@@ -50,7 +50,9 @@
         [parameter(Mandatory=$false)]
         [string]$Tag,
         [parameter(Mandatory=$false)]
-        [switch]$Copy
+        [switch]$Copy,
+        [parameter(Mandatory=$false)]
+        [switch]$Run
     )
 
     if($Tag){
@@ -70,5 +72,16 @@
         }
     }
 
-    $returned #| Select-Object -Property Note, Alias, Details, Tags, Snippet | Sort-Object Note
+    if($Run){
+        if(@($returned).count -gt 1){
+            Write-Warning "More than 1 command returned. Only the first one will be run"
+        }
+
+        $Snippet = $returned | Select-Object -First 1 -ExpandProperty Snippet
+        $ScriptBlock = $executioncontext.invokecommand.NewScriptBlock($Snippet)
+        Invoke-Command -ScriptBlock $ScriptBlock
+    } else {
+        $returned
+    }
+
 }

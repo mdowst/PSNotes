@@ -15,18 +15,27 @@
     
     #>
     [cmdletbinding()]
-    param()
+    param(
+        [parameter(Mandatory=$false)]
+        [switch]$Copy,
+        [parameter(Mandatory=$false)]
+        [switch]$Run
+    )
     if($MyInvocation.MyCommand.Name -eq $MyInvocation.InvocationName){
         Write-Error "The Get-PSNoteAlias cmdlet is designed to be called using an alias and not directly."
     } else {
         $Alias = $MyInvocation.InvocationName
-        $returned = $noteObjects | Where-Object{$_.Alias -eq $Alias}
-        if(Get-Command -Name 'Set-Clipboard' -ErrorAction SilentlyContinue){
-            $returned | Select-Object -First 1 -ExpandProperty Snippet | Set-Clipboard
+        $aliasObject = $noteObjects | Where-Object{$_.Alias -eq $Alias}
+        if($Run){
+            Get-PSNote -Note $aliasObject.Note -Run
         } else {
-            Write-Debug "Cmdlet 'Set-Clipboard' not found."
+            if(Get-Command -Name 'Set-Clipboard' -ErrorAction SilentlyContinue){
+                $returned | Select-Object -First 1 -ExpandProperty Snippet | Set-Clipboard
+            } else {
+                Write-Debug "Cmdlet 'Set-Clipboard' not found."
+            }
+            Return $aliasObject.Snippet
         }
-        $returned.Snippet
     }
 }
 

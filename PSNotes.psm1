@@ -1,4 +1,9 @@
-﻿# Import the functions
+﻿# Variables
+# the default 
+$global:UserPSNotesJsonFile = Join-Path $env:APPDATA '\PSNotes\PSNotes.json'
+[System.Collections.Generic.List[PSNote]] $script:noteObjects = @()
+
+# Import the functions
 foreach($folder in @('private', 'public')){
     $root = Join-Path -Path $PSScriptRoot -ChildPath $folder
     if(Test-Path -Path $root)
@@ -12,12 +17,7 @@ foreach($folder in @('private', 'public')){
     }
 }
 
-# Create Alias for Set-PSnote
-Set-Alias -Name Set-PSNote -Value New-PSNote
-
-
 # load the Json Files into an Object
-[System.Collections.Generic.List[PSNote]] $script:noteObjects = @()
 Function LoadPSNotesJsonFile{
     param($PSNotesJsonFile)
     
@@ -37,13 +37,20 @@ Function LoadPSNotesJsonFile{
     }
 }
 
+# Create PSNote folder in %APPDATA% to save user's local PSNote.json
+if(-not (Test-Path (Split-Path $UserPSNotesJsonFile))){
+    New-Item -Type Directory -Path (Split-Path $UserPSNotesJsonFile) | Out-Null
+}
 
-# Import PSNotes Json File
-LoadPSNotesJsonFile (Join-Path $PSScriptRoot 'PSNotes.json')
-
-
-# Load the user file last to overwrite any duplicated with local config
-$global:UserPSNotesJsonFile = Join-Path $env:APPDATA '\PSNotes\PSNotes.json'
+# Create PSNote.json in %APPDATA%\PSNotes to save users local settings
+if(-not (Test-Path $UserPSNotesJsonFile)){
+    $exampleJson = '[{"Note":"NewPSNote","Alias":"Example","Details":"Example of creating a new Note","Tags":["notes"],' +
+                   '"Snippet":"$Snippet = @\u0027\r\n(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)' +
+                   '\r\n\u0027@\r\nNew-PSNote -Note \u0027DayOfWeek\u0027 -Snippet $Snippet -Details \"Use to name of the day of the week\"' +
+                   ' -Tags \u0027date\u0027 -Alias \u0027today\u0027"}]'
+    $exampleJson | Out-File $UserPSNotesJsonFile -Encoding UTF8NoBOM
+}
+# load the PSNote.json into $noteObjects
 LoadPSNotesJsonFile $UserPSNotesJsonFile
 
 

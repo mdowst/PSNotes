@@ -1,4 +1,4 @@
-﻿Function New-PSNote{
+Function Set-PSNote{
     <#
     .SYNOPSIS
         Use to add or update a PSNote object
@@ -69,36 +69,13 @@
         [parameter(Mandatory=$false)]
         [string]$Alias,
         [parameter(Mandatory=$false)]
-        [string[]]$Tags,
-        [parameter(Mandatory=$false)]
-        [switch]$Force
+        [string[]]$Tags
     )
 
     $check = $noteObjects | Where-Object{$_.Note -eq $Note}
-    if($check -and -not $force){
-        Write-Error "The note '$Note' already exists. Use -force to overwrite existing properties"
-        break
-    } elseif($check -and $force){
-        $noteObjects | Where-Object{$_.Note -eq $Note} | ForEach-Object{
-            if(-not [string]::IsNullOrEmpty($Snippet)){
-                $_.Snippet = $Snippet
-            }
-            if(-not [string]::IsNullOrEmpty($Details)){
-                $_.Details = $Details
-            }
-            if(-not [string]::IsNullOrEmpty($Alias)){
-                $_.Alias = $Alias
-            }
-            if(-not [string]::IsNullOrEmpty($Tags)){
-                $_.Tags = $Tags
-            }
-            $_.File = $UserPSNotesJsonFile
-        }
-    } else {
-        $newNote = [PSNote]::New($Note, $Snippet, $Details, $Alias, $Tags)
-        $noteObjects.Add($newNote)
-        Set-Alias -Name $newNote.Alias -Value Get-PSNoteAlias -Scope Global
-    }
-    
-    Update-PSNotesJsonFile
+    if(-not $check){
+        Write-Warning "The note '$Note' does not exists. An attempt will be made to create it."
+    } 
+
+    New-PSNote @PSBoundParameters -Force
 }
