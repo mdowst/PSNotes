@@ -12,11 +12,12 @@
                        <CustomItem>
                             <ExpressionBinding>
                                 <ScriptBlock>
+									"$('-' * 40)`n`n" +
+									"Note    : $($_.Note)`n" +
+									"Details : $($_.Details)`n" +
 									"Alias   : $($_.Alias)`n" +
-									"Snippet :`n" +
-									"-------`n" +
-									"$($_.Snippet)`n" +
-									"-------`n"
+									"Snippet :`n`n" +
+									"$($_.Snippet)`n`n"
 								</ScriptBlock>
                             </ExpressionBinding>
                         </CustomItem>
