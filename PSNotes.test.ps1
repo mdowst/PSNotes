@@ -1,14 +1,24 @@
-$UserJson = Join-Path $env:APPDATA '\PSNotes\PSNotes.json'
-Copy-Item -LiteralPath $UserJson -Destination "$UserJson.testbak" 
-$mockJson = '[{"Note":"Date","Alias":"today","Details":"Get todays date","Tags":["date"],"Snippet":"Get-Date 01/01/2001","File":' + ($UserJson | ConvertTo-Json) + '}]'
-$mockJson | Out-File $UserJson
+$Timestamp = $((Get-Date).ToFileTime())
 
-#Get-Content $UserJson -Raw | ConvertFrom-Json $UserJson | ConvertTo-Json -Compress
+# Create a backup of your config so you don't lose anything during testing
+$UserFolder = Join-Path $env:APPDATA 'PSNotes'
+$backupFolder = Join-Path $UserFolder $Timestamp
+if(-not (Test-Path $backupFolder)){
+    New-Item -ItemType Directory -Path $backupFolder | Out-Null
+}
+Get-ChildItem -LiteralPath (Join-Path $env:APPDATA '\PSNotes\') -Filter "*.json" | Copy-Item -Destination $backupFolder -Force -ErrorAction Stop
+Get-ChildItem -LiteralPath (Join-Path $env:APPDATA '\PSNotes\') -Filter "*.json" | Remove-Item -Force
+
+# create a new PSNotes.json to use for testing purposes
+$UserJson = Join-Path $UserFolder 'PSNotes.json'
+$SingleExport = Join-Path $env:Temp 'SingleExport.json'
+$AllExport = Join-Path $env:Temp 'AllExport.json'
+$mockJson = '[{"Note":"Date","Alias":"today","Details":"Get todays date","Tags":["date"],"Snippet":"Get-Date 01/01/2001","File":"' + $UserJson.Replace('\','\\') + '"}]'
+$mockJson | Out-File $UserJson
 
 Get-Module PSNotes | Remove-Module
 Import-Module (Join-Path $PSScriptRoot "PSNotes.psd1")
 
-$Timestamp = "Test_$((Get-Date).ToFileTime())"
 
 
 Describe 'Get-PSNote' {
@@ -26,7 +36,7 @@ Describe 'Get-PSNote' {
     }
 
     It "Output Style Check" {
-        Get-PSNote -Note 'Date' | Out-String | Should -Be "`r`nAlias   : today`r`nSnippet :`r`n-------`r`nGet-Date 01/01/2001`r`n-------`r`n`r`n`r`n"
+        Get-PSNote -Note 'Date' | Out-String | Should -Be "`r`n----------------------------------------`r`n`r`nNote    : Date`r`nDetails : Get todays date`r`nAlias   : today`r`nSnippet :`r`n`r`nGet-Date 01/01/2001`r`n`r`n`r`n`r`n"
     }
 
     It "Test Run Parameter" {
@@ -96,5 +106,5 @@ Describe 'Set-PSNote' {
     }
 }
 
-Copy-Item -LiteralPath "$UserJson.testbak" -Destination $UserJson -Force
-Remove-Item "$UserJson.testbak" -Force
+
+Get-ChildItem -LiteralPath $backupFolder -Filter "*.json" | Copy-Item -Destination $UserFolder -Force -ErrorAction Stop -PassThru

@@ -26,32 +26,17 @@ Function Set-PSNote{
 
     .PARAMETER Tags
         A string array of tags to add/update for the Note
-
-    .PARAMETER Force
-        If Note already exists the Force switch is required to overwrite it
     
     .EXAMPLE
-        New-PSNote -Note 'ADUser' -Snippet 'Get-AdUser -Filter *' -Details "Use to return all AD users" -Tags 'AD','Users' 
+        Set-PSNote -Note 'ADUser' -Tags 'AD','Users' 
 
-        Creates a new Note for the Get-ADUser cmdlet
+        Set the tags AD and User for the note ADUser
     
     .EXAMPLE
         $Snippet = '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)'
-        New-PSNote -Note 'DayOfWeek' -Snippet $Snippet -Details "Use to name of the day of the week" -Tags 'date' -Alias 'today'
+        Set-PSNote -Note 'DayOfWeek' -Snippet $Snippet
 
-        Creates a new Note for the to get the current day's abbrevation with the custom Alias of today
-
-    .EXAMPLE
-        $Snippet = @'
-        $stringBuilder = New-Object System.Text.StringBuilder
-        for ($i = 0; $i -lt 10; $i++){
-            $stringBuilder.Append("Line $i`r`n") | Out-Null
-        }
-        $stringBuilder.ToString()
-        '@
-        New-PSNote -Note 'StringBuilder' -Snippet $Snippet -Details "Use StringBuilder to combine multiple strings" -Tags 'string'
-
-        Creates a new Note with a new mulitple line snippet using a here-string
+        Updates the snippet for the note DayOfWeek
 
     .LINK
         https://github.com/mdowst/PSNotes
