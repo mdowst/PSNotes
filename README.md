@@ -36,7 +36,7 @@ The import and export functionality allows you to share notes between machines a
 ## Install Instructions
 PowerShell v5+ and PowerShell Core v6+
 ```powershell
-Install-Module PSnotes
+Install-Module PSNotes
 ```
 
 Note: At of the time of publishing Set-Clipboard is not supported in PowerShell Core. To use the copy to clipboard functionality of this module, it is recommended that you also install the ClipboardText module.
@@ -56,13 +56,13 @@ MyNote
 ```
 
 ###### Example 2: Output the note to the console
-This example gets the note/code snippet with the alias "YourNote" and outputs it to the console and copies it to your local clipboard.
+This example gets the note/code snippet with the alias "MyNote" and outputs it to the console and copies it to your local clipboard.
 ```powershell
 MyNote -copy
 ```
 
 ###### Example 3: Execute the note directly
-This example gets the note/code snippet with the alias "YourNote" and executes the command in your local session.
+This example gets the note/code snippet with the alias "MyNote" and executes the command in your local session.
 ```powershell
 MyNote -run
 ```
@@ -109,7 +109,7 @@ This example creates a new note for the Get-ADUser cmdlet. Since the `-Alias` pa
 New-PSNote -Note 'ADUser' -Snippet 'Get-ADUser -Filter *' -Details "Use to return all AD users" -Tags 'AD','Users' 
 ```
 
-###### Example 2: Create a new note witha custom alias
+###### Example 2: Create a new note with a custom alias
 This example creates a new note with a custom alias.
 ```powershell
 $Snippet = '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)'
@@ -123,7 +123,7 @@ New-PSNote -Note 'SvcAccounts' -Snippet 'Get-ADUser -Filter ''Name -like "*SvcAc
 ```
 [top](#psnotes)
 ###### Example 4: Create multiple line note
-When creating a note for a mutiple line snippet, it is recommended that you use a here-string with single quotes to prevent expressions from being evaluated when you run the `New-PSNote` command.
+When creating a note for a multiple line snippet, it is recommended that you use a here-string with single quotes to prevent expressions from being evaluated when you run the `New-PSNote` command.
 ```powershell
 $Snippet = @'
 $stringBuilder = New-Object System.Text.StringBuilder
@@ -161,8 +161,7 @@ Remove-PSNote -Note 'creds'
 Not only does PSNotes allow you to create your own custom notes. It allows you to share them between computers and users. You can create a list of notes export them and share them with your team. Notes are stored in easy to read and edit JSON files in case you want to make manual edits.
 
 Note: PSNotes stores your notes in your local AppData folder using the path %appdata%\PSNotes. By default the file PSNotes.json. When you run the `Import-PSNote` cmdlet you can choose a catalog name. Doing so will cause the imported notes to be stored in a file with that catalogs name. 
-Export-PSNote
-Import-PSNote
+
 ###### Example 1: Export all notes
 This example exports all notes to a JSON file.
 ```powershell
