@@ -12,7 +12,7 @@
 RootModule = '.\PSNotes.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.1.2.3'
+ModuleVersion = '0.1.3.4'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -30,7 +30,7 @@ CompanyName = 'dowst.dev'
 Copyright = '(c) 2019 Matthew Dowst. All rights reserved.'
 
 # Description of the functionality provided by this module
-Description = 'PSNotes'
+Description = 'PSNotes is a PowerShell module that allows you to create your own custom snippet library, that you can use to reference commands. It is great for long command you run often or commands you don''t run often and need a reminder on. Snippets can either be executed directly, copied to your clipboard, or simply output to the screen for you to do whatever you want with them. When you create a note, you assign an alias to it, so you can have an easy to remember keyword that you can then use to recall it. Notes can also be classified with tags, so you group them in logic collections. You can also easily search for them by tag, name, details, or text within the snippet.'
 
 # Minimum version of the Windows PowerShell engine required by this module
 PowerShellVersion = '2.0'
@@ -69,7 +69,8 @@ FormatsToProcess = '.\Resources\PSNotes.format.ps1xml'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'Export-PSNote', 'Get-PSNote', 'Get-PSNoteAlias', 'Import-PSNote', 'New-PSNote', 'Remove-PSNote', 'Set-PSNote'
+FunctionsToExport = 'Export-PSNote', 'Get-PSNote', 'Get-PSNoteAlias', 'Import-PSNote', 
+               'New-PSNote', 'Remove-PSNote', 'Set-PSNote'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()
@@ -98,10 +99,10 @@ PrivateData = @{
         # Tags = @()
 
         # A URL to the license for this module.
-        # LicenseUri = ''
+        LicenseUri = 'https://github.com/mdowst/PSNotes/blob/master/LICENSE'
 
         # A URL to the main website for this project.
-        # ProjectUri = ''
+        ProjectUri = 'https://github.com/mdowst/PSNotes'
 
         # A URL to an icon representing this module.
         # IconUri = ''

@@ -35,5 +35,12 @@ foreach($folder in $IncludeDirectories){
     Get-ChildItem $modFolder -File | Copy-Item -Destination $destFolder
 }
 
+
 # Publish to powershell gallery
-Publish-Module -Path $releaseFolder -NugetAPIKey $NugetAPIKey -WhatIf -Verbose
+$publish = @{
+    Path = $releaseFolder 
+    NugetAPIKey = $NugetAPIKey  
+    ProjectUri = $ProjectUri
+    LicenseUri = $LicenseUri
+}
+Publish-Module -Path $releaseFolder -NugetAPIKey $NugetAPIKey -Verbose
