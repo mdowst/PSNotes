@@ -9,18 +9,23 @@ class PSNote {
 
     PSNote(
         [string]$Note,
-		[string]$Snippet,
+		[object]$Snippet,
 		[string]$Details,
         [string]$Alias,
         [string[]]$Tags
     ){
         $this.Note = $Note
-		$this.Snippet = $Snippet
+        if ($Snippet -is [scriptblock]) {
+            $this.Snippet = $Snippet.ToString().Trim()
+        }
+        else {
+            $this.Snippet = $Snippet
+        }
 		$this.Details = $Details
         $this.Alias = $Alias
         $this.Tags = $Tags
         $this.File = $script:UserPSNotesJsonFile
-        
+
         if([string]::IsNullOrEmpty($Alias)){
             $this.Alias = $Note
         }
