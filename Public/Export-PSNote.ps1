@@ -23,7 +23,7 @@ Function Export-PSNote{
     .EXAMPLE
         Export-PSNote -All -Path C:\Export\MyPSNotes.json
 
-        Export
+        Exportall notes to a JSON file.
 
     .EXAMPLE
         Get-PSNote -tag 'AD' | Export-PSNote -Path C:\Export\SharedADNotes.json
