@@ -12,7 +12,7 @@ Function Set-PSNote {
         The note you want to add/update.
 
     .PARAMETER Snippet
-        The text of the snippet to add/update.
+        The text or scriptblock of the snippet to add/update.
 
     .PARAMETER Details
         The Details of the snippet to add/update.
