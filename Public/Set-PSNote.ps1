@@ -12,7 +12,7 @@ Function Set-PSNote{
         The note you want to add/update.
 
     .PARAMETER Snippet
-        The text of the snippet to add/update.
+        The text or scriptblock of the snippet to add/update.
 
     .PARAMETER Details
         The Details of the snippet to add/update.
@@ -48,7 +48,8 @@ Function Set-PSNote{
         [parameter(Mandatory=$true)]
         [string]$Note,
         [parameter(Mandatory=$false)]
-        [string]$Snippet,
+        [ValidateScript({ $_ -is [scriptblock] -or $_ -is [System.IConvertible] })]
+        [object]$Snippet,
         [parameter(Mandatory=$false)]
         [string]$Details,
         [parameter(Mandatory=$false)]

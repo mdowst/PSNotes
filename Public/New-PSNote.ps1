@@ -1,4 +1,4 @@
-﻿Function New-PSNote{
+Function New-PSNote{
     <#
     .SYNOPSIS
         Use to add or update a PSNote object
@@ -12,7 +12,7 @@
         The note you want to add/update.
 
     .PARAMETER Snippet
-        The text of the snippet to add/update.
+        The text or scriptblock of the snippet to add/update.
 
     .PARAMETER Details
         The Details of the snippet to add/update.
@@ -63,7 +63,8 @@
         [parameter(Mandatory=$true)]
         [string]$Note,
         [parameter(Mandatory=$false)]
-        [string]$Snippet,
+        [ValidateScript({ $_ -is [scriptblock] -or $_ -is [System.IConvertible] })]
+        [object]$Snippet,
         [parameter(Mandatory=$false)]
         [string]$Details,
         [parameter(Mandatory=$false)]
@@ -73,6 +74,16 @@
         [parameter(Mandatory=$false)]
         [switch]$Force
     )
+	
+	# Validate that $Snippet is either a string, scriptblock, or something that can be converted into a string
+    # e.g. - [int], [guid], [decimal], etc.
+    if ((-not ($Snippet -is [string])) -and $Snippet -is [System.IConvertible]) {
+        $Snippet = [System.Convert]::ToString($Snippet)
+    }
+    elseif ($Snippet -is [scriptblock]) {
+        $Snippet = $Snippet.ToString().Trim()
+    }
+	
     Function Test-NoteAlias{
         param($Alias)
         
