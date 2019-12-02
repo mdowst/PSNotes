@@ -7,8 +7,6 @@ class PSNote {
     [string[]]$Tags
     [string]$file
 
-    PSNote() {}
-
     PSNote(
         [string]$Note,
 		[string]$Snippet,
@@ -17,7 +15,7 @@ class PSNote {
         [string[]]$Tags
     ){
         $this.Note = $Note
-        $this.Snippet = $Snippet
+		$this.Snippet = $Snippet
 		$this.Details = $Details
         $this.Alias = $Alias
         $this.Tags = $Tags

@@ -1,4 +1,4 @@
-﻿Function New-PSNote {
+﻿Function New-PSNote{
     <#
     .SYNOPSIS
         Use to add or update a PSNote object
@@ -58,24 +58,24 @@
 
 
     #>
-    [cmdletbinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', PositionalBinding=$false)]
+    [cmdletbinding(SupportsShouldProcess=$true,ConfirmImpact='Low')]
     param(
-        [parameter(Mandatory = $true, Position = 0)]
+        [parameter(Mandatory=$true)]
         [string]$Note,
-        [parameter(Mandatory = $true, Position = 1)]
+        [parameter(Mandatory=$false)]
         [ValidateScript({ $_ -is [scriptblock] -or $_ -is [System.IConvertible] })]
         [object]$Snippet,
-        [parameter(Mandatory = $false)]
+        [parameter(Mandatory=$false)]
         [string]$Details,
-        [parameter(Mandatory = $false)]
+        [parameter(Mandatory=$false)]
         [string]$Alias,
-        [parameter(Mandatory = $false)]
+        [parameter(Mandatory=$false)]
         [string[]]$Tags,
-        [parameter(Mandatory = $false)]
+        [parameter(Mandatory=$false)]
         [switch]$Force
     )
 
-    # Validate that $Snippet is either a string, scriptblock, or something that can be converted into a string
+	# Validate that $Snippet is either a string, scriptblock, or something that can be converted into a string
     # e.g. - [int], [guid], [decimal], etc.
     if ((-not ($Snippet -is [string])) -and $Snippet -is [System.IConvertible]) {
         $Snippet = [System.Convert]::ToString($Snippet)
@@ -84,41 +84,37 @@
         $Snippet = $Snippet.ToString().Trim()
     }
 
-    Function Test-NoteAlias {
+    Function Test-NoteAlias{
         param($Alias)
 
-        $AliasCheck = [regex]::Matches($Alias, "[^0-9a-zA-Z\-_]")
-        if ($AliasCheck.Success) {
+        $AliasCheck = [regex]::Matches($Alias,"[^0-9a-zA-Z\-_]")
+        if($AliasCheck.Success){
             throw "'$Alias' is not a valid alias. Alias's can only contain letters, numbers, dashes(-), and underscores (_)."
         }
     }
-
-    $check = $noteObjects | Where-Object {$_.Note -eq $Note}
-    if ($check -and -not $force) {
+    $check = $noteObjects | Where-Object{$_.Note -eq $Note}
+    if($check -and -not $force){
         Write-Error "The note '$Note' already exists. Use -force to overwrite existing properties"
         break
-    }
-    elseif ($check -and $force) {
-        $noteObjects | Where-Object {$_.Note -eq $Note} | ForEach-Object {
-
-            $_.Snippet = $Snippet
-
-            if (-not [string]::IsNullOrEmpty($Details)) {
+    } elseif($check -and $force){
+        $noteObjects | Where-Object{$_.Note -eq $Note} | ForEach-Object{
+            if(-not [string]::IsNullOrEmpty($Snippet)){
+                $_.Snippet = $Snippet
+            }
+            if(-not [string]::IsNullOrEmpty($Details)){
                 $_.Details = $Details
             }
-            if (-not [string]::IsNullOrEmpty($Alias)) {
+            if(-not [string]::IsNullOrEmpty($Alias)){
                 Test-NoteAlias $Alias
                 $_.Alias = $Alias
             }
-            if (-not [string]::IsNullOrEmpty($Tags)) {
+            if(-not [string]::IsNullOrEmpty($Tags)){
                 $_.Tags = $Tags
             }
-
             $_.File = $UserPSNotesJsonFile
         }
-    }
-    else {
-        if ([string]::IsNullOrEmpty($Alias)) {
+    } else {
+        if([string]::IsNullOrEmpty($Alias)){
             $Alias = $Note
         }
 

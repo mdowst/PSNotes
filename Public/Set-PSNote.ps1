@@ -1,4 +1,4 @@
-Function Set-PSNote {
+Function Set-PSNote{
     <#
     .SYNOPSIS
         Use to add or update a PSNote object
@@ -26,12 +26,12 @@ Function Set-PSNote {
 
     .PARAMETER Tags
         A string array of tags to add/update for the Note
-
+    
     .EXAMPLE
-        Set-PSNote -Note 'ADUser' -Tags 'AD','Users'
+        Set-PSNote -Note 'ADUser' -Tags 'AD','Users' 
 
         Set the tags AD and User for the note ADUser
-
+    
     .EXAMPLE
         $Snippet = '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)'
         Set-PSNote -Note 'DayOfWeek' -Snippet $Snippet
@@ -40,28 +40,28 @@ Function Set-PSNote {
 
     .LINK
         https://github.com/mdowst/PSNotes
-
-
+    
+    
     #>
-    [cmdletbinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', PositionalBinding = $false)]
+    [cmdletbinding(SupportsShouldProcess=$true,ConfirmImpact='Low')]
     param(
-        [parameter(Mandatory = $true, Position = 0)]
+        [parameter(Mandatory=$true)]
         [string]$Note,
-        [parameter(Mandatory = $true, Position = 1)]
+        [parameter(Mandatory=$false)]
         [ValidateScript({ $_ -is [scriptblock] -or $_ -is [System.IConvertible] })]
         [object]$Snippet,
-        [parameter(Mandatory = $false)]
+        [parameter(Mandatory=$false)]
         [string]$Details,
-        [parameter(Mandatory = $false)]
+        [parameter(Mandatory=$false)]
         [string]$Alias,
-        [parameter(Mandatory = $false)]
+        [parameter(Mandatory=$false)]
         [string[]]$Tags
     )
 
-    $check = $noteObjects | Where-Object {$_.Note -eq $Note}
-    if (-not $check) {
+    $check = $noteObjects | Where-Object{$_.Note -eq $Note}
+    if(-not $check){
         Write-Warning "The note '$Note' does not exists. An attempt will be made to create it."
-    }
+    } 
 
     New-PSNote @PSBoundParameters -Force
 }
