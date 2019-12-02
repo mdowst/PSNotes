@@ -7,6 +7,8 @@ class PSNote {
     [string[]]$Tags
     [string]$file
 
+    PSNote() {}
+
     PSNote(
         [string]$Note,
 		[string]$Snippet,
