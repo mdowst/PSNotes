@@ -20,7 +20,7 @@ class PSNote {
         $this.Alias = $Alias
         $this.Tags = $Tags
         $this.File = $script:UserPSNotesJsonFile
-
+        
         if([string]::IsNullOrEmpty($Alias)){
             $this.Alias = $Note
         }
