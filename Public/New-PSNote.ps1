@@ -1,4 +1,4 @@
-﻿Function New-PSNote{
+Function New-PSNote{
     <#
     .SYNOPSIS
         Use to add or update a PSNote object
@@ -29,12 +29,12 @@
 
     .PARAMETER Force
         If Note already exists the Force switch is required to overwrite it
-
+    
     .EXAMPLE
-        New-PSNote -Note 'ADUser' -Snippet 'Get-AdUser -Filter *' -Details "Use to return all AD users" -Tags 'AD','Users'
+        New-PSNote -Note 'ADUser' -Snippet 'Get-AdUser -Filter *' -Details "Use to return all AD users" -Tags 'AD','Users' 
 
         Creates a new Note for the Get-ADUser cmdlet
-
+    
     .EXAMPLE
         $Snippet = '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)'
         New-PSNote -Note 'DayOfWeek' -Snippet $Snippet -Details "Use to name of the day of the week" -Tags 'date' -Alias 'today'
@@ -55,8 +55,8 @@
 
     .LINK
         https://github.com/mdowst/PSNotes
-
-
+    
+    
     #>
     [cmdletbinding(SupportsShouldProcess=$true,ConfirmImpact='Low')]
     param(
@@ -74,7 +74,7 @@
         [parameter(Mandatory=$false)]
         [switch]$Force
     )
-
+	
 	# Validate that $Snippet is either a string, scriptblock, or something that can be converted into a string
     # e.g. - [int], [guid], [decimal], etc.
     if ((-not ($Snippet -is [string])) -and $Snippet -is [System.IConvertible]) {
@@ -83,14 +83,14 @@
     elseif ($Snippet -is [scriptblock]) {
         $Snippet = $Snippet.ToString().Trim()
     }
-
+	
     Function Test-NoteAlias{
         param($Alias)
-
+        
         $AliasCheck = [regex]::Matches($Alias,"[^0-9a-zA-Z\-_]")
         if($AliasCheck.Success){
             throw "'$Alias' is not a valid alias. Alias's can only contain letters, numbers, dashes(-), and underscores (_)."
-        }
+        } 
     }
     $check = $noteObjects | Where-Object{$_.Note -eq $Note}
     if($check -and -not $force){
@@ -119,11 +119,11 @@
         }
 
         Test-NoteAlias $Alias
-
+        
         $newNote = [PSNote]::New($Note, $Snippet, $Details, $Alias, $Tags)
         $noteObjects.Add($newNote)
         Set-Alias -Name $newNote.Alias -Value Get-PSNoteAlias -Scope Global
     }
-
+    
     Update-PSNotesJsonFile
 }
