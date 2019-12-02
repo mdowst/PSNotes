@@ -73,7 +73,14 @@
         [parameter(Mandatory=$false)]
         [switch]$Force
     )
-
+    Function Test-NoteAlias{
+        param($Alias)
+        
+        $AliasCheck = [regex]::Matches($Alias,"[^0-9a-zA-Z\-_]")
+        if($AliasCheck.Success){
+            throw "'$Alias' is not a valid alias. Alias's can only contain letters, numbers, dashes(-), and underscores (_)."
+        } 
+    }
     $check = $noteObjects | Where-Object{$_.Note -eq $Note}
     if($check -and -not $force){
         Write-Error "The note '$Note' already exists. Use -force to overwrite existing properties"
@@ -87,6 +94,7 @@
                 $_.Details = $Details
             }
             if(-not [string]::IsNullOrEmpty($Alias)){
+                Test-NoteAlias $Alias
                 $_.Alias = $Alias
             }
             if(-not [string]::IsNullOrEmpty($Tags)){
@@ -95,6 +103,12 @@
             $_.File = $UserPSNotesJsonFile
         }
     } else {
+        if([string]::IsNullOrEmpty($Alias)){
+            $Alias = $Note
+        }
+
+        Test-NoteAlias $Alias
+        
         $newNote = [PSNote]::New($Note, $Snippet, $Details, $Alias, $Tags)
         $noteObjects.Add($newNote)
         Set-Alias -Name $newNote.Alias -Value Get-PSNoteAlias -Scope Global

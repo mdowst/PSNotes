@@ -1,6 +1,6 @@
 # PSNotes
 
-PSNotes is a PowerShell module that allows you to create your own custom snippet library, that you can use to reference commands you run often. Or ones you don't run often and need a reminder on. Snippets can either be executed directly, copied to your clipboard, or simply output to the display for you to do whatever you want with them. When you create a note you assign an alias to it, so you can have an easy to remember keyword that you can then use to recall it. Notes can also be classified with tags, so you can easily search for them. 
+PSNotes is a PowerShell module that allows you to create your own custom snippet library, that you can use to reference commands you run often. Or ones you don't run often and need a reminder on. Snippets can either be executed directly, copied to your clipboard, or simply output to the display for you to do whatever you want with them. When you create a note, you assign an alias to it, so you can have an easy to remember keyword that you can then use to recall it. Notes can also be classified with tags, so you can easily search for them. 
 
 * [Key Features](#key-features)
 * [Getting Started](#getting-started)
@@ -14,7 +14,7 @@ PSNotes is a PowerShell module that allows you to create your own custom snippet
 # Key Features
 
 ### Recall a command using a specific alias keyword
-When you create a new note you can define an alias that you can later use to display or run it.
+When you create a new note, you can define an alias that you can later use to display or run it.
 ![UnixTime Demo](Documentation/UnixTime.gif)
 
 Perfect for long commands you need to run often.
@@ -47,7 +47,7 @@ Install-Module -Name ClipboardText
 ```
 [top](#psnotes)
 ## Output and Run Notes
-When you create a note in the PSNotes module you assign an alias to it. You can use this alias at any time to output, copy, or run a note. Simply type the name of the alias and hit enter to output it to your PowerShell console. You can also add the `-copy` switch to have the note copied to your clipboard, or use the `-run` to execute the note directly.
+When you create a note in the PSNotes module you assign an alias to it. You can use this alias at any time to output, copy, or run a note. Simply type the name of the alias and hit enter to output it to your PowerShell console. You can also add the `-copy` switch to have the note copied to your clipboard or use the `-run` to execute the note directly.
 
 ###### Example 1: Output the note to the console
 This example gets the note/code snippet with the alias "MyNote" and outputs it to the console.
@@ -101,7 +101,7 @@ Get-PSNote -SearchString 'day'
 ```
 [top](#psnotes)
 ## Creating Notes
-You can create your own notes at any time using `New-PSNote`. Keep in mind that the snippet must be passed as string, so it is recommended to wrap them in single quotes and here-strings to prevent them from being executed when you are try to create a note.
+You can create your own notes at any time using `New-PSNote`. Keep in mind that the snippet must be passed as string, so it is recommended to wrap them in single quotes and here-strings to prevent them from being executed when you are creating a note.
 
 ###### Example 1: Create a new note
 This example creates a new note for the Get-ADUser cmdlet. Since the `-Alias` parameter is not supplied the Note value will be assigned as the alias.
@@ -117,7 +117,7 @@ New-PSNote -Note 'DayOfWeek' -Snippet $Snippet -Details "Use to name of the day 
 ```
 
 ###### Example 3: Create a new note with both single and double quotes in it
-This example show one option you can use to create a new note for a snippet that contains both single and double quotes. Notice in the snippet itself the single quotes are doubled. This escapes them and tells PowerShell it is not the end of the string. 
+This example shows one way you can create a new note for a snippet that contains both single and double quotes. Notice in the snippet itself the single quotes are doubled. This escapes them and tells PowerShell it is not the end of the string. 
 ```powershell
 New-PSNote -Note 'SvcAccounts' -Snippet 'Get-ADUser -Filter ''Name -like "*SvcAccount"''' -Details "Use to return all AD Service Accounts" -Tags 'AD','Users' 
 ```
@@ -160,7 +160,7 @@ Remove-PSNote -Note 'creds'
 ## Sharing Notes
 Not only does PSNotes allow you to create your own custom notes. It allows you to share them between computers and users. You can create a list of notes export them and share them with your team. Notes are stored in easy to read and edit JSON files in case you want to make manual edits.
 
-Note: PSNotes stores your notes in your local AppData folder using the path %appdata%\PSNotes. By default the file PSNotes.json. When you run the `Import-PSNote` cmdlet you can choose a catalog name. Doing so will cause the imported notes to be stored in a file with that catalogs name. 
+Note: PSNotes stores your notes in your local AppData folder using the path %appdata%\PSNotes. By default, it places them in the file PSNotes.json. When you run the `Import-PSNote` cmdlet you can choose a catalog name. Doing so will cause the imported notes to be stored in a file with that catalogs name. 
 
 ###### Example 1: Export all notes
 This example exports all notes to a JSON file.
