@@ -12,7 +12,6 @@ PSNotes is a PowerShell module that allows you to create your own custom snippet
     * [Sharing Notes](#sharing-notes)
 
 # Key Features
-[here](#Share-your-notes-with-others)
 
 ### Recall a command using a specific alias keyword
 When you create a new note you can define an alias that you can later use to display or run it.
