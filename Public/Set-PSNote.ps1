@@ -16,7 +16,7 @@ Function Set-PSNote{
 
     .PARAMETER ScriptBlock
         Specifies the snippet to save. Enclose the commands in braces { } to create a script block
-        
+
     .PARAMETER Details
         The Details of the snippet to add/update.
 
@@ -46,7 +46,7 @@ Function Set-PSNote{
     
     
     #>
-    [cmdletbinding(SupportsShouldProcess=$true,ConfirmImpact='Low')]
+    [cmdletbinding(SupportsShouldProcess=$true,ConfirmImpact='Low',DefaultParameterSetName="Note")]
     param(
         [parameter(Mandatory=$true)]
         [string]$Note,

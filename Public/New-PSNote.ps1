@@ -68,7 +68,7 @@
     
     
     #>
-    [cmdletbinding(SupportsShouldProcess=$true,ConfirmImpact='Low')]
+    [cmdletbinding(SupportsShouldProcess=$true,ConfirmImpact='Low',DefaultParameterSetName="Note")]
     param(
         [parameter(Mandatory=$true)]
         [string]$Note,
@@ -98,11 +98,11 @@
         $Snippet = $ScriptBlock.ToString()
     }
 
-    $check = $noteObjects | Where-Object{$_.Note -eq $Note}
-    if($check -and -not $force){
+    $newNote = $noteObjects | Where-Object{$_.Note -eq $Note}
+    if($newNote -and -not $force){
         Write-Error "The note '$Note' already exists. Use -force to overwrite existing properties"
         break
-    } elseif($check -and $force){
+    } elseif($newNote -and $force){
         $noteObjects | Where-Object{$_.Note -eq $Note} | ForEach-Object{
             if(-not [string]::IsNullOrEmpty($Snippet)){
                 $_.Snippet = $Snippet
@@ -128,8 +128,9 @@
         
         $newNote = [PSNote]::New($Note, $Snippet, $Details, $Alias, $Tags)
         $noteObjects.Add($newNote)
-        Set-Alias -Name $newNote.Alias -Value Get-PSNoteAlias -Scope Global
     }
     
+    Set-Alias -Name $newNote.Alias -Value Get-PSNoteAlias -Scope Global
+
     Update-PSNotesJsonFile
 }
