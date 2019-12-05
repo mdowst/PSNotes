@@ -138,5 +138,5 @@ Describe 'Set-PSNote' {
     }
 }
 
-break
+
 Get-ChildItem -LiteralPath $backupFolder -Filter "*.json" | Copy-Item -Destination $UserFolder -Force -ErrorAction Stop -PassThru
