@@ -28,6 +28,9 @@ You can assign tags to your notes to make searching easier.
 Add new snippets at any time
 ![New-PSNote Demo](Documentation/newnote.gif)
 
+Add new snippets as string or by using a script block
+![New-PSNote ScriptBlock Demo](Documentation/ScriptBlock.gif)
+
 ### Share your notes with others
 The import and export functionality allows you to share notes between machines and people.
 ![Export/Import Demo](Documentation/ImportExport.gif)
@@ -116,13 +119,21 @@ $Snippet = '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfW
 New-PSNote -Note 'DayOfWeek' -Snippet $Snippet -Details "Use to name of the day of the week" -Tags 'date' -Alias 'today'
 ```
 
-###### Example 3: Create a new note with both single and double quotes in it
+###### Example 3: Create a new note using script block
+This example creates a new note for the Get-WmiObject using a script block instead of a string. This make multiple line scripts easier to enter and gives you the ability to use auto-complete when entering it. 
+```powershell
+New-PSNote -Note 'CpuUsage' -Tags 'perf' -Alias 'cpu' -ScriptBlock {
+    Get-WmiObject win32_processor | Measure-Object -property LoadPercentage -Average
+}
+```
+
+###### Example 4: Create a new note with both single and double quotes in it
 This example shows one way you can create a new note for a snippet that contains both single and double quotes. Notice in the snippet itself the single quotes are doubled. This escapes them and tells PowerShell it is not the end of the string. 
 ```powershell
 New-PSNote -Note 'SvcAccounts' -Snippet 'Get-ADUser -Filter ''Name -like "*SvcAccount"''' -Details "Use to return all AD Service Accounts" -Tags 'AD','Users' 
 ```
-[top](#psnotes)
-###### Example 4: Create multiple line note
+
+###### Example 5: Create multiple line note
 When creating a note for a multiple line snippet, it is recommended that you use a here-string with single quotes to prevent expressions from being evaluated when you run the `New-PSNote` command.
 ```powershell
 $Snippet = @'
@@ -134,7 +145,7 @@ $stringBuilder.ToString()
 '@
 New-PSNote -Note 'StringBuilder' -Snippet $Snippet -Details "Use StringBuilder to combine multiple strings" -Tags 'string'
 ```
-
+[top](#psnotes)
 ## Updating Notes
 You can update a note at any time using `Set-PSNote`. With `Set-PSNote` you can update the Snippet, Details, Tags, or Alias of any note. In addition, notes can be deleted using `Remove-PSNote`.
 

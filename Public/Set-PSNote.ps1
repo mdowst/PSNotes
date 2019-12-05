@@ -47,8 +47,10 @@ Function Set-PSNote{
     param(
         [parameter(Mandatory=$true)]
         [string]$Note,
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory=$false, ParameterSetName="Snippet")]
         [string]$Snippet,
+        [parameter(Mandatory=$false, ParameterSetName="ScriptBlock")]
+        [ScriptBlock]$ScriptBlock,
         [parameter(Mandatory=$false)]
         [string]$Details,
         [parameter(Mandatory=$false)]

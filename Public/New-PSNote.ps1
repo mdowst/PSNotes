@@ -62,8 +62,10 @@
     param(
         [parameter(Mandatory=$true)]
         [string]$Note,
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory=$false, ParameterSetName="Snippet")]
         [string]$Snippet,
+        [parameter(Mandatory=$false, ParameterSetName="ScriptBlock")]
+        [ScriptBlock]$ScriptBlock,
         [parameter(Mandatory=$false)]
         [string]$Details,
         [parameter(Mandatory=$false)]
@@ -81,6 +83,11 @@
             throw "'$Alias' is not a valid alias. Alias's can only contain letters, numbers, dashes(-), and underscores (_)."
         } 
     }
+
+    if(-not [string]::IsNullOrEmpty($ScriptBlock)){
+        $Snippet = $ScriptBlock.ToString()
+    }
+
     $check = $noteObjects | Where-Object{$_.Note -eq $Note}
     if($check -and -not $force){
         Write-Error "The note '$Note' already exists. Use -force to overwrite existing properties"

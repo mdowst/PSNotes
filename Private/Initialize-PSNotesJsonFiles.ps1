@@ -30,7 +30,7 @@ Function Initialize-PSNotesJsonFile{
                     '"Snippet":"$Snippet = @\u0027\r\n(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)' +
                     '\r\n\u0027@\r\nNew-PSNote -Note \u0027DayOfWeek\u0027 -Snippet $Snippet -Details \"Use to name of the day of the week\"' +
                     ' -Tags \u0027date\u0027 -Alias \u0027today\u0027"}]'
-        $exampleJson | Out-File $UserPSNotesJsonFile -Encoding UTF8NoBOM
+        $exampleJson | Out-File $UserPSNotesJsonFile -Encoding UTF8
     }
 
     # load additional JSON store files

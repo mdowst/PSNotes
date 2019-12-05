@@ -12,7 +12,7 @@
 RootModule = '.\PSNotes.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.1.3.4'
+ModuleVersion = '0.1.6.6'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -121,7 +121,7 @@ PrivateData = @{
 
     } # End of PSData hashtable
 
-} # End of PrivateData hashtable
+ } # End of PrivateData hashtable
 
 # HelpInfo URI of this module
 # HelpInfoURI = ''
