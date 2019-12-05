@@ -8,7 +8,7 @@ $psd1File = Get-ChildItem -path $ModulesFolder -Filter "*.psd1" | Select-Object 
 $psd1 = Test-ModuleManifest $psd1File
 
 # Revise the new version
-$Revision = $psd1.Version.Revision # + 1
+$Revision = $psd1.Version.Revision + 1
 [System.Version]$newVersion = [System.Version]::new($psd1.Version.Major, $psd1.Version.Minor, $psd1.Version.MinorRevision, $Revision)
 
 Write-Verbose "New version '$version'"
@@ -37,10 +37,4 @@ foreach($folder in $IncludeDirectories){
 
 
 # Publish to powershell gallery
-$publish = @{
-    Path = $releaseFolder 
-    NugetAPIKey = $NugetAPIKey  
-    ProjectUri = $ProjectUri
-    LicenseUri = $LicenseUri
-}
 Publish-Module -Path $releaseFolder -NugetAPIKey $NugetAPIKey -Verbose
