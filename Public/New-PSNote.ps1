@@ -14,6 +14,9 @@
     .PARAMETER Snippet
         The text of the snippet to add/update.
 
+    .PARAMETER ScriptBlock
+        Specifies the snippet to save. Enclose the commands in braces { } to create a script block.
+
     .PARAMETER Details
         The Details of the snippet to add/update.
 
@@ -34,6 +37,13 @@
         New-PSNote -Note 'ADUser' -Snippet 'Get-AdUser -Filter *' -Details "Use to return all AD users" -Tags 'AD','Users' 
 
         Creates a new Note for the Get-ADUser cmdlet
+
+    .EXAMPLE
+        New-PSNote -Note 'CpuUsage' -Tags 'perf' -Alias 'cpu' -ScriptBlock {
+            Get-WmiObject win32_processor | Measure-Object -property LoadPercentage -Average
+        }
+
+        Creates a new Note using a script block instead of a snippet string
     
     .EXAMPLE
         $Snippet = '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)'

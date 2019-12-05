@@ -14,6 +14,9 @@ Function Set-PSNote{
     .PARAMETER Snippet
         The text of the snippet to add/update.
 
+    .PARAMETER ScriptBlock
+        Specifies the snippet to save. Enclose the commands in braces { } to create a script block
+        
     .PARAMETER Details
         The Details of the snippet to add/update.
 
