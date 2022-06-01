@@ -25,7 +25,36 @@
         </CustomEntries>
       </CustomControl>
     </View>
-	<View>
+    <View>
+      <Name>SplatBlock</Name>
+      <ViewSelectedBy>
+        <TypeName>SplatBlock</TypeName>
+      </ViewSelectedBy>
+      <CustomControl>
+        <CustomEntries>
+          <CustomEntry>
+            <CustomItem>
+              <ExpressionBinding>
+                <ScriptBlock>
+                  if($_.SetBlock){
+                    "ParameterSet      : $($_.ParameterSet)`n" +
+                    "IsDefault : $($_.IsDefault)`n" +
+                    "SetBlock :" +
+                    "$($_.SetBlock.Split("`n") | Foreach-Object{ "`n           $($_.Trim())"})" +
+                    "`nHashBlock :" +
+                    "$($_.HashBlock.Split("`n") | Foreach-Object{ "`n           $($_)"})"
+                  }
+                  else{
+                    "$($_.HashBlock)`n"
+                  }
+                </ScriptBlock>
+              </ExpressionBinding>
+            </CustomItem>
+          </CustomEntry>
+        </CustomEntries>
+      </CustomControl>
+    </View>
+    <View>
       <Name>PSNoteSearch</Name>
       <ViewSelectedBy>
         <TypeName>PSNoteSearch</TypeName>
