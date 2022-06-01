@@ -1,4 +1,4 @@
-Function Write-Splatting {
+Function ConvertTo-Splatting {
     <#
     .SYNOPSIS
     Use to convert an existing PowerShell command to splatting
@@ -19,7 +19,7 @@ Function Write-Splatting {
     $splatme = @'
     Set-AzVMExtension -ExtensionName "MicrosoftMonitoringAgent" -ResourceGroupName "rg-xxxx" -VMName "vm-xxxx" -Publisher "Microsoft.EnterpriseCloud.Monitoring" -ExtensionType "MicrosoftMonitoringAgent" -TypeHandlerVersion "1.0" -Settings @{"workspaceId" = "xxxx" } -ProtectedSettings @{"workspaceKey" = "xxxx"} -Location "uksouth"
     '@
-    Write-Splatting $splatme
+    ConvertTo-Splatting $splatme
 
     --- Output ----
     $SetAzVMExtensionParam = @{
@@ -40,7 +40,7 @@ Function Write-Splatting {
     $splatme = {
         Copy-Item -Path "test.txt" -Destination "test2.txt" -WhatIf
     }
-    Write-Splatting $splatme
+    ConvertTo-Splatting $splatme
 
     --- Output ----
     $CopyItemParam = @{
@@ -58,7 +58,7 @@ Function Write-Splatting {
             -Name "VirtualMachine07" `
             -Status
     }
-    Write-Splatting $splatme
+    ConvertTo-Splatting $splatme
 
     --- Output ----
     $GetAzVMParam = @{
@@ -234,10 +234,15 @@ Function Write-Splatting {
         $output.Add("$($ParsedCommand) @$($hash)")
     }
     
-    [SplatBlock]@{
+    $return = [SplatBlock]@{
         Command   = $index.Value
         IsDefault = $null
         HashBlock = ($output -join ("`n"))
         SetBlock  = $null
     }
+
+    
+    $return.HashBlock | Set-Clipboard
+
+    $return
 }

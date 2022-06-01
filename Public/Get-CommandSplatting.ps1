@@ -63,10 +63,10 @@ Function Get-CommandSplatting {
         [Parameter(ParameterSetName = 'All', Position = 1)]
         [switch]$All,
         [Parameter(Mandatory = $false, Position = 2)]
-        [switch]$IncludeCommon
+        [switch]$IncludeCommon,
+        [Parameter(Mandatory = $false, Position = 3)]
+        [switch]$Copy
     )
-
-    #[System.Collections.Generic.List[SplatBlock]]$Output = @()
 
     # Get the command
     $commandData = Get-Command $command
@@ -83,7 +83,8 @@ Function Get-CommandSplatting {
         $Output = $commandData.ParameterSets | Select-Object -Property @{l = 'ParameterSet'; e = { $_.Name } }, IsDefault, @{l = 'Parameters'; e = { @($_.Parameters.Name | 
                     Where-Object { $_ -notin [System.Management.Automation.Cmdlet]::CommonParameters }) -join (', ') }
         } |
-        ForEach-Object { [SplatBlock]@{
+        ForEach-Object { 
+            [SplatBlock]@{
                 ParameterSet = $_.ParameterSet
                 IsDefault    = $_.IsDefault
                 HashBlock    = $_.Parameters
@@ -109,54 +110,61 @@ Function Get-CommandSplatting {
 
     $hash = $command.Split('-')[-1]
 
-    
-    $Output = foreach ($set in $ParameterSets) {
-        [System.Collections.Generic.List[PSObject]]$hashBlock = @()
-        [System.Collections.Generic.List[PSObject]]$setBlock = @()
-        $hashBlock.Add("`$$($hash) = @{")
-        $length = 0
+    if ($ListParameterSets -ne $true) {
+        $Output = foreach ($set in $ParameterSets) {
+            [System.Collections.Generic.List[PSObject]]$hashBlock = @()
+            [System.Collections.Generic.List[PSObject]]$setBlock = @()
+            $hashBlock.Add("`$$($hash)$($set.Name) = @{")
+            $length = 0
 
-        $Parameters = $set.Parameters
-        if ($IncludeCommon -ne $true) {
-            $Parameters = $set.Parameters | Where-Object { $_.Name -notin 
-                [System.Management.Automation.Cmdlet]::CommonParameters }
-        }
-        $Parameters.Name | ForEach-Object { if ($_.Length -gt $length) { $length = $_.length } }
+            $Parameters = $set.Parameters
+            if ($IncludeCommon -ne $true) {
+                $Parameters = $set.Parameters | Where-Object { $_.Name -notin 
+                    [System.Management.Automation.Cmdlet]::CommonParameters }
+            }
+            $Parameters.Name | ForEach-Object { if ($_.Length -gt $length) { $length = $_.length } }
 
-        $LastOrder = $Parameters | Sort-Object Position | Select-Object -ExpandProperty Position -Last 1
-        if ($LastOrder -ge 0) {
-            $SortedParameters = $Parameters | 
-            Select-Object -Property *, @{l = 'Order'; e = { if ($_.Position -lt 0) { $LastOrder + 1 } else { $_.Position } } } |
-            Sort-Object Order
-        }
-        else {
-            $SortedParameters = $Parameters | Sort-Object Position
-        }
-
-        Foreach ($p in $SortedParameters) {
-            $l = $length - $p.Name.Length
-		
-            if ($p.ParameterType.Name -eq 'SwitchParameter') {
-                $setBlock.Add("[Boolean]`$$($p.Name) = `$false # Switch")
+            $LastOrder = $Parameters | Sort-Object Position | Select-Object -ExpandProperty Position -Last 1
+            if ($LastOrder -ge 0) {
+                $SortedParameters = $Parameters | 
+                Select-Object -Property *, @{l = 'Order'; e = { if ($_.Position -lt 0) { $LastOrder + 1 } else { $_.Position } } } |
+                Sort-Object Order
             }
             else {
-                $setBlock.Add("[$($p.ParameterType)]`$$($p.Name) = ''")	
+                $SortedParameters = $Parameters | Sort-Object Position
             }
+
+            Foreach ($p in $SortedParameters) {
+                $l = $length - $p.Name.Length
 		
-            [string]$row = "`t$($p.Name)$(' ' * $l) = `$$($p.Name)"
-            if ($p.IsMandatory -eq $true) {
-                $row += "$(' ' * $l) #Required"
+                if ($p.ParameterType.Name -eq 'SwitchParameter') {
+                    $setBlock.Add("[Boolean]`$$($p.Name) = `$false # Switch")
+                }
+                else {
+                    $setBlock.Add("[$($p.ParameterType)]`$$($p.Name) = ''")	
+                }
+		
+                [string]$row = "`t$($p.Name)$(' ' * $l) = `$$($p.Name)"
+                if ($p.IsMandatory -eq $true) {
+                    $row += "$(' ' * $l) #Required"
+                }
+                $hashBlock.Add($row)
             }
-            $hashBlock.Add($row)
+            $hashBlock.Add('}')
+            $hashBlock.Add("$command @$($hash)$($set.Name)")
+            [SplatBlock]@{
+                Command      = $Command
+                ParameterSet = $set.Name
+                IsDefault    = $set.IsDefault
+                HashBlock    = ($hashBlock -join ("`n"))
+                SetBlock     = ($setBlock -join ("`n"))
+            }
         }
-        $hashBlock.Add('}')
-        $hashBlock.Add("$command @$($hash)")
-        [SplatBlock]@{
-            Command      = $Command
-            ParameterSet = $set.Name
-            IsDefault    = $set.IsDefault
-            HashBlock    = ($hashBlock -join ("`n"))
-            SetBlock     = ($setBlock -join ("`n"))
+    }
+
+    if($Copy -eq $true){
+        $Output | Select-Object -First 1 | ForEach-Object{
+            "$($_.SetBlock)`n$($_.HashBlock)" | Set-Clipboard
         }
     }
 

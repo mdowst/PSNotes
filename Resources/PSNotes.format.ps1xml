@@ -37,15 +37,20 @@
               <ExpressionBinding>
                 <ScriptBlock>
                   if($_.SetBlock){
-                    "ParameterSet      : $($_.ParameterSet)`n" +
-                    "IsDefault : $($_.IsDefault)`n" +
-                    "SetBlock :" +
+                    "ParameterSet : $($_.ParameterSet)`n" +
+                    "IsDefault    : $($_.IsDefault)`n" +
+                    "SetBlock     :" +
                     "$($_.SetBlock.Split("`n") | Foreach-Object{ "`n           $($_.Trim())"})" +
-                    "`nHashBlock :" +
+                    "`nHashBlock  :" +
                     "$($_.HashBlock.Split("`n") | Foreach-Object{ "`n           $($_)"})"
                   }
+                  elseif($_.ParameterSet){
+                    "ParameterSet : $($_.ParameterSet)`n" +
+                    "IsDefault    : $($_.IsDefault)`n" +
+                    "Parameters   : $($_.HashBlock)`n"
+                  }
                   else{
-                    "$($_.HashBlock)`n"
+                    "$($_.HashBlock)"
                   }
                 </ScriptBlock>
               </ExpressionBinding>

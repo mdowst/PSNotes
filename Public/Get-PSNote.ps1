@@ -102,7 +102,8 @@
 
     if($Run){
         if(@($returned).count -gt 1){
-            Write-Warning "More than 1 command returned. Only the first one will be run"
+            Write-Warning -Message "$($returned | Select-Object -First 1 -ExpandProperty Snippet)"
+            Write-Warning -Message "More than 1 command was returned. If you continue Only the first one will be run" -WarningAction Inquire
         }
 
         $Snippet = $returned | Select-Object -First 1 -ExpandProperty Snippet
