@@ -23,10 +23,12 @@ Function Get-CommandSplatting {
     .PARAMETER IncludeCommon
     Use to include the PowerShell common parameters in the splatting output. (e.g. Verbose, ErrorAction, etc.)
 
-    .EXAMPLE
-    Get the default parameter set for Get-Item
-    PS:\> Get-CommandSplatting -Command 'Get-Item'
+    .EXAMPLE 
+    Get-CommandSplatting -Command 'Get-Item'
 
+    Get the default parameter set for a command
+
+    --- Output ----
     Name      : Path
     IsDefault : True
     SetBlock :
@@ -48,6 +50,101 @@ Function Get-CommandSplatting {
                     Stream     = $Stream
             }
             Get-Item @Item
+
+
+    .EXAMPLE
+    Get-CommandSplatting -Command 'Get-Item' -ListParameterSets
+
+    List the available parameter sets for a command
+
+    --- Output ----
+    ParameterSet : Path
+    IsDefault    : True
+    Parameters   : Path, Filter, Include, Exclude, Force, Credential, Stream
+
+    ParameterSet : LiteralPath
+    IsDefault    : False
+    Parameters   : LiteralPath, Filter, Include, Exclude, Force, Credential, Stream
+
+
+    .EXAMPLE 
+    Get-CommandSplatting -Command 'Get-Item' -ParameterSet LiteralPath
+
+    Get specific parameter set for a command
+
+    --- Output ----
+    ParameterSet : LiteralPath
+    IsDefault    : False
+    SetBlock     :
+            [string[]]$LiteralPath = '' 
+            [string]$Filter = '' 
+            [string[]]$Include = ''
+            [string[]]$Exclude = ''
+            [Boolean]$Force = $false # Switch
+            [pscredential]$Credential = ''
+            [string[]]$Stream = ''
+    HashBlock  :
+            $ItemLiteralPath = @{
+                    LiteralPath = $LiteralPath #Required
+                    Filter      = $Filter
+                    Include     = $Include
+                    Exclude     = $Exclude
+                    Force       = $Force
+                    Credential  = $Credential
+                    Stream      = $Stream
+            }
+            Get-Item @ItemLiteralPath
+
+
+    .EXAMPLE 
+    Get-CommandSplatting -Command 'Get-Item' -All
+
+    Get all parameter sets for a command
+
+    --- Output ----
+    ParameterSet : Path
+    IsDefault    : True
+    SetBlock     :
+            [string[]]$Path = '' 
+            [string]$Filter = '' 
+            [string[]]$Include = '' 
+            [string[]]$Exclude = '' 
+            [Boolean]$Force = $false # Switch 
+            [pscredential]$Credential = '' 
+            [string[]]$Stream = ''
+    HashBlock  :
+            $ItemPath = @{ 
+                    Path       = $Path       #Required 
+                    Filter     = $Filter 
+                    Include    = $Include 
+                    Exclude    = $Exclude
+                    Force      = $Force
+                    Credential = $Credential
+                    Stream     = $Stream
+            }
+            Get-Item @ItemPath
+    ParameterSet : LiteralPath
+    IsDefault    : False
+    SetBlock     :
+            [string[]]$LiteralPath = ''
+            [string]$Filter = ''
+            [string[]]$Include = ''
+            [string[]]$Exclude = ''
+            [Boolean]$Force = $false # Switch
+            [pscredential]$Credential = ''
+            [string[]]$Stream = ''
+    HashBlock  :
+            $ItemLiteralPath = @{
+                    LiteralPath = $LiteralPath #Required
+                    Filter      = $Filter
+                    Include     = $Include
+                    Exclude     = $Exclude
+                    Force       = $Force
+                    Credential  = $Credential
+                    Stream      = $Stream
+            }
+            Get-Item @ItemLiteralPath
+
 
     .NOTES
     General notes

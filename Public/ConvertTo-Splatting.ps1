@@ -14,12 +14,13 @@ Function ConvertTo-Splatting {
     .PARAMETER ScriptBlock
     The command scriptblock you want to convert to using splatting
 
-    .EXAMPLE
-    Converts the string splatme to splatting
+    .EXAMPLE     
     $splatme = @'
     Set-AzVMExtension -ExtensionName "MicrosoftMonitoringAgent" -ResourceGroupName "rg-xxxx" -VMName "vm-xxxx" -Publisher "Microsoft.EnterpriseCloud.Monitoring" -ExtensionType "MicrosoftMonitoringAgent" -TypeHandlerVersion "1.0" -Settings @{"workspaceId" = "xxxx" } -ProtectedSettings @{"workspaceKey" = "xxxx"} -Location "uksouth"
     '@
     ConvertTo-Splatting $splatme
+
+    Converts the string splatme to splatting
 
     --- Output ----
     $SetAzVMExtensionParam = @{
@@ -36,11 +37,12 @@ Function ConvertTo-Splatting {
     Set-AzVMExtension @SetAzVMExtensionParam
 
     .EXAMPLE
-    Converts the scriptblock splatme to splatting
     $splatme = {
         Copy-Item -Path "test.txt" -Destination "test2.txt" -WhatIf
     }
     ConvertTo-Splatting $splatme
+
+    Converts the scriptblock splatme to splatting
 
     --- Output ----
     $CopyItemParam = @{
@@ -51,7 +53,6 @@ Function ConvertTo-Splatting {
     Copy-Item @CopyItemParam
 
     .EXAMPLE
-    Removed backticks and converts the scriptblock splatme to splatting
     $splatme = {
         Get-AzVM `
             -ResourceGroupName "ResourceGroup11" `
@@ -59,6 +60,8 @@ Function ConvertTo-Splatting {
             -Status
     }
     ConvertTo-Splatting $splatme
+
+    Removed backticks and converts the scriptblock splatme to splatting
 
     --- Output ----
     $GetAzVMParam = @{

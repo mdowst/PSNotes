@@ -15,25 +15,25 @@ PSNotes is a PowerShell module that allows you to create your own custom snippet
 
 ### Recall a command using a specific alias keyword
 When you create a new note, you can define an alias that you can later use to display or run it.
-![UnixTime Demo](Documentation/UnixTime.gif)
+![UnixTime Demo](Documentation/media/UnixTime.gif)
 
 Perfect for long commands you need to run often.
-![AzCon Demo](Documentation/AzCon.gif)
+![AzCon Demo](Documentation/media/AzCon.gif)
 
 ### Easily search your notes
 You can assign tags to your notes to make searching easier.
-![Get-PSNote Demo](Documentation/ADUserTag.gif)
+![Get-PSNote Demo](Documentation/media/ADUserTag.gif)
 
 ### Quickly add your own notes
 Add new snippets at any time
-![New-PSNote Demo](Documentation/newnote.gif)
+![New-PSNote Demo](Documentation/media/newnote.gif)
 
 Add new snippets as string or by using a script block
-![New-PSNote ScriptBlock Demo](Documentation/ScriptBlock.gif)
+![New-PSNote ScriptBlock Demo](Documentation/media/ScriptBlock.gif)
 
 ### Share your notes with others
 The import and export functionality allows you to share notes between machines and people.
-![Export/Import Demo](Documentation/ImportExport.gif)
+![Export/Import Demo](Documentation/media/ImportExport.gif)
 
 # Getting Started
 ## Install Instructions
