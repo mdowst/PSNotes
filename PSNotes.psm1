@@ -1,17 +1,24 @@
 ﻿# Global Variables
+
 if ($IsLinux) {
     $script:UserPSNotesJsonPath = '/home/'
 } 
 else {
     $script:UserPSNotesJsonPath = Join-Path $env:APPDATA '\PSNotes\'
 } 
+
+if($global:IsPesterTest){
+    $script:UserPSNotesJsonPath = Join-Path $UserPSNotesJsonPath 'Pester'
+    Get-ChildItem -Path $UserPSNotesJsonPath -Filter '*.json' | Remove-Item -Force
+}
+
 $global:UserPSNotesJsonFile = Join-Path $UserPSNotesJsonPath '\PSNotes.json'
 [System.Collections.Generic.List[PSNote]] $script:noteObjects = @()
 
-if(-not $PSScriptRoot){
+if (-not $PSScriptRoot) {
     $Path = '.\'
 }
-else{
+else {
     $Path = $PSScriptRoot
 }
 
@@ -30,11 +37,6 @@ foreach ($folder in @('private', 'public')) {
 
 # Load all commands to noteObjects
 Initialize-PSNotesJsonFile
-
-# load Aliases for commands
-$noteObjects | ForEach-Object {
-    Set-Alias -Name $_.Alias -Value Get-PSNoteAlias
-}
 
 # Check id Set-Clipboard cmdlet is found. If not
 if (-not (Get-Command -Name 'Set-Clipboard' -ErrorAction SilentlyContinue)) {
