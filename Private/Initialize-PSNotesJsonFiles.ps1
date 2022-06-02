@@ -40,5 +40,9 @@ Function Initialize-PSNotesJsonFile{
     # load the PSNote.json into $noteObjects
     LoadPSNotesJsonFile $UserPSNotesJsonFile
 
-
+    # load Aliases for commands
+    $noteObjects | ForEach-Object {
+        Write-Debug "Alias : $($_.Alias)"
+        Set-Alias -Name $_.Alias -Value Get-PSNoteAlias -Scope Global -Force
+    }
 }
