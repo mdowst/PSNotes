@@ -53,7 +53,7 @@ Function Export-PSNote{
     process{
         # If All add all objects otherwise only add those passed
         if($All){
-            $noteObjects | ForEach-Object{ $ExportObjects.Add( [PSNoteExport]::New( $_ ) ) }
+            $script:_noteObjects | ForEach-Object{ $ExportObjects.Add( [PSNoteExport]::New( $_ ) ) }
         } else {
             $noteObject | ForEach-Object{ $ExportObjects.Add( [PSNoteExport]::New( $_ ) ) }
         }

@@ -98,12 +98,12 @@
         $Snippet = $ScriptBlock.ToString()
     }
 
-    $newNote = $noteObjects | Where-Object{$_.Note -eq $Note}
+    $newNote = $script:_noteObjects | Where-Object{$_.Note -eq $Note}
     if($newNote -and -not $force){
         Write-Error "The note '$Note' already exists. Use -force to overwrite existing properties"
         break
     } elseif($newNote -and $force){
-        $noteObjects | Where-Object{$_.Note -eq $Note} | ForEach-Object{
+        $script:_noteObjects | Where-Object{$_.Note -eq $Note} | ForEach-Object{
             if(-not [string]::IsNullOrEmpty($Snippet)){
                 $_.Snippet = $Snippet
             }
@@ -117,7 +117,7 @@
             if(-not [string]::IsNullOrEmpty($Tags)){
                 $_.Tags = $Tags
             }
-            $_.File = $UserPSNotesJsonFile
+            $_.File = $script:_UserPSNotesJsonFile
         }
     } else {
         if([string]::IsNullOrEmpty($Alias)){
@@ -127,7 +127,7 @@
         Test-NoteAlias $Alias
         
         $newNote = [PSNote]::New($Note, $Snippet, $Details, $Alias, $Tags)
-        $noteObjects.Add($newNote)
+        $script:_noteObjects.Add($newNote)
     }
     
     Set-Alias -Name $newNote.Alias -Value Get-PSNoteAlias -Scope Global

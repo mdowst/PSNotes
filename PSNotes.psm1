@@ -1,19 +1,19 @@
 ﻿# Global Variables
 
 if ($IsLinux) {
-    $script:UserPSNotesJsonPath = '/home/'
+    $script:_UserPSNotesJsonPath = '/home/'
 } 
 else {
-    $script:UserPSNotesJsonPath = Join-Path $env:APPDATA '\PSNotes\'
+    $script:_UserPSNotesJsonPath = Join-Path $env:APPDATA '\PSNotes\'
 } 
 
 if($global:IsPesterTest){
-    $script:UserPSNotesJsonPath = Join-Path $UserPSNotesJsonPath 'Pester'
-    Get-ChildItem -Path $UserPSNotesJsonPath -Filter '*.json' | Remove-Item -Force
+    $script:_UserPSNotesJsonPath = Join-Path $script:_UserPSNotesJsonPath 'Pester'
+    Get-ChildItem -Path $script:_UserPSNotesJsonPath -Filter '*.json' | Remove-Item -Force
 }
 
-$global:UserPSNotesJsonFile = Join-Path $UserPSNotesJsonPath '\PSNotes.json'
-[System.Collections.Generic.List[PSNote]] $script:noteObjects = @()
+$script:_UserPSNotesJsonFile = Join-Path $script:_UserPSNotesJsonPath '\PSNotes.json'
+[System.Collections.Generic.List[PSNote]] $script:_noteObjects = @()
 
 if (-not $PSScriptRoot) {
     $Path = '.\'

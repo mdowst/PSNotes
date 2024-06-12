@@ -11,37 +11,37 @@ Function Initialize-PSNotesJsonFile{
         $(Get-Content $PSNotesJsonFile -Raw | ConvertFrom-Json) | Select-Object Note, Snippet, Details, Alias, Tags, @{l='file';e={$PSNotesJsonFile}}| 
             ForEach-Object{ 
                 $newNote = [PSNote]::New($_)
-                $remove = $script:noteObjects | Where-Object{$_.Alias -eq $newNote.Alias}
+                $remove = $script:_noteObjects | Where-Object{$_.Alias -eq $newNote.Alias}
                 if($remove){
-                    $script:noteObjects.Remove($remove) | Out-Null
+                    $script:_noteObjects.Remove($remove) | Out-Null
                 }
-                $script:noteObjects.Add($newNote) 
+                $script:_noteObjects.Add($newNote) 
         }
     }
 
     # Create PSNote folder in %APPDATA% to save user's local PSNote.json
-    if(-not (Test-Path $UserPSNotesJsonPath)){
-        New-Item -Type Directory -Path $UserPSNotesJsonPath | Out-Null
+    if(-not (Test-Path $script:_UserPSNotesJsonPath)){
+        New-Item -Type Directory -Path $script:_UserPSNotesJsonPath | Out-Null
     }
 
     # Create PSNote.json in %APPDATA%\PSNotes to save users local settings
-    if(-not (Test-Path $UserPSNotesJsonFile)){
+    if(-not (Test-Path $script:_UserPSNotesJsonFile)){
         $exampleJson = '[{"Note":"NewPSNote","Alias":"Example","Details":"Example of creating a new Note","Tags":["notes"],' +
                     '"Snippet":"$Snippet = @\u0027\r\n(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)' +
                     '\r\n\u0027@\r\nNew-PSNote -Note \u0027DayOfWeek\u0027 -Snippet $Snippet -Details \"Use to name of the day of the week\"' +
                     ' -Tags \u0027date\u0027 -Alias \u0027today\u0027"}]'
-        $exampleJson | Out-File $UserPSNotesJsonFile -Encoding UTF8
+        $exampleJson | Out-File $script:_UserPSNotesJsonFile -Encoding UTF8
     }
 
     # load additional JSON store files
-    Get-ChildItem -LiteralPath $UserPSNotesJsonPath -Filter "*.json" | Where-Object {$_.FullName -ne $UserPSNotesJsonFile} | 
+    Get-ChildItem -LiteralPath $script:_UserPSNotesJsonPath -Filter "*.json" | Where-Object {$_.FullName -ne $script:_UserPSNotesJsonFile} | 
         ForEach-Object{ LoadPSNotesJsonFile $_.FullName }
 
-    # load the PSNote.json into $noteObjects
-    LoadPSNotesJsonFile $UserPSNotesJsonFile
+    # load the PSNote.json into $script:_noteObjects
+    LoadPSNotesJsonFile $script:_UserPSNotesJsonFile
 
     # load Aliases for commands
-    $noteObjects | ForEach-Object {
+    $script:_noteObjects | ForEach-Object {
         Write-Debug "Alias : $($_.Alias)"
         Set-Alias -Name $_.Alias -Value Get-PSNoteAlias -Scope Global -Force
     }

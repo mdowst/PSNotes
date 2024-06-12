@@ -36,7 +36,7 @@
         [switch]$Force
     )
 
-    $remove = $noteObjects | Where-Object{$_.Note -eq $note}
+    $remove = $script:_noteObjects | Where-Object{$_.Note -eq $note}
     Write-Verbose "Note   : $($note | Out-String)"
     Write-Verbose "remove : $($remove | Out-String)"
     
@@ -47,7 +47,7 @@
             ("Would you like to remove {0}?" -f $remove.Note),
             "Confirm removal"
         )){
-            if($noteObjects.Remove($remove)){
+            if($script:_noteObjects.Remove($remove)){
                 Update-PSNotesJsonFile
             }
         }

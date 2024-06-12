@@ -8,15 +8,15 @@ $psd1File = Get-ChildItem -path $ModulesFolder -Filter "*.psd1" | Select-Object 
 $psd1 = Test-ModuleManifest $psd1File
 
 # Revise the new version
-$Revision = $psd1.Version.Revision + 1
-[System.Version]$newVersion = [System.Version]::new($psd1.Version.Major, $psd1.Version.Minor, $psd1.Version.MinorRevision, $Revision)
+#$Revision = $psd1.Version.Revision + 1
+#[System.Version]$newVersion = [System.Version]::new($psd1.Version.Major, $psd1.Version.Minor, $psd1.Version.MinorRevision, $Revision)
 
-Write-Verbose "New version '$version'"
+#Write-Verbose "New version '$version'"
 
-Update-ModuleManifest -Path $psd1File -ModuleVersion $newVersion
+#Update-ModuleManifest -Path $psd1File -ModuleVersion $newVersion
 
 # create the release folder
-$releaseFolder = Join-Path $PSScriptRoot "\PSNotes\$($newVersion.ToString())"
+$releaseFolder = Join-Path $PSScriptRoot "\PSNotes\$($psd1.Version.ToString())"
 If (-not(Test-Path $releaseFolder)){
     New-Item -type Directory -Path $releaseFolder | Out-Null
 }

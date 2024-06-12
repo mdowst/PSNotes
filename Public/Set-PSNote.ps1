@@ -62,7 +62,7 @@ Function Set-PSNote{
         [string[]]$Tags
     )
 
-    $check = $noteObjects | Where-Object{$_.Note -eq $Note}
+    $check = $script:_noteObjects | Where-Object{$_.Note -eq $Note}
     if(-not $check){
         Write-Warning "The note '$Note' does not exists. An attempt will be made to create it."
     } 

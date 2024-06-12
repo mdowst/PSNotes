@@ -69,9 +69,9 @@
 
     if($SearchString){
         [System.Collections.Generic.List[PSNoteSearch]] $SearchResults = @()
-        $noteObjects | Where-Object{ $_.Note -like "*$SearchString*" -or $_.Alias -like "*$SearchString*" -or 
+        $script:_noteObjects | Where-Object{ $_.Note -like "*$SearchString*" -or $_.Alias -like "*$SearchString*" -or 
             $_.Details -like "*$SearchString*" -or $_.Snippet -like "*$SearchString*" } | ForEach-Object { $SearchResults.Add($_) }
-        $noteObjects | Where-Object{ $SearchResults.Note -notcontains $_.Note } | ForEach-Object { 
+        $script:_noteObjects | Where-Object{ $SearchResults.Note -notcontains $_.Note } | ForEach-Object { 
             $tagMatch = $false
             $_.tag | ForEach-Object {
                 if($_ -like "*$SearchString*"){
@@ -84,9 +84,9 @@
         }
         $returned = $SearchResults
     } elseif($Tag){
-        $returned = $noteObjects | Where-Object{$_.Note -like $note -and $_.Tags -contains $Tag}
+        $returned = $script:_noteObjects | Where-Object{$_.Note -like $note -and $_.Tags -contains $Tag}
     } else {
-        $returned = $noteObjects | Where-Object{$_.Note -like $note}
+        $returned = $script:_noteObjects | Where-Object{$_.Note -like $note}
     }
     
     if($copy){

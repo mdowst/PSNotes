@@ -25,7 +25,7 @@
         Write-Error "The Get-PSNoteAlias cmdlet is designed to be called using an alias and not directly."
     } else {
         $Alias = $MyInvocation.InvocationName
-        $aliasObject = $noteObjects | Where-Object{$_.Alias -eq $Alias}
+        $aliasObject = $script:_noteObjects | Where-Object{$_.Alias -eq $Alias}
         if($Run){
             Get-PSNote -Note $aliasObject.Note -Run
         } else {
