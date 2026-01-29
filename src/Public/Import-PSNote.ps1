@@ -38,7 +38,7 @@ Function Import-PSNote{
         [parameter(Mandatory=$false)]
         [string]$Catalog
     )
-
+    Test-PSNotesInitalize
     # If Catalog check name and set path
     if($Catalog){
         # confirm the Catalog string is a valid file name
@@ -46,9 +46,9 @@ Function Import-PSNote{
             throw "The catalog name '$Catalog' is an invalid file name. Invalid characater found in place $($Catalog.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()))"
         }
         # Set path the path for the catalog item 
-        $CatalogPath = Join-Path $script:_UserPSNotesJsonPath "$Catalog.json"
+        $CatalogPath = Join-Path $env:PSNOTES_HOME "$Catalog.json"
     } else {
-        $CatalogPath = $script:_UserPSNotesJsonFile
+        $CatalogPath = $env:PSNotesUserJsonFile
     }
 
     [System.Collections.Generic.List[PSNote]] $ImportObjects = @()

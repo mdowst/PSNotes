@@ -32,11 +32,14 @@
     param(
         [parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$True)]
         [string]$Note,
+        [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)]
+        [string]$Catalog,
         [parameter(Mandatory=$false)]
         [switch]$Force
     )
+    Test-PSNotesInitalize
 
-    $remove = $script:_noteObjects | Where-Object{$_.Note -eq $note}
+    $remove = $script:_noteStore.Notes | Where-Object{$_.Note -eq $note -and $_.Catalog -eq $catalog}
     Write-Verbose "Note   : $($note | Out-String)"
     Write-Verbose "remove : $($remove | Out-String)"
     
@@ -47,14 +50,12 @@
             ("Would you like to remove {0}?" -f $remove.Note),
             "Confirm removal"
         )){
-            if($script:_noteObjects.Remove($remove)){
-                Update-PSNotesJsonFile
-            }
+            $script:_noteStore.RemoveNote($remove.Note, $remove.Catalog)
         }
     }
-    
-    
-    
-    $remove
+    else {
+        Write-Warning "Note '$note' not found in catalog '$catalog'. No action taken."
+    }
 
+    $remove
 }

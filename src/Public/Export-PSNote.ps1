@@ -47,6 +47,7 @@ Function Export-PSNote{
         [switch]$Append
     )
     begin{
+        Test-PSNotesInitalize
         [System.Collections.Generic.List[PSNoteExport]] $ExportObjects = @()
         Write-Verbose "$($noteObject | FT | Out-String)"
     }

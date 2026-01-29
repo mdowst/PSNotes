@@ -1,50 +1,49 @@
-Function Copy-PSNote{
+Function Invoke-PSNote{
     <#
     .SYNOPSIS
-        Use to display a list of notes in a selectable menu so you can choose which to copy to your clipboard
+        Use to display a list of notes in a selectable menu so you can choose which to run
 
     .DESCRIPTION
         Allows you to search for snippets by name or by tag. You can also search all 
         properties by using the SearchString parameter. Search results are displayed
-        in a selectable menu and you are prompted to select which one you want to 
-        add to your clipboard.
+        in a selectable menu and you are prompted to select which one you want to run.
 
     .PARAMETER Note
-        The note you want to return. Accepts wildcards
+        The note you want to run. Accepts wildcards
 
     .PARAMETER Tag
-        The tag of the note(s) you want to return.
+        The tag of the note(s) you want to run.
 
     .PARAMETER SearchString
         Use to search for text in the note's name, details, snippet, alias, and tags
 
     .EXAMPLE
-        Copy-PSNote
+        Invoke-PSNote
 
         Returns a menu with all notes
 
     .EXAMPLE
-        Copy-PSNote -Name 'creds'
+        Invoke-PSNote -Name 'creds'
 
         Returns a menu with the note creds
     
     .EXAMPLE
-        Copy-PSNote -Name 'cred*'
+        Invoke-PSNote -Name 'cred*'
 
         Returns a menu with all notes that start with cred
 
     .EXAMPLE
-        Copy-PSNote -tag 'AD'
+        Invoke-PSNote -tag 'AD'
 
         Returns a menu with all notes with the tag 'AD'
 
     .EXAMPLE
-        Copy-PSNote -Name '*user*' -tag 'AD'
+        Invoke-PSNote -Name '*user*' -tag 'AD'
 
         Returns a menu with all notes with user in the name and the tag 'AD'
 
     .EXAMPLE
-        Copy-PSNote -SearchString 'day'
+        Invoke-PSNote -SearchString 'day'
 
         Returns a menu with all notes with the word day in the name, details, snippet text, alias, or tags
     
@@ -61,11 +60,12 @@ Function Copy-PSNote{
         [parameter(Mandatory=$false, ParameterSetName="Search", Position = 0)]
         [string]$SearchString
     )
-
+    Test-PSNotesInitalize
     $NoteSelection = @(Get-PSNote @PSBoundParameters)
     $noteSnippet = Write-NoteSnippet $NoteSelection
 
     if(-not [string]::IsNullOrEmpty($noteSnippet)){
-        $noteSnippet | Set-Clipboard
+        $ScriptBlock = $executioncontext.invokecommand.NewScriptBlock($noteSnippet)
+        Invoke-Command -ScriptBlock $ScriptBlock
     }
 }

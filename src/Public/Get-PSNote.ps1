@@ -25,12 +25,12 @@
         Returns all notes
 
     .EXAMPLE
-        Get-PSNote -Name 'creds'
+        Get-PSNote -Note 'creds'
 
         Returns the note creds
     
     .EXAMPLE
-        Get-PSNote -Name 'cred*'
+        Get-PSNote -Note 'cred*'
 
         Returns all notes that start with cred
 
@@ -40,7 +40,7 @@
         Returns all notes with the tag 'AD'
 
     .EXAMPLE
-        Get-PSNote -Name '*user*' -tag 'AD'
+        Get-PSNote -Note '*user*' -tag 'AD'
 
         Returns all notes with user in the name and the tag 'AD'
 
@@ -65,13 +65,13 @@
         [parameter(Mandatory=$false, ParameterSetName="Search")]
         [string]$SearchString
     )
-
+    Test-PSNotesInitalize
 
     if($SearchString){
         [System.Collections.Generic.List[PSNoteSearch]] $SearchResults = @()
-        $script:_noteObjects | Where-Object{ $_.Note -like "*$SearchString*" -or $_.Alias -like "*$SearchString*" -or 
+        $script:_noteStore.Notes | Where-Object{ $_.Note -like "*$SearchString*" -or $_.Alias -like "*$SearchString*" -or 
             $_.Details -like "*$SearchString*" -or $_.Snippet -like "*$SearchString*" } | ForEach-Object { $SearchResults.Add($_) }
-        $script:_noteObjects | Where-Object{ $SearchResults.Note -notcontains $_.Note } | ForEach-Object { 
+        $script:_noteStore.Notes | Where-Object{ $SearchResults.Note -notcontains $_.Note } | ForEach-Object { 
             $tagMatch = $false
             $_.tag | ForEach-Object {
                 if($_ -like "*$SearchString*"){
@@ -84,9 +84,9 @@
         }
         $returned = $SearchResults
     } elseif($Tag){
-        $returned = $script:_noteObjects | Where-Object{$_.Note -like $note -and $_.Tags -contains $Tag}
+        $returned = $script:_noteStore.Notes | Where-Object{$_.Note -like $note -and $_.Tags -contains $Tag}
     } else {
-        $returned = $script:_noteObjects | Where-Object{$_.Note -like $note}
+        $returned = $script:_noteStore.Notes | Where-Object{$_.Note -like $note}
     }
     
     if($copy){

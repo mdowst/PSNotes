@@ -21,11 +21,12 @@
         [parameter(Mandatory=$false)]
         [switch]$Run
     )
+    Test-PSNotesInitalize
     if($MyInvocation.MyCommand.Name -eq $MyInvocation.InvocationName){
         Write-Error "The Get-PSNoteAlias cmdlet is designed to be called using an alias and not directly."
     } else {
         $Alias = $MyInvocation.InvocationName
-        $aliasObject = $script:_noteObjects | Where-Object{$_.Alias -eq $Alias}
+        $aliasObject = $script:_noteStore.Notes | Where-Object{$_.Alias -eq $Alias}
         if($Run){
             Get-PSNote -Note $aliasObject.Note -Run
         } else {

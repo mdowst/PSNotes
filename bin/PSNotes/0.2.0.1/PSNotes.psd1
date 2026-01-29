@@ -27,7 +27,7 @@ Author = 'Matthew Dowst'
 CompanyName = 'dowst.dev'
 
 # Copyright statement for this module
-Copyright = '(c) 2019 Matthew Dowst. All rights reserved.'
+Copyright = '(c) 2026 Matthew Dowst. All rights reserved.'
 
 # Description of the functionality provided by this module
 Description = 'PSNotes is a PowerShell module that allows you to create your own custom snippet library, that you can use to reference commands. It is great for long command you run often or commands you don''t run often and need a reminder on. Snippets can either be executed directly, copied to your clipboard, or simply output to the screen for you to do whatever you want with them. When you create a note, you assign an alias to it, so you can have an easy to remember keyword that you can then use to recall it. Notes can also be classified with tags, so you group them in logic collections. You can also easily search for them by tag, name, details, or text within the snippet.'
@@ -48,7 +48,7 @@ PowerShellVersion = '2.0'
 # ClrVersion = ''
 
 # Processor architecture (None, X86, Amd64) required by this module
-ProcessorArchitecture = 'Amd64'
+ProcessorArchitecture = 'None'
 
 # Modules that must be imported into the global environment prior to importing this module
 # RequiredModules = @()
@@ -57,21 +57,19 @@ ProcessorArchitecture = 'Amd64'
 # RequiredAssemblies = @()
 
 # Script files (.ps1) that are run in the caller's environment prior to importing this module.
-ScriptsToProcess = 'Resources\PSNote_Classes.ps1'
+# ScriptsToProcess = ''
 
 # Type files (.ps1xml) to be loaded when importing this module
 # TypesToProcess = @()
 
 # Format files (.ps1xml) to be loaded when importing this module
-FormatsToProcess = 'Resources\PSNotes.format.ps1xml'
+FormatsToProcess = 'PSNotes.format.ps1xml'
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'Export-PSNote', 'Get-PSNote', 'Get-PSNoteAlias', 'Import-PSNote', 
-               'Invoke-PSNote', 'Copy-PSNote', 'New-PSNote', 'Remove-PSNote', 
-               'Set-PSNote', 'Get-CommandSplatting', 'ConvertTo-Splatting'
+FunctionsToExport = @('ConvertTo-Splatting','Copy-PSNote','Export-PSNote','Get-CommandSplatting','Get-PSNote','Get-PSNoteAlias','Import-PSNote','Invoke-PSNote','New-PSNote','Remove-PSNote','Set-PSNote')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()
@@ -131,4 +129,3 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
-

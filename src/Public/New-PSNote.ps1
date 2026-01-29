@@ -1,4 +1,4 @@
-﻿Function New-PSNote{
+﻿Function New-PSNote {
     <#
     .SYNOPSIS
         Use to add or update a PSNote object
@@ -68,69 +68,80 @@
     
     
     #>
-    [cmdletbinding(SupportsShouldProcess=$true,ConfirmImpact='Low',DefaultParameterSetName="Note")]
+    [cmdletbinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', DefaultParameterSetName = "Note")]
     param(
-        [parameter(Mandatory=$true)]
+        [parameter(Mandatory = $true)]
         [string]$Note,
-        [parameter(Mandatory=$false, ParameterSetName="Snippet")]
+        [parameter(Mandatory = $false, ParameterSetName = "Snippet")]
         [string]$Snippet,
-        [parameter(Mandatory=$false, ParameterSetName="ScriptBlock")]
+        [parameter(Mandatory = $false, ParameterSetName = "ScriptBlock")]
         [ScriptBlock]$ScriptBlock,
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory = $false)]
         [string]$Details,
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory = $false)]
         [string]$Alias,
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory = $false)]
         [string[]]$Tags,
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory = $false)]
+        [string]$Catalog = 'PSNotes',
+        [parameter(Mandatory = $false)]
         [switch]$Force
     )
-    Function Test-NoteAlias{
+    Test-PSNotesInitalize
+    Function Test-NoteAlias {
         param($Alias)
         
-        $AliasCheck = [regex]::Matches($Alias,"[^0-9a-zA-Z\-_]")
-        if($AliasCheck.Success){
+        $AliasCheck = [regex]::Matches($Alias, "[^0-9a-zA-Z\-_]")
+        if ($AliasCheck.Success) {
             throw "'$Alias' is not a valid alias. Alias's can only contain letters, numbers, dashes(-), and underscores (_)."
         } 
     }
 
-    if(-not [string]::IsNullOrEmpty($ScriptBlock)){
+    if (-not [string]::IsNullOrEmpty($ScriptBlock)) {
         $Snippet = $ScriptBlock.ToString()
     }
 
-    $newNote = $script:_noteObjects | Where-Object{$_.Note -eq $Note}
-    if($newNote -and -not $force){
+    $newNote = $script:_noteStore.Notes | Where-Object { $_.Note -eq $Note }
+    if ($newNote -and -not $force) {
         Write-Error "The note '$Note' already exists. Use -force to overwrite existing properties"
         break
-    } elseif($newNote -and $force){
-        $script:_noteObjects | Where-Object{$_.Note -eq $Note} | ForEach-Object{
-            if(-not [string]::IsNullOrEmpty($Snippet)){
-                $_.Snippet = $Snippet
+    }
+    elseif ($newNote -and $force) {
+        $toUpdate = $script:_noteStore.Notes | Where-Object { $_.Note -eq $Note } | ForEach-Object {
+            $tu = [PSNote]::new($_)
+            if (-not [string]::IsNullOrEmpty($Snippet)) {
+                $tu.Snippet = $Snippet
             }
-            if(-not [string]::IsNullOrEmpty($Details)){
-                $_.Details = $Details
+            if (-not [string]::IsNullOrEmpty($Details)) {
+                $tu.Details = $Details
             }
-            if(-not [string]::IsNullOrEmpty($Alias)){
+            if (-not [string]::IsNullOrEmpty($Alias)) {
                 Test-NoteAlias $Alias
-                $_.Alias = $Alias
+                $tu.Alias = $Alias
             }
-            if(-not [string]::IsNullOrEmpty($Tags)){
-                $_.Tags = $Tags
+            if (-not [string]::IsNullOrEmpty($Tags)) {
+                $tu.Tags = $Tags
             }
-            $_.File = $script:_UserPSNotesJsonFile
+            if (-not [string]::IsNullOrEmpty($Catalog)) {
+                $tu.Catalog = $Catalog
+            }
+            $tu
         }
-    } else {
-        if([string]::IsNullOrEmpty($Alias)){
+        $toUpdate | ForEach-Object {
+            Write-Verbose "Updating Note: $($_.Note)"
+            $script:_noteStore.UpdateNote($_)
+        }
+    }
+    else {
+        if ([string]::IsNullOrEmpty($Alias)) {
             $Alias = $Note
         }
 
         Test-NoteAlias $Alias
         
-        $newNote = [PSNote]::New($Note, $Snippet, $Details, $Alias, $Tags)
-        $script:_noteObjects.Add($newNote)
+        $newNote = [PSNote]::New($Note, $Snippet, $Details, $Alias, $Tags, $Catalog)
+        $script:_noteStore.AddNote($newNote)
     }
     
     Set-Alias -Name $newNote.Alias -Value Get-PSNoteAlias -Scope Global
-
-    Update-PSNotesJsonFile
 }
