@@ -6,6 +6,7 @@ class PSNote {
     [string]$Alias
     [string[]]$Tags
     [string]$Catalog
+    [bool]$Run = $false
 
     PSNote(
         [string]$Note,
@@ -32,7 +33,8 @@ class PSNote {
         [string]$Details,
         [string]$Alias,
         [string[]]$Tags,
-        [string]$Catalog
+        [string]$Catalog,
+        [bool]$Run
     ) {
         $this.Note = $Note
         $this.Snippet = $Snippet
@@ -40,7 +42,7 @@ class PSNote {
         $this.Alias = $Alias
         $this.Tags = $Tags
         $this.Catalog = $Catalog
-        
+        $this.Run = $Run
         if ([string]::IsNullOrEmpty($Alias)) {
             $this.Alias = $Note
         }
@@ -55,6 +57,14 @@ class PSNote {
         $this.Alias = $object.Alias
         $this.Tags = $object.Tags
         $this.Catalog = $object.Catalog
+        
+        $tryRun = $false
+        if([bool]::TryParse($object.Run, [ref]$tryRun)) {
+            $this.Run = $tryRun
+        }
+        else {
+            $this.Run = $false
+        }
 
         if ([string]::IsNullOrEmpty($this.Alias)) {
             $this.Alias = $object.Note
@@ -266,11 +276,13 @@ class NoteStore {
             if ($dup -and $dup.Catalog -ne $newNote.Catalog) {
                 Write-Warning "Duplicate Alias found: $($newNote.Alias). Skipping note: $($newNote.Note)"
             }
-            elseif(-not $dup) {
+            elseif (-not $dup) {
                 $this.Notes.Add($newNote) 
             }
         }
-        $this.Catalogs.Add($catalog)
+        if(-not ($this.Catalogs | Where-Object { $_.Catalog -eq $catalog.Catalog })) {
+            $this.Catalogs.Add($catalog)
+        }
     }
 
     [void] InitializeAliases() {
@@ -287,9 +299,9 @@ class NoteStore {
     }
 
     [void] AddNote([PSNote] $note) {
-        $this.Notes.Add($note)
+        $this.Notes.Add($note) | Out-Null
         $catalogUpdates = $this.Catalogs | Where-Object { $_.Catalog -eq $note.Catalog } | ForEach-Object {
-            $_.Notes.Add($note)
+            $_.Notes.Add($note) | Out-Null
             $_
         }
         $catalogUpdates | ForEach-Object {
@@ -301,34 +313,32 @@ class NoteStore {
     [void] RemoveNote([string] $note, [string] $catalog) {
         $remove = $this.Notes | Where-Object { $_.Note -eq $note -and $_.Catalog -eq $catalog }
         if ($remove) {
-            $this.Notes.Remove($remove)
-            $this.Catalogs | Where-Object { $_.Catalog -eq $remove.Catalog } | ForEach-Object {
-                $_.Notes.Remove($remove)
+            $this.Notes.Remove($remove) | Out-Null
+            $catalogUpdates = $this.Catalogs | Where-Object { $_.Catalog -eq $remove.Catalog } | ForEach-Object {
+                $_.Notes.Remove($remove) | Out-Null
+                $_
+            }
+            $catalogUpdates | ForEach-Object {
                 $_.Save()
                 $this.LoadCatalog($_)
             }
         }
+        else {
+            Write-Warning "Note '$note' not found in catalog '$catalog'. No action taken."
+        }
     }
 
     [void] UpdateNote([PSNote] $note) {
-        $index = $this.Notes.FindIndex({ param($n) $n.Note -eq $note.Note })
-        if ($index -ge 0) {
-            $this.Notes[$index] = $note
-            $catalogIndex = $this.Catalogs | Where-Object { $_.Catalog -eq $note.Catalog } | ForEach-Object {
-                $Index = $_.Notes.FindIndex({ param($n) $n.Note -eq $note.Note })
-                if ($Index -ge 0) {
-                    [pscustomobject]@{
-                        Catalog = $_.Catalog
-                        Index   = $_.Notes.FindIndex({ param($n) $n.Note -eq $note.Note })
-                    }
-                }
-            }
-            foreach ($ci in $catalogIndex) {
-                $catUpdate = $this.Catalogs | Where-Object { $_.Catalog -eq $ci.Catalog }
-                $catUpdate.Notes[$ci.Index] = $note
-                $catUpdate.Save()
-                $this.LoadCatalog($catUpdate)
-            }
+        $update = $this.Notes | Where-Object { $_.Note -eq $note.Note }
+        if ($update.Catalog -eq $note.Catalog) {
+            $this.RemoveNote($note.Note, $note.Catalog)
+            $this.AddNote($note)
+        }
+        elseif ($update){
+            Write-Warning "Note '$($note.Note)' exists in catalog '$($update.Catalog)'. Cannot update note in different catalog at this time '$($note.Catalog)'. No action taken."
+        }
+        else {
+            Write-Warning "Note '$($note.Note)' not found in catalog '$($note.Catalog)'. No action taken."
         }
     }
 }

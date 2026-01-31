@@ -1,58 +1,27 @@
-# Global Variables
+$Path = Join-Path (Split-Path $PSScriptRoot) 'src'
 
-if ($IsLinux) {
-    $env:PSNOTES_HOME = '/home/'
-} 
-else {
-    $env:PSNOTES_HOME = Join-Path $env:APPDATA 'PSNotes'
-} 
+$psd1 = Join-Path -Path $Path -ChildPath 'PSNotes.psd1'
+$psm1 = Join-Path -Path $Path -ChildPath 'PSNotes.psm1'
 
-if($global:IsPesterTest){
-    $env:PSNOTES_HOME = Join-Path $env:PSNOTES_HOME 'Pester'
-    Get-ChildItem -Path $env:PSNOTES_HOME -Filter '*.json' | Remove-Item -Force
-}
-
-$env:PSNotesUserJsonFile = Join-Path $env:PSNOTES_HOME 'PSNotes.json'
-$env:PSNotesRemoteJsonFile = Join-Path $env:PSNOTES_HOME 'RemotePSNotesConnections.json'
-[System.Collections.Generic.List[PSNote]] $script:_noteObjects = @()
-
-if (-not $PSScriptRoot) {
-    $Path = '.\'
-}
-else {
+$psm1Script = {
     $Path = $PSScriptRoot
-}
+    # Import the functions
+    foreach ($folder in @('classes', 'private', 'public')) {
+        $root = Join-Path -Path $Path -ChildPath $folder
+        if (Test-Path -Path $root) {
+            Write-Verbose "processing folder $root"
+            $files = Get-ChildItem -Path $root -Filter *.ps1 -Recurse
 
-# Import the functions
-foreach ($folder in @('private', 'public')) {
-    $root = Join-Path -Path $Path -ChildPath $folder
-    if (Test-Path -Path $root) {
-        Write-Verbose "processing folder $root"
-        $files = Get-ChildItem -Path $root -Filter *.ps1 -Recurse
-
-        # dot source each file
-        $files | where-Object { $_.name -NotLike '*.Tests.ps1' } |
-        ForEach-Object { Write-Verbose $_.name; . $_.FullName }
-    }
-}
-
-# Load all commands to noteObjects
-Initialize-PSNotesRemoteJsonFile
-Initialize-PSNotesJsonFile
-
-# Check id Set-Clipboard cmdlet is found. If not
-if (-not (Get-Command -Name 'Set-Clipboard' -ErrorAction SilentlyContinue)) {
-    # ClipboardText module is found then set an alias for the Set-Clipboard command
-    if (Get-Module ClipboardText -ListAvailable) {
-        if (-not (Get-Alias -Name 'Set-Clipboard' -ErrorAction SilentlyContinue)) {
-            Set-Alias -Name 'Set-Clipboard' -Value 'Set-ClipboardText'
+            # dot source each file
+            $files | where-Object { $_.name -NotLike '*.Tests.ps1' } |
+            ForEach-Object { Write-Verbose $_.name; . $_.FullName }
         }
     }
-    else {
-        $warning = "Cmdlet 'Set-Clipboard' not found. Copy functionality will not work until this is resovled. " +
-        "`n`t You can install the ClipboardText module from PowerShell Gallery, to add this functionality. " + 
-        "`n`n`t`t Install-Module -Name ClipboardText`n" +
-        "`n`t More Details: https://www.powershellgallery.com/packages/ClipboardText"
-        Write-Warning $warning
-    }
+
+    # Load all commands to noteObjects
+    Initialize-PSNotes
 }
+
+$psm1Script.ToString() | Out-File -FilePath $psm1 -Encoding UTF8 -Force
+Import-Module -Name $psd1 -Force -Verbose
+Remove-Item -Path $psm1 -Force

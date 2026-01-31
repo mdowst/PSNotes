@@ -27,7 +27,7 @@
     } else {
         $Alias = $MyInvocation.InvocationName
         $aliasObject = $script:_noteStore.Notes | Where-Object{$_.Alias -eq $Alias}
-        if($Run){
+        if($Run -or $aliasObject.Run) {
             Get-PSNote -Note $aliasObject.Note -Run
         } else {
             if(Get-Command -Name 'Set-Clipboard' -ErrorAction SilentlyContinue){

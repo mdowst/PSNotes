@@ -137,17 +137,24 @@ Describe 'NoteCatalog Static Methods' {
     }
     
     Context 'ResolvePath' {
-        It 'resolves path with default catalog name' {
+        It 'resolves path with no parameters (default catalog)' {
             $path = [NoteCatalog]::ResolvePath()
             
             $path | Should -Match 'PSNotes\.json$'
             (Split-Path -Parent $path) | Should -Exist
         }
         
-        It 'resolves path with custom catalog name' {
+        It 'resolves path with only catalog name parameter' {
             $path = [NoteCatalog]::ResolvePath('MyNotes')
             
             $path | Should -Match 'MyNotes\.json$'
+        }
+        
+        It 'resolves path with custom catalog name and root path' {
+            $path = [NoteCatalog]::ResolvePath('CustomNote', $script:TestDir)
+            
+            $path | Should -Match 'CustomNote\.json$'
+            $path | Should -Match ([regex]::Escape($script:TestDir))
         }
         
         It 'resolves path when catalog name already has .json extension' {
@@ -296,6 +303,27 @@ Describe 'NoteCatalog Instance Methods' {
             
             $catalog.Catalog | Should -Be 'MyCatalog'
             $catalog.Path | Should -Match 'MyCatalog\.json$'
+        }
+    }
+    
+    Context 'Constructor with blank parameter' {
+        It 'creates blank catalog without loading from disk' {
+            $catalog = [NoteCatalog]::new($true)
+            
+            $catalog.StoreVersion | Should -Be 1
+            $catalog.Notes.Count | Should -Be 0
+            $catalog.Path | Should -Not -BeNullOrEmpty
+        }
+        
+        It 'blank catalog does not auto-load existing file' {
+            # Create and save a catalog with notes
+            $existingCatalog = [NoteCatalog]::new('BlankTest')
+            $existingCatalog.Notes.Add([PSNote]::new('ExistingNote', 'code', 'details', 'en', @('tag')))
+            $existingCatalog.Save()
+            
+            # Create blank catalog - should not load the existing file
+            $blankCatalog = [NoteCatalog]::new($true)
+            $blankCatalog.Notes.Count | Should -Be 0
         }
     }
     
@@ -501,12 +529,21 @@ Describe 'NoteStore Class' {
                 'code',
                 'details',
                 'PSNotes',
-                @('tag')
+                @('tag'),
+                'DuplicateTestA'
             )
             $testCatalogA.Notes.Add($dupNote)
             $store.LoadCatalog($testCatalogA)
             $testCatalogB = [NoteCatalog]::new('DuplicateTestB')
-            $testCatalogB.Notes.Add($dupNote)  # Add duplicate
+            $dupNoteB = [PSNote]::new(
+                'DupNote',
+                'code',
+                'details',
+                'PSNotes',
+                @('tag'),
+                'DuplicateTestB'
+            )
+            $testCatalogB.Notes.Add($dupNoteB)  # Add duplicate
             
             # This should warn but not throw
             $warnings = & {
@@ -558,6 +595,228 @@ Describe 'NoteStore Class' {
             
             $store.Catalogs.Count | Should -Be 3  # default + 2 loaded
             $store.Notes.Count | Should -BeGreaterOrEqual 3
+        }
+    }
+    
+    Context 'AddNote method' {
+        It 'adds a note to both store and catalog' {
+            # Create and save a catalog first
+            $catalog = [NoteCatalog]::new('AddNoteTest')
+            $catalog.Save()
+            
+            $store = [NoteStore]::new()
+            $store.LoadCatalog('AddNoteTest')
+            
+            $newNote = [PSNote]::new(
+                'AddedNote',
+                'Write-Host "added"',
+                'A newly added note',
+                'an',
+                @('added'),
+                'AddNoteTest'
+            )
+            
+            $initialCount = $store.Notes.Count
+            $store.AddNote($newNote)
+            
+            # Verify note is in store
+            $store.Notes.Count | Should -Be ($initialCount + 1)
+            $store.Notes | Where-Object { $_.Note -eq 'AddedNote' } | Should -Not -BeNullOrEmpty
+            
+            # Verify note is in catalog
+            $catalog = $store.Catalogs | Where-Object { $_.Catalog -eq 'AddNoteTest' }
+            $catalog.Notes | Where-Object { $_.Note -eq 'AddedNote' } | Should -Not -BeNullOrEmpty
+        }
+        
+        It 'saves catalog after adding note' {
+            $catalog = [NoteCatalog]::new('AddNoteSaveTest')
+            $catalog.Save()
+            
+            $store = [NoteStore]::new()
+            $store.LoadCatalog('AddNoteSaveTest')
+            
+            $newNote = [PSNote]::new(
+                'SavedNote',
+                'code',
+                'details',
+                'sn',
+                @('test'),
+                'AddNoteSaveTest'
+            )
+            
+            $store.AddNote($newNote)
+            
+            # Reload from disk to verify persistence
+            $store2 = [NoteStore]::new()
+            $store2.LoadCatalog('AddNoteSaveTest')
+            $store2.Notes | Where-Object { $_.Note -eq 'SavedNote' } | Should -Not -BeNullOrEmpty
+        }
+    }
+    
+    Context 'RemoveNote method' {
+        It 'removes a note from store and catalog' {
+            # Create catalog with notes
+            $catalog = [NoteCatalog]::new('RemoveNoteTest')
+            $noteToRemove = [PSNote]::new('RemoveMe', 'code', 'details', 'rm', @('remove'),'RemoveNoteTest')
+            $noteToKeep = [PSNote]::new('KeepMe', 'code', 'details', 'km', @('keep'),'RemoveNoteTest')
+            $catalog.Notes.Add($noteToRemove)
+            $catalog.Notes.Add($noteToKeep)
+            $catalog.Save()
+            
+            $store = [NoteStore]::new()
+            $store.LoadCatalog('RemoveNoteTest')
+            
+            $initialCount = $store.Notes.Count
+            $store.RemoveNote('RemoveMe', 'RemoveNoteTest')
+            
+            # Verify note is removed from store
+            $store.Notes.Count | Should -Be ($initialCount - 1)
+            $store.Notes | Where-Object { $_.Note -eq 'RemoveMe' } | Should -BeNullOrEmpty
+            
+            # Verify other note still exists
+            $store.Notes | Where-Object { $_.Note -eq 'KeepMe' } | Should -Not -BeNullOrEmpty
+            
+            # Verify removal persisted to catalog
+            $catalog = $store.Catalogs | Where-Object { $_.Catalog -eq 'RemoveNoteTest' }
+            $catalog.Notes | Where-Object { $_.Note -eq 'RemoveMe' } | Should -BeNullOrEmpty
+        }
+        
+        It 'persists removal to disk' {
+            $catalog = [NoteCatalog]::new('RemoveNotePersistTest')
+            $noteToRemove = [PSNote]::new('TempNote', 'code', 'details', 'tn', @('temp'),'RemoveNotePersistTest')
+            $catalog.Notes.Add($noteToRemove)
+            $catalog.Save()
+            
+            $store = [NoteStore]::new()
+            $store.LoadCatalog('RemoveNotePersistTest')
+            $store.RemoveNote('TempNote', 'RemoveNotePersistTest')
+            
+            # Reload from disk to verify persistence
+            $store2 = [NoteStore]::new()
+            $store2.LoadCatalog('RemoveNotePersistTest')
+            $store2.Notes | Where-Object { $_.Note -eq 'TempNote' } | Should -BeNullOrEmpty
+        }
+        
+        It 'handles removing non-existent note gracefully' {
+            $catalog = [NoteCatalog]::new('RemoveNonExistentTest')
+            $catalog.Save()
+            
+            $store = [NoteStore]::new()
+            $store.LoadCatalog('RemoveNonExistentTest')
+            
+            $initialCount = $store.Notes.Count
+            
+            # Should not throw or modify store
+            { $store.RemoveNote('NonExistent', 'RemoveNonExistentTest') } | Should -Not -Throw
+            $store.Notes.Count | Should -Be $initialCount
+        }
+    }
+    
+    Context 'UpdateNote method' {
+        It 'updates a note in store and catalog' {
+            # Create catalog with note
+            $catalog = [NoteCatalog]::new('UpdateNoteTest')
+            $originalNote = [PSNote]::new('MyNote', 'old code', 'old details', 'mn', @('old'), 'UpdateNoteTest')
+            $catalog.Notes.Add($originalNote)
+            $catalog.Save()
+            
+            $store = [NoteStore]::new()
+            $store.LoadCatalog('UpdateNoteTest')
+            
+            # Update the note
+            $updatedNote = [PSNote]::new(
+                'MyNote',
+                'new code',
+                'new details',
+                'mn',
+                @('updated'),
+                'UpdateNoteTest'
+            )
+            
+            $store.UpdateNote($updatedNote)
+            
+            # Verify update in store
+            $noteInStore = $store.Notes | Where-Object { $_.Note -eq 'MyNote' }
+            $noteInStore.Snippet | Should -Be 'new code'
+            $noteInStore.Details | Should -Be 'new details'
+            $noteInStore.Tags | Should -Be @('updated')
+            
+            # Verify update in catalog
+            $catalog = $store.Catalogs | Where-Object { $_.Catalog -eq 'UpdateNoteTest' }
+            $noteInCatalog = $catalog.Notes | Where-Object { $_.Note -eq 'MyNote' }
+            $noteInCatalog.Snippet | Should -Be 'new code'
+        }
+        
+        It 'persists updates to disk' {
+            $catalog = [NoteCatalog]::new('UpdateNotePersistTest')
+            $originalNote = [PSNote]::new('UpdateMe', 'v1', 'version 1', 'um', @('v1'),'UpdateNotePersistTest')
+            $catalog.Notes.Add($originalNote)
+            $catalog.Save()
+            
+            $store = [NoteStore]::new()
+            $store.LoadCatalog('UpdateNotePersistTest')
+            
+            $updatedNote = [PSNote]::new(
+                'UpdateMe',
+                'v2',
+                'version 2',
+                'um',
+                @('v2'),
+                'UpdateNotePersistTest'
+            )
+            
+            $store.UpdateNote($updatedNote)
+            
+            # Reload from disk to verify persistence
+            $store2 = [NoteStore]::new()
+            $store2.LoadCatalog('UpdateNotePersistTest')
+            $noteOnDisk = $store2.Notes | Where-Object { $_.Note -eq 'UpdateMe' }
+            $noteOnDisk.Snippet | Should -Be 'v2'
+            $noteOnDisk.Details | Should -Be 'version 2'
+        }
+        
+        It 'handles updating non-existent note' {
+            $catalog = [NoteCatalog]::new('UpdateNonExistentTest')
+            $catalog.Save()
+            
+            $store = [NoteStore]::new()
+            $store.LoadCatalog('UpdateNonExistentTest')
+            
+            $nonExistentNote = [PSNote]::new('NonExistent', 'code', 'details', 'ne', @('test'),'UpdateNonExistentTest')
+            
+            # Should not throw, but also should not add the note
+            { $store.UpdateNote($nonExistentNote) } | Should -Not -Throw
+            $store.Notes | Where-Object { $_.Note -eq 'NonExistent' } | Should -BeNullOrEmpty
+        }
+    }
+    
+    Context 'Save method' {
+        It 'saves all catalogs' {
+            # Create and populate multiple catalogs
+            $cat1 = [NoteCatalog]::new('SaveAllCat1')
+            $cat1.Notes.Add([PSNote]::new('Note1', 'c1', 'd1', 'n1', @('t1'),'SaveAllCat1'))
+            
+            $cat2 = [NoteCatalog]::new('SaveAllCat2')
+            $cat2.Notes.Add([PSNote]::new('Note2', 'c2', 'd2', 'n2', @('t2'),'SaveAllCat2'))
+            
+            $store = [NoteStore]::new()
+            $store.LoadCatalog($cat1)
+            $store.LoadCatalog($cat2)
+            
+            # Add new notes
+            $store.Notes | ForEach-Object {
+                $_.Snippet = 'modified'
+            }
+            
+            # Save all catalogs
+            $store.Save()
+            
+            # Reload and verify all changes persisted
+            $store2 = [NoteStore]::new()
+            $store2.LoadCatalog('SaveAllCat1')
+            $store2.LoadCatalog('SaveAllCat2')
+            
+            $store2.Catalogs.Count | Should -Be 3  # default + 2
         }
     }
 }

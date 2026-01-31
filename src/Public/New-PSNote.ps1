@@ -85,6 +85,8 @@
         [parameter(Mandatory = $false)]
         [string]$Catalog = 'PSNotes',
         [parameter(Mandatory = $false)]
+        [bool]$Run = $false,
+        [parameter(Mandatory = $false)]
         [switch]$Force
     )
     Test-PSNotesInitalize
@@ -109,21 +111,18 @@
     elseif ($newNote -and $force) {
         $toUpdate = $script:_noteStore.Notes | Where-Object { $_.Note -eq $Note } | ForEach-Object {
             $tu = [PSNote]::new($_)
-            if (-not [string]::IsNullOrEmpty($Snippet)) {
-                $tu.Snippet = $Snippet
-            }
-            if (-not [string]::IsNullOrEmpty($Details)) {
-                $tu.Details = $Details
-            }
-            if (-not [string]::IsNullOrEmpty($Alias)) {
-                Test-NoteAlias $Alias
-                $tu.Alias = $Alias
-            }
-            if (-not [string]::IsNullOrEmpty($Tags)) {
-                $tu.Tags = $Tags
-            }
-            if (-not [string]::IsNullOrEmpty($Catalog)) {
-                $tu.Catalog = $Catalog
+            $PSBoundParameters.GetEnumerator() | ForEach-Object {
+                if ($_.Key -eq 'ScriptBlock') {
+                    $tu.Snippet = $_.Value.ToString()
+                }
+                elseif ($_.Key -eq 'Alias') {
+                    Test-NoteAlias $_.Value
+                    $tu.Alias = $_.Value
+                }
+                elseif($_.Key -ne 'Force' -and $_.Key -ne 'Note') {
+                    # Skip Force and Note as we don't want to update those
+                    $tu.$($_.Key) = $_.Value
+                }
             }
             $tu
         }
@@ -139,7 +138,7 @@
 
         Test-NoteAlias $Alias
         
-        $newNote = [PSNote]::New($Note, $Snippet, $Details, $Alias, $Tags, $Catalog)
+        $newNote = [PSNote]::New($Note, $Snippet, $Details, $Alias, $Tags, $Catalog, $Run)
         $script:_noteStore.AddNote($newNote)
     }
     
