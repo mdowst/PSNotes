@@ -57,9 +57,9 @@ class PSNote {
         $this.Alias = $object.Alias
         $this.Tags = $object.Tags
         $this.Catalog = $object.Catalog
-        
+
         $tryRun = $false
-        if([bool]::TryParse($object.Run, [ref]$tryRun)) {
+        if ([bool]::TryParse($object.Run, [ref]$tryRun)) {
             $this.Run = $tryRun
         }
         else {
@@ -69,8 +69,12 @@ class PSNote {
         if ([string]::IsNullOrEmpty($this.Alias)) {
             $this.Alias = $object.Note
         }
-
     }
+
+    [string] GetKey() {
+        return "$($this.Catalog)::$($this.Alias)"
+    }
+
 }
 
 class NoteCatalog {
@@ -250,17 +254,79 @@ class NoteCatalog {
     }
 }
 
+class NoteMetadataStore {
+    static [int] $CurrentVersion = 1
+
+    [string] $Path
+    [int] $Version
+    [System.Collections.Generic.HashSet[string]] $Favorites
+
+    NoteMetadataStore([string] $path) {
+        $this.Path = $path
+        $this.Version = [NoteMetadataStore]::CurrentVersion
+        $this.Favorites = [System.Collections.Generic.HashSet[string]]::new()
+        $this.Open()
+    }
+
+    [void] Open() {
+        if (-not (Test-Path $this.Path)) { return }
+
+        try {
+            $json = [NoteCatalog]::ReadUtf8NoBom($this.Path)
+            if ([string]::IsNullOrWhiteSpace($json)) { return }
+
+            $data = $json | ConvertFrom-Json -ErrorAction Stop
+            if ($data.items) {
+                foreach ($k in $data.items) {
+                    if (-not [string]::IsNullOrWhiteSpace([string]$k)) {
+                        $null = $this.Favorites.Add([string]$k)
+                    }
+                }
+            }
+        }
+        catch {
+            # If metadata is corrupt, fail safe (don't crash UI). You can add logging later.
+            return
+        }
+    }
+
+    [string] ToJson() {
+        $obj = [pscustomobject]@{
+            version = [NoteMetadataStore]::CurrentVersion
+            items   = @($this.Favorites)
+        }
+        return ($obj | ConvertTo-Json -Depth 5)
+    }
+
+    [void] Save() {
+        $lockStream = [NoteCatalog]::AcquireLock($this.Path, 5000, 50)
+        try {
+            [NoteCatalog]::WriteUtf8NoBomToLockedStream($lockStream, $this.ToJson())
+        }
+        finally {
+            $lockStream.Dispose()
+        }
+    }
+}
+
+
 class NoteStore {
     static [int] $CurrentStoreVersion = 1
 
     [System.Collections.Generic.List[NoteCatalog]] $Catalogs
     [System.Collections.Generic.List[PSNote]] $Notes
+    [NoteMetadataStore] $Metadata
 
     NoteStore() {
         $this.Notes = [System.Collections.Generic.List[PSNote]]::new()
         $this.Catalogs = [System.Collections.Generic.List[NoteCatalog]]::new()
+
         $defaultStore = [NoteCatalog]::new()
         $this.LoadCatalog($defaultStore)
+
+        $metaPath = Join-Path $env:PSNOTES_HOME 'favorites.json'
+        $this.Metadata = [NoteMetadataStore]::new($metaPath)
+
         $this.InitializeAliases()
     }
 
@@ -280,7 +346,7 @@ class NoteStore {
                 $this.Notes.Add($newNote) 
             }
         }
-        if(-not ($this.Catalogs | Where-Object { $_.Catalog -eq $catalog.Catalog })) {
+        if (-not ($this.Catalogs | Where-Object { $_.Catalog -eq $catalog.Catalog })) {
             $this.Catalogs.Add($catalog)
         }
     }
@@ -334,11 +400,62 @@ class NoteStore {
             $this.RemoveNote($note.Note, $note.Catalog)
             $this.AddNote($note)
         }
-        elseif ($update){
+        elseif ($update) {
             Write-Warning "Note '$($note.Note)' exists in catalog '$($update.Catalog)'. Cannot update note in different catalog at this time '$($note.Catalog)'. No action taken."
         }
         else {
             Write-Warning "Note '$($note.Note)' not found in catalog '$($note.Catalog)'. No action taken."
         }
     }
+
+    [string] GetNoteKey([PSNote] $note) {
+        return "$($note.Catalog)::$($note.Alias)"
+    }
+
+    [bool] IsFavorite([PSNote] $note) {
+        if (-not $this.Metadata) { return $false }
+        return $this.Metadata.Favorites.Contains($this.GetNoteKey($note))
+    }
+
+    [void] AddFavorite([PSNote] $note) {
+        if (-not $this.Metadata) { return }
+        $key = $this.GetNoteKey($note)
+        if ($this.Metadata.Favorites.Add($key)) { $this.Metadata.Save() }
+    }
+
+    [void] RemoveFavorite([PSNote] $note) {
+        if (-not $this.Metadata) { return }
+        $key = $this.GetNoteKey($note)
+        if ($this.Metadata.Favorites.Remove($key)) { $this.Metadata.Save() }
+    }
+
+    [bool] ToggleFavorite([PSNote] $note) {
+        if (-not $this.Metadata) { return $false }
+
+        $key = $this.GetNoteKey($note)
+        if ($this.Metadata.Favorites.Contains($key)) {
+            $null = $this.Metadata.Favorites.Remove($key)
+            $this.Metadata.Save()
+            return $false
+        }
+        else {
+            $null = $this.Metadata.Favorites.Add($key)
+            $this.Metadata.Save()
+            return $true
+        }
+    }
+
+    [System.Collections.Generic.List[PSNote]] GetFavorites() {
+        $list = [System.Collections.Generic.List[PSNote]]::new()
+        if (-not $this.Metadata) { return $list }
+
+        foreach ($n in $this.Notes) {
+            if ($this.Metadata.Favorites.Contains($this.GetNoteKey($n))) {
+                $list.Add($n) | Out-Null
+            }
+        }
+        return $list
+    }
 }
+
+
