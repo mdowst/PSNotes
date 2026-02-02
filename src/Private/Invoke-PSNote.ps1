@@ -1,4 +1,4 @@
-Function Invoke-PSNote{
+Function Invoke-PSNote {
     <#
     .SYNOPSIS
         Use to display a list of notes in a selectable menu so you can choose which to run
@@ -50,22 +50,32 @@ Function Invoke-PSNote{
         .LINK
         https://github.com/mdowst/PSNotes
     #>
-    [cmdletbinding(DefaultParameterSetName="Note")]
-    param(    
-        [Alias("Name")]    
-        [parameter(Mandatory=$false, ParameterSetName="Note", Position = 0)]
-        [string]$Note = '*',
-        [parameter(Mandatory=$false, ParameterSetName="Note")]
-        [string]$Tag,
-        [parameter(Mandatory=$false, ParameterSetName="Search", Position = 0)]
-        [string]$SearchString
+    [cmdletbinding(DefaultParameterSetName = "Note")]
+    param(      
+        [parameter(Mandatory = $true, ParameterSetName = "Note", Position = 0)]
+        [PSNote]$Note
     )
     Test-PSNotesInitalize
-    $NoteSelection = @(Get-PSNote @PSBoundParameters)
-    $noteSnippet = Write-NoteSnippet $NoteSelection
-
-    if(-not [string]::IsNullOrEmpty($noteSnippet)){
-        $ScriptBlock = $executioncontext.invokecommand.NewScriptBlock($noteSnippet)
-        Invoke-Command -ScriptBlock $ScriptBlock
+    
+    switch ($Note.Kind) {
+        Script {
+            if ([string]::IsNullOrWhiteSpace($Note.Target)) {
+                throw "Cannot invoke Script note '$($Note.Note)': Target is empty."
+            }
+            if (-not (Test-Path -LiteralPath $Note.Target)) {
+                throw "Cannot invoke Script note '$($Note.Note)': Script file not found at path: $($Note.Target)"
+            }
+            & $Note.Target
+        }
+        Snippet {
+            if ([string]::IsNullOrWhiteSpace($Note.Target)) {
+                throw "Cannot invoke Snippet note '$($Note.Note)': Snippet is empty."
+            }
+            $scriptBlock = [ScriptBlock]::Create($Note.Target)
+            Invoke-Command -ScriptBlock $scriptBlock
+        }
+        default {
+            throw "Cannot invoke note '$($Note.Note)': Unknown Kind: $($Note.Kind)"
+        }
     }
 }

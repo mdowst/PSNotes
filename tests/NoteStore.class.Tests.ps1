@@ -62,7 +62,8 @@ Describe 'PSNote Class' {
                 'A greeting snippet',
                 'MyAlias',
                 @('test'),
-                'CustomCatalog'
+                'CustomCatalog',
+                $false
             )
             
             $note.Note | Should -Be 'MyNote'
@@ -76,7 +77,8 @@ Describe 'PSNote Class' {
                 'A greeting snippet',
                 '',
                 @('test'),
-                'CustomCatalog'
+                'CustomCatalog',
+                $false
             )
             
             $note.Alias | Should -Be 'MyNote'
@@ -92,6 +94,7 @@ Describe 'PSNote Class' {
                 Alias   = 'tn'
                 Tags    = @('tag1', 'tag2')
                 Catalog = 'TestCatalog'
+                Run = $false
             }
             
             $note = [PSNote]::new($obj)
@@ -112,6 +115,7 @@ Describe 'PSNote Class' {
                 Alias   = ''
                 Tags    = @('tag1')
                 Catalog = 'TestCatalog'
+                Run =$false
             }
             
             $note = [PSNote]::new($obj)
@@ -530,7 +534,8 @@ Describe 'NoteStore Class' {
                 'details',
                 'PSNotes',
                 @('tag'),
-                'DuplicateTestA'
+                'DuplicateTestA',
+                $false
             )
             $testCatalogA.Notes.Add($dupNote)
             $store.LoadCatalog($testCatalogA)
@@ -541,7 +546,8 @@ Describe 'NoteStore Class' {
                 'details',
                 'PSNotes',
                 @('tag'),
-                'DuplicateTestB'
+                'DuplicateTestB',
+                $false
             )
             $testCatalogB.Notes.Add($dupNoteB)  # Add duplicate
             
@@ -553,28 +559,7 @@ Describe 'NoteStore Class' {
             $warnings | Should -Be "Duplicate Alias found: PSNotes. Skipping note: DupNote"
         }
     }
-    
-    Context 'InitializeAliases' {
-        It 'creates aliases for all notes' {
-            $store = [NoteStore]::new()
-            
-            # Add a test note
-            $testNote = [PSNote]::new(
-                'TestNote',
-                'Write-Host "test"',
-                'details',
-                'uniquealias12345',
-                @('test')
-            )
-            $store.Notes.Add($testNote)
-            $store.InitializeAliases()
-            
-            # Note: This creates global aliases, which may not be testable in isolated scope
-            # Just verify the method runs without error
-            $store.Notes.Count | Should -Be 1
-        }
-    }
-    
+        
     Context 'Integration tests' {
         It 'loads multiple catalogs and consolidates notes' {
             # Create first catalog
@@ -613,7 +598,8 @@ Describe 'NoteStore Class' {
                 'A newly added note',
                 'an',
                 @('added'),
-                'AddNoteTest'
+                'AddNoteTest',
+                $false
             )
             
             $initialCount = $store.Notes.Count
@@ -641,7 +627,8 @@ Describe 'NoteStore Class' {
                 'details',
                 'sn',
                 @('test'),
-                'AddNoteSaveTest'
+                'AddNoteSaveTest',
+                $false
             )
             
             $store.AddNote($newNote)
@@ -657,8 +644,8 @@ Describe 'NoteStore Class' {
         It 'removes a note from store and catalog' {
             # Create catalog with notes
             $catalog = [NoteCatalog]::new('RemoveNoteTest')
-            $noteToRemove = [PSNote]::new('RemoveMe', 'code', 'details', 'rm', @('remove'),'RemoveNoteTest')
-            $noteToKeep = [PSNote]::new('KeepMe', 'code', 'details', 'km', @('keep'),'RemoveNoteTest')
+            $noteToRemove = [PSNote]::new('RemoveMe', 'code', 'details', 'rm', @('remove'),'RemoveNoteTest', $false)
+            $noteToKeep = [PSNote]::new('KeepMe', 'code', 'details', 'km', @('keep'),'RemoveNoteTest', $false)
             $catalog.Notes.Add($noteToRemove)
             $catalog.Notes.Add($noteToKeep)
             $catalog.Save()
@@ -683,7 +670,7 @@ Describe 'NoteStore Class' {
         
         It 'persists removal to disk' {
             $catalog = [NoteCatalog]::new('RemoveNotePersistTest')
-            $noteToRemove = [PSNote]::new('TempNote', 'code', 'details', 'tn', @('temp'),'RemoveNotePersistTest')
+            $noteToRemove = [PSNote]::new('TempNote', 'code', 'details', 'tn', @('temp'),'RemoveNotePersistTest', $false)
             $catalog.Notes.Add($noteToRemove)
             $catalog.Save()
             
@@ -716,7 +703,7 @@ Describe 'NoteStore Class' {
         It 'updates a note in store and catalog' {
             # Create catalog with note
             $catalog = [NoteCatalog]::new('UpdateNoteTest')
-            $originalNote = [PSNote]::new('MyNote', 'old code', 'old details', 'mn', @('old'), 'UpdateNoteTest')
+            $originalNote = [PSNote]::new('MyNote', 'old code', 'old details', 'mn', @('old'), 'UpdateNoteTest', $false)
             $catalog.Notes.Add($originalNote)
             $catalog.Save()
             
@@ -730,7 +717,8 @@ Describe 'NoteStore Class' {
                 'new details',
                 'mn',
                 @('updated'),
-                'UpdateNoteTest'
+                'UpdateNoteTest',
+                $false
             )
             
             $store.UpdateNote($updatedNote)
@@ -749,7 +737,7 @@ Describe 'NoteStore Class' {
         
         It 'persists updates to disk' {
             $catalog = [NoteCatalog]::new('UpdateNotePersistTest')
-            $originalNote = [PSNote]::new('UpdateMe', 'v1', 'version 1', 'um', @('v1'),'UpdateNotePersistTest')
+            $originalNote = [PSNote]::new('UpdateMe', 'v1', 'version 1', 'um', @('v1'),'UpdateNotePersistTest', $false)
             $catalog.Notes.Add($originalNote)
             $catalog.Save()
             
@@ -762,7 +750,8 @@ Describe 'NoteStore Class' {
                 'version 2',
                 'um',
                 @('v2'),
-                'UpdateNotePersistTest'
+                'UpdateNotePersistTest',
+                $false
             )
             
             $store.UpdateNote($updatedNote)
@@ -782,7 +771,7 @@ Describe 'NoteStore Class' {
             $store = [NoteStore]::new()
             $store.LoadCatalog('UpdateNonExistentTest')
             
-            $nonExistentNote = [PSNote]::new('NonExistent', 'code', 'details', 'ne', @('test'),'UpdateNonExistentTest')
+            $nonExistentNote = [PSNote]::new('NonExistent', 'code', 'details', 'ne', @('test'),'UpdateNonExistentTest', $false)
             
             # Should not throw, but also should not add the note
             { $store.UpdateNote($nonExistentNote) } | Should -Not -Throw
@@ -794,10 +783,10 @@ Describe 'NoteStore Class' {
         It 'saves all catalogs' {
             # Create and populate multiple catalogs
             $cat1 = [NoteCatalog]::new('SaveAllCat1')
-            $cat1.Notes.Add([PSNote]::new('Note1', 'c1', 'd1', 'n1', @('t1'),'SaveAllCat1'))
+            $cat1.Notes.Add([PSNote]::new('Note1', 'c1', 'd1', 'n1', @('t1'),'SaveAllCat1', $false))
             
             $cat2 = [NoteCatalog]::new('SaveAllCat2')
-            $cat2.Notes.Add([PSNote]::new('Note2', 'c2', 'd2', 'n2', @('t2'),'SaveAllCat2'))
+            $cat2.Notes.Add([PSNote]::new('Note2', 'c2', 'd2', 'n2', @('t2'),'SaveAllCat2', $false))
             
             $store = [NoteStore]::new()
             $store.LoadCatalog($cat1)

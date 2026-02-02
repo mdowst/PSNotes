@@ -27,8 +27,8 @@
     } else {
         $Alias = $MyInvocation.InvocationName
         $aliasObject = $script:_noteStore.Notes | Where-Object{$_.Alias -eq $Alias}
-        if($Run -or $aliasObject.Run) {
-            Get-PSNote -Note $aliasObject.Note -Run
+        if(($Run -or $aliasObject.Run) -and -not $Copy) {
+            Invoke-PSNote -Note $aliasObject
         } else {
             if(Get-Command -Name 'Set-Clipboard' -ErrorAction SilentlyContinue){
                 $returned | Select-Object -First 1 -ExpandProperty Snippet | Set-Clipboard

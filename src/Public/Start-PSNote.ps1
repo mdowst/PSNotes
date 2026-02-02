@@ -21,11 +21,7 @@ function Start-PSNote {
         Tag           = $null
         Note          = $null
         ExecuteOnExit = $null  # [PSNote] or $null
-        Settings      = [PSCustomObject]@{
-            Main            = 'Favorites'
-            ForegroundColor = 'Black'
-            BackgroundColor = 'Gray'
-        }
+        Settings      = $Store.Config
     }
     
     # Default view: Favorites if any exist; otherwise Catalogs
@@ -34,11 +30,13 @@ function Start-PSNote {
 
     $footerItems = @(
         @{ Key = '[M]'; Label = 'Main' },
-        @{ Key = '[A]'; Label = 'All' },
-        @{ Key = '[S]'; Label = 'Search' },
-        @{ Key = '[G]'; Label = 'Catalogs' },
-        @{ Key = '[T]'; Label = 'Tags' },
         @{ Key = '[F]'; Label = 'Favorites' },
+        @{ Key = '[G]'; Label = 'Catalogs' },
+        @{ Key = '[S]'; Label = 'Search' },
+        @{ Key = '[H]'; Label = 'Help' },
+        @{ Key = '[B]'; Label = 'Back' },
+        @{ Key = '[A]'; Label = 'All' },
+        @{ Key = '[T]'; Label = 'Tags' },
         @{ Key = '[O]'; Label = 'Options' },
         @{ Key = '[Q]'; Label = 'Quit' }
     )
@@ -50,18 +48,13 @@ function Start-PSNote {
         Write-PSNotesHeaderBar -Store $Store -State $state
 
         switch ($state.Mode) {
-
-            'Main' {
-                $menu = "[A] All  [S] Search  [G] Catalogs  [T] Tags  [F] Favorites  [R] Random  [Q] Quit"
-            }
-
             'AllCatalogs' {
                 $state.Catalog = $null
                 $state.Tag = $null
                 $state.ScopeNotes = @($Store.Notes)
                 $state.LastList = @($state.ScopeNotes | Sort-Object Catalog, Alias)
                 Write-PSNotesNoteList -Notes $state.LastList -Title $state.ScopeLabel -Store $Store
-                $menu = "[#] Open  [T] Thumb  [S] Search  [B] Back"
+                $menu = "[#] Open  [P] Preview  [S] Search  [B] Back"
             }
 
             'Search' {
@@ -111,7 +104,6 @@ function Start-PSNote {
                     }
                 }
                 $menu = "[#] Open  [P] Preview  [B] Back"
-            
             }
 
             'Preview' {
@@ -139,7 +131,7 @@ function Start-PSNote {
             if ($state.ReturnMode[-1] -ne $state.Mode) {
                 $state.ReturnMode += $state.Mode
             }
-            if([string]::IsNullOrWhiteSpace($sel) -and $state.Mode -eq 'Preview') {
+            if ([string]::IsNullOrWhiteSpace($sel) -and $state.Mode -eq 'Preview') {
                 $sel = 'N'
             }
             switch ($sel.ToUpperInvariant()) {
@@ -179,6 +171,10 @@ function Start-PSNote {
                         Set-Clipboard -Value $state.Note.Snippet
                         $state.Mode = $state.ReturnMode[-2]
                         $state.ReturnMode = $state.ReturnMode[0..($state.ReturnMode.Count - 2)]
+                        if ($state.Settings.ExitOnCopy) {
+                            $state.ExecuteOnExit = $null
+                            $state.Mode = 'Exit'
+                        }
                     }
                 }
                 'X' {

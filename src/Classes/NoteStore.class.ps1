@@ -1,12 +1,18 @@
+enum PSNoteKind {
+    Snippet
+    Script
+}
 # Create the PSNote class
 class PSNote {
     [string]$Note
-    [string]$Snippet
+    [string]$Snippet          # legacy/back-compat (old stores + older code paths)
     [string]$Details
     [string]$Alias
     [string[]]$Tags
     [string]$Catalog
     [bool]$Run = $false
+    [PSNoteKind]$Kind = [PSNoteKind]::Snippet
+    [string]$Target           # canonical executable/content (snippet text or script path)
 
     PSNote(
         [string]$Note,
@@ -15,16 +21,18 @@ class PSNote {
         [string]$Alias,
         [string[]]$Tags
     ) {
-        $this.Note = $Note
+        $this.Note    = $Note
         $this.Snippet = $Snippet
         $this.Details = $Details
-        $this.Alias = $Alias
-        $this.Tags = $Tags
+        $this.Alias   = $Alias
+        $this.Tags    = $Tags
         $this.Catalog = 'PSNotes'
-        
-        if ([string]::IsNullOrEmpty($Alias)) {
-            $this.Alias = $Note
-        }
+
+        if ([string]::IsNullOrEmpty($Alias)) { $this.Alias = $Note }
+
+        # Default behavior (back-compat): Snippet notes use Snippet as Target
+        $this.Kind   = [PSNoteKind]::Snippet
+        $this.Target = $Snippet
     }
 
     PSNote(
@@ -36,38 +44,92 @@ class PSNote {
         [string]$Catalog,
         [bool]$Run
     ) {
-        $this.Note = $Note
+        $this.Note    = $Note
         $this.Snippet = $Snippet
         $this.Details = $Details
-        $this.Alias = $Alias
-        $this.Tags = $Tags
+        $this.Alias   = $Alias
+        $this.Tags    = $Tags
         $this.Catalog = $Catalog
-        $this.Run = $Run
-        if ([string]::IsNullOrEmpty($Alias)) {
-            $this.Alias = $Note
+        $this.Run     = $Run
+
+        if ([string]::IsNullOrEmpty($Alias)) { $this.Alias = $Note }
+
+        $this.Kind   = [PSNoteKind]::Snippet
+        $this.Target = $Snippet
+    }
+
+    # New convenience constructor for Kind/Target (optional but nice)
+    PSNote(
+        [string]$Note,
+        [PSNoteKind]$Kind,
+        [string]$Target,
+        [string]$Details,
+        [string]$Alias,
+        [string[]]$Tags,
+        [string]$Catalog,
+        [bool]$Run
+    ) {
+        $this.Note    = $Note
+        $this.Kind    = $Kind
+        $this.Target  = $Target
+        $this.Details = $Details
+        $this.Alias   = $Alias
+        $this.Tags    = $Tags
+        $this.Catalog = $Catalog
+        $this.Run     = $Run
+
+        if ([string]::IsNullOrEmpty($Alias)) { $this.Alias = $Note }
+
+        # Keep legacy Snippet populated for Snippet kind so old code keeps working
+        if ($this.Kind -eq [PSNoteKind]::Snippet) {
+            $this.Snippet = $Target
         }
     }
 
-    PSNote(
-        [object]$object
-    ) {
-        $this.Note = $object.Note
-        $this.Snippet = $object.Snippet
+    PSNote([object]$object) {
+        $this.Note    = $object.Note
         $this.Details = $object.Details
-        $this.Alias = $object.Alias
-        $this.Tags = $object.Tags
+        $this.Alias   = $object.Alias
+        $this.Tags    = $object.Tags
         $this.Catalog = $object.Catalog
 
+        # Run (existing behavior)
         $tryRun = $false
-        if ([bool]::TryParse($object.Run, [ref]$tryRun)) {
-            $this.Run = $tryRun
-        }
-        else {
-            $this.Run = $false
+        if ([bool]::TryParse($object.Run, [ref]$tryRun)) { $this.Run = $tryRun } else { $this.Run = $false }
+
+        if ([string]::IsNullOrEmpty($this.Alias)) { $this.Alias = $object.Note }
+
+        # --- Kind (new, but tolerate missing/invalid) ---
+        $kindText = $null
+        if ($null -ne $object.PSObject.Properties['Kind']) {
+            $kindText = [string]$object.Kind
         }
 
-        if ([string]::IsNullOrEmpty($this.Alias)) {
-            $this.Alias = $object.Note
+        if ([string]::IsNullOrWhiteSpace($kindText)) {
+            $this.Kind = [PSNoteKind]::Snippet
+        }
+        else {
+            try { $this.Kind = [PSNoteKind]::$kindText }
+            catch { $this.Kind = [PSNoteKind]::Snippet }
+        }
+
+        # --- Target (new canonical field; fall back to Snippet from older stores) ---
+        $targetField = $null
+        if ($null -ne $object.PSObject.Properties['Target']) {
+            $targetField = [string]$object.Target
+        }
+        if ([string]::IsNullOrWhiteSpace($targetField) -and $null -ne $object.PSObject.Properties['Snippet']) {
+            $targetField = [string]$object.Snippet
+        }
+        $this.Target = $targetField
+
+        # Maintain legacy Snippet for old callers
+        if ($this.Kind -eq [PSNoteKind]::Snippet) {
+            $this.Snippet = $this.Target
+        }
+        else {
+            # Script notes: Snippet is not the canonical payload
+            $this.Snippet = $object.Snippet  # keep whatever was there (often null), harmless
         }
     }
 
@@ -75,7 +137,16 @@ class PSNote {
         return "$($this.Catalog)::$($this.Alias)"
     }
 
+    # Optional helper: what do we show in menus?
+    [string] GetDisplayText() {
+        $out = switch ($this.Kind) {
+            Script  { "$($this.Alias) (Script)" }
+            default { "$($this.Alias)" }
+        }
+        return $out
+    }
 }
+
 
 class NoteCatalog {
     static [int] $CurrentStoreVersion = 1
@@ -261,6 +332,17 @@ class NoteMetadataStore {
     [int] $Version
     [System.Collections.Generic.HashSet[string]] $Favorites
 
+    NoteMetadataStore() {
+        $metaPath = Join-Path $env:PSNOTES_HOME 'config'
+        if (-not (Test-Path $metaPath)) {
+            $null = New-Item -Path $metaPath -ItemType Directory -Force
+        }
+        $this.Path = (Join-Path $metaPath 'psnotemetadatastore.json')
+        $this.Version = [NoteMetadataStore]::CurrentVersion
+        $this.Favorites = [System.Collections.Generic.HashSet[string]]::new()
+        $this.Open()
+    }
+
     NoteMetadataStore([string] $path) {
         $this.Path = $path
         $this.Version = [NoteMetadataStore]::CurrentVersion
@@ -276,8 +358,8 @@ class NoteMetadataStore {
             if ([string]::IsNullOrWhiteSpace($json)) { return }
 
             $data = $json | ConvertFrom-Json -ErrorAction Stop
-            if ($data.items) {
-                foreach ($k in $data.items) {
+            if ($data.Favorites) {
+                foreach ($k in $data.Favorites) {
                     if (-not [string]::IsNullOrWhiteSpace([string]$k)) {
                         $null = $this.Favorites.Add([string]$k)
                     }
@@ -291,11 +373,7 @@ class NoteMetadataStore {
     }
 
     [string] ToJson() {
-        $obj = [pscustomobject]@{
-            version = [NoteMetadataStore]::CurrentVersion
-            items   = @($this.Favorites)
-        }
-        return ($obj | ConvertTo-Json -Depth 5)
+        return ($this | ConvertTo-Json -Depth 5)
     }
 
     [void] Save() {
@@ -309,13 +387,97 @@ class NoteMetadataStore {
     }
 }
 
+class NoteConfigStore {
+    static [int] $CurrentVersion = 1
 
+    [string] $Path
+    [int] $Version
+    [string] $Main
+    [bool] $ExitOnCopy
+    [ConsoleColor] $ForegroundColor
+    [ConsoleColor] $BackgroundColor
+
+    NoteConfigStore() {
+        $metaPath = Join-Path $env:PSNOTES_HOME 'config'
+        if (-not (Test-Path $metaPath)) {
+            $null = New-Item -Path $metaPath -ItemType Directory -Force
+        }
+        $this.Path = (Join-Path $metaPath 'psnoteconfig.json')
+        $this.SetDefaults()
+        $this.Open()
+    }
+
+    NoteConfigStore([string] $path) {
+        $this.Path = $path
+        $this.SetDefaults()
+        $this.Open()
+    }
+
+    [void] SetDefaults() {
+        $this.Version = [NoteConfigStore]::CurrentVersion
+        $this.Main = 'Favorites'
+        $this.ExitOnCopy = $true
+        $this.ForegroundColor = [ConsoleColor]::Black
+        $this.BackgroundColor = [ConsoleColor]::Gray
+    }
+
+    [void] Open() {
+        if (-not (Test-Path $this.Path)) { return }
+
+        try {
+            $json = [NoteCatalog]::ReadUtf8NoBom($this.Path)
+            if ([string]::IsNullOrWhiteSpace($json)) { return }
+
+            $data = $json | ConvertFrom-Json -ErrorAction Stop
+            if (-not [string]::IsNullOrWhiteSpace([string]$data.Main)) {
+                $this.Main = [string]$data.Main
+            }
+            if ($null -ne $data.ExitOnCopy) {
+                $tryExitOnCopy = $false
+                if ([bool]::TryParse($data.ExitOnCopy, [ref]$tryExitOnCopy)) {
+                    $this.ExitOnCopy = $tryExitOnCopy
+                }
+            }
+            if ($null -ne $data.ForegroundColor) {
+                $tryFg = [ConsoleColor]::Black
+                if ([Enum]::TryParse([string]$data.ForegroundColor, [ref]$tryFg)) {
+                    $this.ForegroundColor = $tryFg
+                }
+            }
+            if ($null -ne $data.BackgroundColor) {
+                $tryBg = [ConsoleColor]::Gray
+                if ([Enum]::TryParse([string]$data.BackgroundColor, [ref]$tryBg)) {
+                    $this.BackgroundColor = $tryBg
+                }
+            }
+        }
+        catch {
+            # If metadata is corrupt, fail safe (don't crash UI). You can add logging later.
+            return
+        }
+    }
+
+    [string] ToJson() {
+        return ($this | ConvertTo-Json -Depth 5)
+    }
+
+    [void] Save() {
+        $lockStream = [NoteCatalog]::AcquireLock($this.Path, 5000, 50)
+        try {
+            [NoteCatalog]::WriteUtf8NoBomToLockedStream($lockStream, $this.ToJson())
+        }
+        finally {
+            $lockStream.Dispose()
+        }
+    }
+}
 class NoteStore {
     static [int] $CurrentStoreVersion = 1
 
     [System.Collections.Generic.List[NoteCatalog]] $Catalogs
     [System.Collections.Generic.List[PSNote]] $Notes
     [NoteMetadataStore] $Metadata
+    [NoteConfigStore] $Config
 
     NoteStore() {
         $this.Notes = [System.Collections.Generic.List[PSNote]]::new()
@@ -324,8 +486,8 @@ class NoteStore {
         $defaultStore = [NoteCatalog]::new()
         $this.LoadCatalog($defaultStore)
 
-        $metaPath = Join-Path $env:PSNOTES_HOME 'favorites.json'
-        $this.Metadata = [NoteMetadataStore]::new($metaPath)
+        $this.Metadata = [NoteMetadataStore]::new()
+        $this.Config = [NoteConfigStore]::new()
 
         $this.InitializeAliases()
     }

@@ -106,9 +106,8 @@
             Write-Warning -Message "More than 1 command was returned. If you continue Only the first one will be run" -WarningAction Inquire
         }
 
-        $Snippet = $returned | Select-Object -First 1 -ExpandProperty Snippet
-        $ScriptBlock = $executioncontext.invokecommand.NewScriptBlock($Snippet)
-        Invoke-Command -ScriptBlock $ScriptBlock
+        $note = $returned | Select-Object -First 1
+        Invoke-PSNote -Note $note
     } else {
         $returned
     }
