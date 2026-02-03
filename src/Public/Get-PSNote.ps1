@@ -13,6 +13,9 @@
     .PARAMETER Tag
         The tag of the note(s) you want to return.
 
+    .PARAMETER Catalog
+        Filter notes by catalog name. Accepts wildcards and multiple values.
+
     .PARAMETER Copy
         If specfied the the Snippet will be copied to your clipboard
 
@@ -48,7 +51,17 @@
         Get-PSNote -SearchString 'day'
 
         Returns all notes with the word day in the name, details, snippet text, alias, or tags
-    
+
+    .EXAMPLE
+        Get-PSNote -Catalog 'PSNotes'
+
+        Returns all notes in the PSNotes catalog
+
+    .EXAMPLE
+        Get-PSNote -SearchString 'day' -Catalog 'Work*','Personal*'
+
+        Searches only within the matching catalogs
+
         .LINK
         https://github.com/mdowst/PSNotes
     #>
@@ -62,52 +75,64 @@
         [switch]$Copy,
         [parameter(Mandatory=$false, ParameterSetName="Note")]
         [switch]$Run,
+        [parameter(Mandatory=$false, ParameterSetName="Note")]
+        [parameter(Mandatory=$false, ParameterSetName="Search")]
+        [string[]]$Catalog,
         [parameter(Mandatory=$false, ParameterSetName="Search")]
         [string]$SearchString
     )
     Test-PSNotesInitalize
 
-    if($SearchString){
-        [System.Collections.Generic.List[PSNoteSearch]] $SearchResults = @()
-        $script:_noteStore.Notes | Where-Object{ $_.Note -like "*$SearchString*" -or $_.Alias -like "*$SearchString*" -or 
-            $_.Details -like "*$SearchString*" -or $_.Snippet -like "*$SearchString*" } | ForEach-Object { $SearchResults.Add($_) }
-        $script:_noteStore.Notes | Where-Object{ $SearchResults.Note -notcontains $_.Note } | ForEach-Object { 
-            $tagMatch = $false
-            $_.tag | ForEach-Object {
-                if($_ -like "*$SearchString*"){
-                    $tagMatch = $true
-                }
+    $notes = $script:_noteStore.Notes
+
+    if($Catalog){
+        $notes = $notes | Where-Object {
+            $noteCatalog = $_.Catalog
+            foreach($pattern in $Catalog){
+                if($noteCatalog -like $pattern){ return $true }
             }
-            if($tagMatch){
-                $SearchResults.Add($_) 
-            }
+            return $false
         }
-        $returned = $SearchResults
+    }
+
+    if($SearchString){
+        $returned = $notes | Where-Object {
+            $_.Note    -like "*$SearchString*" -or
+            $_.Alias   -like "*$SearchString*" -or
+            $_.Details -like "*$SearchString*" -or
+            $_.Snippet -like "*$SearchString*" -or
+            $_.Target  -like "*$SearchString*" -or
+            ($_.Tags | Where-Object { $_ -like "*$SearchString*" } | Select-Object -First 1)
+        }
     } elseif($Tag){
-        $returned = $script:_noteStore.Notes | Where-Object{$_.Note -like $note -and $_.Tags -contains $Tag}
+        $returned = $notes | Where-Object{$_.Note -like $note -and $_.Tags -contains $Tag}
     } else {
-        $returned = $script:_noteStore.Notes | Where-Object{$_.Note -like $note}
+        $returned = $notes | Where-Object{$_.Note -like $note}
     }
     
-    if($copy){
+    if($copy -or $Run){
         if(@($returned).count -gt 1){
-            Write-Warning "More than 1 command returned. Only the first one will be written to the clipboard"
+            Write-Warning "More than 1 command returned. Select one to continue."
+            $sel = Write-NoteSnippet -NoteSelection $returned
+            $returned = $sel
         }
+
+        if(-not $returned){
+            Write-Warning "No note found to run."
+            return
+        }
+    }
+
+    if($copy){
         if(Get-Command -Name 'Set-Clipboard' -ErrorAction SilentlyContinue){
-            $returned | Select-Object -First 1 -ExpandProperty Snippet | Set-Clipboard
+            $returned | Select-Object -First 1 -ExpandProperty Target | Set-Clipboard
         } else {
             Write-Debug "Cmdlet 'Set-Clipboard' not found."
         }
     }
 
     if($Run){
-        if(@($returned).count -gt 1){
-            Write-Warning -Message "$($returned | Select-Object -First 1 -ExpandProperty Snippet)"
-            Write-Warning -Message "More than 1 command was returned. If you continue Only the first one will be run" -WarningAction Inquire
-        }
-
-        $note = $returned | Select-Object -First 1
-        Invoke-PSNote -Note $note
+        Invoke-PSNote -Note $returned
     } else {
         $returned
     }

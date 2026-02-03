@@ -1,61 +1,126 @@
-﻿Function Remove-PSNote{
-        <#
+﻿Function Remove-PSNote {
+    <#
     .SYNOPSIS
-        Use to remove a Note from you personal store
+        Remove one or more PSNotes from the note store.
 
     .DESCRIPTION
-        Allows you to remove a snippets by name. 
+        You can remove notes by piping results from Get-PSNote, or by using the same
+        discovery parameters (Note/Tag/Catalog/SearchString) to select notes to remove.
+
+    .PARAMETER InputObject
+        Pipeline input (typically from Get-PSNote).
 
     .PARAMETER Note
-        The note you want to remove. Has to match exactly
+        Note name pattern (wildcards supported). Defaults to '*'.
 
-   
+    .PARAMETER Tag
+        Filter by tag (exact match, consistent with Get-PSNote).
+
+    .PARAMETER Catalog
+        Filter by catalog name (wildcards supported; accepts multiple values).
+
+    .PARAMETER SearchString
+        Free-text search across Note/Alias/Details/Snippet/Target/Tags.
+
+    .PARAMETER Force
+        Suppress confirmation prompts (still honors -WhatIf).
+
     .EXAMPLE
-        Remove-PSNote -Note 'creds'
-
-        Removes the Note creds
+        Get-PSNote -SearchString 'cred' -Catalog 'Work*' | Remove-PSNote
 
     .EXAMPLE
-        Get-PSNote -Name 'creds' | Remove-PSNote
+        Remove-PSNote -Note 'cred*' -Catalog 'PSNotes'
 
-        Removes the Note creds using pipeline
-    
     .EXAMPLE
-        Remove-PSNote -Note 'creds' -confirm:$false
-
-        Removes the Note creds without prompting
+        Remove-PSNote -SearchString 'token' -Catalog 'Work*','Personal*' -Force
 
     .LINK
         https://github.com/mdowst/PSNotes
     #>
-    [cmdletbinding(SupportsShouldProcess=$true,ConfirmImpact='High')]
+    [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName = 'Note')]
     param(
-        [parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$True)]
-        [string]$Note,
-        [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)]
-        [string]$Catalog,
-        [parameter(Mandatory=$false)]
+        # Pipeline input from Get-PSNote
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = 'ByObject')]
+        [object]$InputObject,
+
+        # Discovery params (match Get-PSNote)
+        [Parameter(Mandatory = $false, ParameterSetName = 'Note')]
+        [string]$Note = '*',
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'Note')]
+        [string]$Tag,
+
+        [Parameter(Mandatory = $false, ParameterSetName = 'Note')]
+        [Parameter(Mandatory = $false, ParameterSetName = 'Search')]
+        [string[]]$Catalog,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Search')]
+        [string]$SearchString,
+
+        [Parameter(Mandatory = $false)]
         [switch]$Force
     )
-    Test-PSNotesInitalize
 
-    $remove = $script:_noteStore.Notes | Where-Object{$_.Note -eq $note -and $_.Catalog -eq $catalog}
-    Write-Verbose "Note   : $($note | Out-String)"
-    Write-Verbose "remove : $($remove | Out-String)"
-    
-    
-    if($remove){
-        if($PSCmdlet.ShouldProcess(
-            ("Removing note '{0}'" -f $remove.Note),
-            ("Would you like to remove {0}?" -f $remove.Note),
-            "Confirm removal"
-        )){
-            $script:_noteStore.RemoveNote($remove.Note, $remove.Catalog)
+    begin {
+        Test-PSNotesInitalize
+
+        if ($Force -and -not $PSBoundParameters.ContainsKey('Confirm')) {
+            $ConfirmPreference = 'None'
+        }
+
+        $candidates = New-Object System.Collections.Generic.List[object]
+    }
+
+    process {
+        if ($PSCmdlet.ParameterSetName -eq 'ByObject') {
+            if ($null -ne $InputObject -and
+                $null -ne $InputObject.PSObject.Properties['Note'] -and
+                $null -ne $InputObject.PSObject.Properties['Catalog']) {
+                $candidates.Add($InputObject) | Out-Null
+            }
+            return
+        }
+
+        # Use Get-PSNote for discovery so Remove stays consistent with Get behavior.
+        $gpParams = @{}
+        if ($PSCmdlet.ParameterSetName -eq 'Search') {
+            $gpParams['SearchString'] = $SearchString
+        } else {
+            $gpParams['Note'] = $Note
+            if ($Tag) { $gpParams['Tag'] = $Tag }
+        }
+
+        if ($Catalog) { $gpParams['Catalog'] = $Catalog }
+
+        foreach ($n in @(Get-PSNote @gpParams)) {
+            $candidates.Add($n) | Out-Null
         }
     }
-    else {
-        Write-Warning "Note '$note' not found in catalog '$catalog'. No action taken."
-    }
 
-    $remove
+    end {
+        # De-dupe by Catalog+Note (Get-PSNote can return duplicates if the store contains them)
+        $unique = @{}
+        foreach ($n in $candidates) {
+            if ($null -eq $n) { continue }
+            $key = "{0}::{1}" -f $n.Catalog, $n.Note
+            if (-not $unique.ContainsKey($key)) { $unique[$key] = $n }
+        }
+
+        if ($unique.Count -eq 0) {
+            Write-Verbose "No matching notes found. No action taken."
+            return
+        }
+
+        $removed = New-Object System.Collections.Generic.List[object]
+
+        foreach ($n in $unique.Values) {
+            $desc = "Removing note '{0}' from catalog '{1}'" -f $n.Note, $n.Catalog
+            if ($PSCmdlet.ShouldProcess($desc)) {
+                $script:_noteStore.RemoveNote($n.Note, $n.Catalog)
+                $removed.Add($n) | Out-Null
+            }
+        }
+
+        $removed
+    }
 }

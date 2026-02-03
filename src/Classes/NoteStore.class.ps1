@@ -21,17 +21,17 @@ class PSNote {
         [string]$Alias,
         [string[]]$Tags
     ) {
-        $this.Note    = $Note
+        $this.Note = $Note
         $this.Snippet = $Snippet
         $this.Details = $Details
-        $this.Alias   = $Alias
-        $this.Tags    = $Tags
+        $this.Alias = $Alias
+        $this.Tags = $Tags
         $this.Catalog = 'PSNotes'
 
         if ([string]::IsNullOrEmpty($Alias)) { $this.Alias = $Note }
 
         # Default behavior (back-compat): Snippet notes use Snippet as Target
-        $this.Kind   = [PSNoteKind]::Snippet
+        $this.Kind = [PSNoteKind]::Snippet
         $this.Target = $Snippet
     }
 
@@ -44,17 +44,17 @@ class PSNote {
         [string]$Catalog,
         [bool]$Run
     ) {
-        $this.Note    = $Note
+        $this.Note = $Note
         $this.Snippet = $Snippet
         $this.Details = $Details
-        $this.Alias   = $Alias
-        $this.Tags    = $Tags
+        $this.Alias = $Alias
+        $this.Tags = $Tags
         $this.Catalog = $Catalog
-        $this.Run     = $Run
+        $this.Run = $Run
 
         if ([string]::IsNullOrEmpty($Alias)) { $this.Alias = $Note }
 
-        $this.Kind   = [PSNoteKind]::Snippet
+        $this.Kind = [PSNoteKind]::Snippet
         $this.Target = $Snippet
     }
 
@@ -69,14 +69,14 @@ class PSNote {
         [string]$Catalog,
         [bool]$Run
     ) {
-        $this.Note    = $Note
-        $this.Kind    = $Kind
-        $this.Target  = $Target
+        $this.Note = $Note
+        $this.Kind = $Kind
+        $this.Target = $Target
         $this.Details = $Details
-        $this.Alias   = $Alias
-        $this.Tags    = $Tags
+        $this.Alias = $Alias
+        $this.Tags = $Tags
         $this.Catalog = $Catalog
-        $this.Run     = $Run
+        $this.Run = $Run
 
         if ([string]::IsNullOrEmpty($Alias)) { $this.Alias = $Note }
 
@@ -87,10 +87,10 @@ class PSNote {
     }
 
     PSNote([object]$object) {
-        $this.Note    = $object.Note
+        $this.Note = $object.Note
         $this.Details = $object.Details
-        $this.Alias   = $object.Alias
-        $this.Tags    = $object.Tags
+        $this.Alias = $object.Alias
+        $this.Tags = $object.Tags
         $this.Catalog = $object.Catalog
 
         # Run (existing behavior)
@@ -140,7 +140,7 @@ class PSNote {
     # Optional helper: what do we show in menus?
     [string] GetDisplayText() {
         $out = switch ($this.Kind) {
-            Script  { "$($this.Alias) (Script)" }
+            Script { "$($this.Alias) (Script)" }
             default { "$($this.Alias)" }
         }
         return $out
@@ -157,7 +157,7 @@ class NoteCatalog {
     [System.Collections.Generic.List[PSNote]] $Notes
 
     NoteCatalog() {
-        [NoteCatalog]::InitializeEnvironment()
+        [NoteStore]::InitializeEnvironment()
         $this.Path = [NoteCatalog]::ResolvePath('PSNotes', $env:PSNOTES_HOME)
         $this.Catalog = 'PSNotes'
         $this.StoreVersion = [NoteCatalog]::CurrentStoreVersion
@@ -166,7 +166,7 @@ class NoteCatalog {
     }
 
     NoteCatalog([string] $Catalog) {
-        [NoteCatalog]::InitializeEnvironment()
+        [NoteStore]::InitializeEnvironment()
         $this.Path = [NoteCatalog]::ResolvePath($Catalog, $env:PSNOTES_HOME)
         $this.Catalog = $Catalog
         $this.StoreVersion = [NoteCatalog]::CurrentStoreVersion
@@ -178,17 +178,6 @@ class NoteCatalog {
         $this.Path = [NoteCatalog]::ResolvePath('PSNotes', $env:PSNOTES_HOME)
         $this.StoreVersion = [NoteCatalog]::CurrentStoreVersion
         $this.Notes = [System.Collections.Generic.List[PSNote]]::new()
-    }
-
-    static [void] InitializeEnvironment() {
-        if ([string]::IsNullOrEmpty($env:PSNOTES_HOME)) {
-            if (Get-Variable -Name IsLinux -Scope Global -ValueOnly -ErrorAction SilentlyContinue) {
-                $env:PSNOTES_HOME = '/home/'
-            } 
-            else {
-                $env:PSNOTES_HOME = Join-Path $env:APPDATA 'PSNotes'
-            } 
-        }
     }
 
     static [string] ResolvePath() {
@@ -480,6 +469,7 @@ class NoteStore {
     [NoteConfigStore] $Config
 
     NoteStore() {
+        [NoteStore]::InitializeEnvironment()
         $this.Notes = [System.Collections.Generic.List[PSNote]]::new()
         $this.Catalogs = [System.Collections.Generic.List[NoteCatalog]]::new()
 
@@ -490,6 +480,17 @@ class NoteStore {
         $this.Config = [NoteConfigStore]::new()
 
         $this.InitializeAliases()
+    }
+
+    static [void] InitializeEnvironment() {
+        if ([string]::IsNullOrEmpty($env:PSNOTES_HOME)) {
+            if (Get-Variable -Name IsLinux -Scope Global -ValueOnly -ErrorAction SilentlyContinue) {
+                $env:PSNOTES_HOME = '/home/'
+            } 
+            else {
+                $env:PSNOTES_HOME = Join-Path $env:APPDATA 'PSNotes'
+            } 
+        }
     }
 
     [void] LoadCatalog([string] $catalogName) {

@@ -18,18 +18,33 @@ Function Write-NoteSnippet {
     } 
     $promptMenu = $noteMenu | Format-Table Nbr, Note, Alias, Details, Tags -AutoSize | Out-String
 
-    $Prompt = "$($promptMenu)Enter the number to run (or leave blank to cancel) and hit [Enter]"
-    $Selection = Read-Host -Prompt $Prompt
+    $Prompt = "Enter the number to run (or leave blank to cancel) and hit [Enter]"
+    $promptError = $false
+    do {
+        Write-Host $promptMenu
+        if ( $promptError ) {
+            Write-Host "The select must a number between 1 and $($NoteSelection.Count)" -ForegroundColor Red
+        }
+        $Selection = Read-Host -Prompt $Prompt
+        if ([string]::IsNullOrEmpty($Selection)) {
+            $promptError = $false
+        }
+        elseif (-not [int]::TryParse($Selection, [ref]$null)) {
+            $promptError = $true
+        }
+        elseif ([int]$Selection -gt $NoteSelection.Count -or [int]$Selection -lt 1) {
+            $promptError = $true
+        }
+        else {
+            $promptError = $false
+        }
+        
+    }while ($promptError)
+    
     if ([string]::IsNullOrEmpty($Selection)) {
         $null
     }
-    elseif (-not [int]::TryParse($Selection, [ref]$null)) {
-        Write-Error "The select must a number between 1 and $($NoteSelection.Count)"
-    }
-    elseif ([int]$Selection -gt $NoteSelection.Count -or [int]$Selection -lt 1) {
-        Write-Error "The select must be between 1 and $($NoteSelection.Count)"
-    }
     else {
-        $NoteSelection[$Selection - 1].Snippet
+        $NoteSelection[$Selection - 1]
     }
 }

@@ -1,0 +1,30 @@
+{
+  "StoreVersion": 1,
+  "Notes": [
+    {
+      "Note": "az-login",
+      "Target": "Connect-AzAccount",
+      "Details": "Azure login",
+      "Alias": "azlogin",
+      "Tags": [
+        "Azure",
+        "Auth"
+      ],
+      "Catalog": "Personal",
+      "Run": true
+    }
+    ,
+    {
+      "Note": "day-one",
+      "Target": "Write-Output day",
+      "Details": "Notes about day",
+      "Alias": "day",
+      "Tags": [
+        "Journal",
+        "Auth"
+      ],
+      "Catalog": "Personal",
+      "Run": true
+    }
+  ]
+}
