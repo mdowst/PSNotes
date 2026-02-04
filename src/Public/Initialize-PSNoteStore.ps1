@@ -1,29 +1,11 @@
-Function Initialize-PSNotes {
+Function Initialize-PSNoteStore {
     [CmdletBinding()]
     param()
-    # Global Variables
-
-    if ([string]::IsNullOrEmpty($env:PSNOTES_HOME)) {
-        if ($IsLinux) {
-            $env:PSNOTES_HOME = '/home/'
-        } 
-        else {
-            $env:PSNOTES_HOME = Join-Path $env:APPDATA 'PSNotes'
-        } 
-    }
-    Write-Verbose "User PSNotes Path: $env:PSNOTES_HOME"
-
-    if ($global:IsPesterTest) {
-        $env:PSNOTES_HOME = Join-Path $env:PSNOTES_HOME 'Pester'
-        Get-ChildItem -Path $env:PSNOTES_HOME -Filter '*.json' | Remove-Item -Force
-    }
-
-    #$env:PSNotesUserJsonFile = Join-Path $env:PSNOTES_HOME 'PSNotes.json'
-    $env:PSNotesRemoteJsonFile = Join-Path $env:PSNOTES_HOME 'RemotePSNotesConnections.json'
 
     # Load all commands to noteObjects
-    #Initialize-PSNotesRemoteJsonFile
+    #Initialize-PSNoteStoreRemoteJsonFile
     $script:_noteStore = [NoteStore]::new()
+    Write-Verbose "User PSNotes Path: $env:PSNOTES_HOME"
     Get-ChildItem -Path $env:PSNOTES_HOME -Filter '*.json' | Where-Object{ $_.BaseName -ne 'PSNotes' } | ForEach-Object {
         $script:_noteStore.LoadCatalog($_.BaseName)
     }

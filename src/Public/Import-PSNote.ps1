@@ -59,5 +59,5 @@ Function Import-PSNote{
     Export-PSNote -NoteObject $ImportObjects -Path $CatalogPath -Append 
 
     # Reinitialize the Json files to reload everything
-    Initialize-PSNotesJsonFile
+    Initialize-PSNoteStoreJsonFile
 }

@@ -1,5 +1,9 @@
 # Pester tests for Get-PSNote
 Get-Module PSNotes | Remove-Module -Force
+$Global:TopLevel = $PSScriptRoot
+while ( -not (Test-Path (Join-Path $Global:TopLevel 'src'))) {
+    $Global:TopLevel = Split-Path $Global:TopLevel -Parent
+}
 BeforeAll {
     Set-StrictMode -Version Latest
     
@@ -11,11 +15,9 @@ BeforeAll {
     $script:OriginalPSNotesHome = $env:PSNOTES_HOME
     $env:PSNOTES_HOME = $script:TestDir
 
-    # Define a fake note store for testing
-    $fakeJson = Join-Path -Path $PSScriptRoot -ChildPath 'Mocks\TestNoteStore.json'
-    Copy-Item -Path $fakeJson -Destination (Join-Path -Path $env:PSNOTES_HOME -ChildPath 'PSNotes.json') -Force
+    $script:MockPath = Join-Path -Path $PSScriptRoot -ChildPath 'Mocks'
 
-    Import-Module '.\bin\PSNotes\0.2.0.1\PSNotes.psd1' -Force
+    Import-Module (Join-Path $Global:TopLevel 'bin\PSNotes\0.2.0.1\PSNotes.psd1') -Force
 }
 
 AfterAll {
@@ -29,7 +31,14 @@ AfterAll {
 }
 
 Describe "Get-PSNote" {
+    BeforeEach {
+        # Define a fake note store for testing
+        Copy-Item -Path (Join-Path -Path $script:MockPath -ChildPath 'TestPersonalStore.json') -Destination (Join-Path -Path $env:PSNOTES_HOME -ChildPath 'Personal.json') -Force
+        Copy-Item -Path (Join-Path -Path $script:MockPath -ChildPath 'TestWorkStore.json') -Destination (Join-Path -Path $env:PSNOTES_HOME -ChildPath 'Work.json') -Force
 
+        Initialize-PSNoteStore
+    }
+    
     Context "Note parameter set" {
 
         It "returns all notes when called with no parameters" {

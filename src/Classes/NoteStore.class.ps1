@@ -5,14 +5,13 @@ enum PSNoteKind {
 # Create the PSNote class
 class PSNote {
     [string]$Note
-    [string]$Snippet          # legacy/back-compat (old stores + older code paths)
+    [string]$Snippet
     [string]$Details
     [string]$Alias
     [string[]]$Tags
     [string]$Catalog
     [bool]$Run = $false
     [PSNoteKind]$Kind = [PSNoteKind]::Snippet
-    [string]$Target           # canonical executable/content (snippet text or script path)
 
     PSNote(
         [string]$Note,
@@ -30,9 +29,7 @@ class PSNote {
 
         if ([string]::IsNullOrEmpty($Alias)) { $this.Alias = $Note }
 
-        # Default behavior (back-compat): Snippet notes use Snippet as Target
         $this.Kind = [PSNoteKind]::Snippet
-        $this.Target = $Snippet
     }
 
     PSNote(
@@ -55,14 +52,12 @@ class PSNote {
         if ([string]::IsNullOrEmpty($Alias)) { $this.Alias = $Note }
 
         $this.Kind = [PSNoteKind]::Snippet
-        $this.Target = $Snippet
     }
 
-    # New convenience constructor for Kind/Target (optional but nice)
     PSNote(
         [string]$Note,
         [PSNoteKind]$Kind,
-        [string]$Target,
+        [string]$Snippet,
         [string]$Details,
         [string]$Alias,
         [string[]]$Tags,
@@ -71,7 +66,7 @@ class PSNote {
     ) {
         $this.Note = $Note
         $this.Kind = $Kind
-        $this.Target = $Target
+        $this.Snippet = $Snippet
         $this.Details = $Details
         $this.Alias = $Alias
         $this.Tags = $Tags
@@ -79,25 +74,22 @@ class PSNote {
         $this.Run = $Run
 
         if ([string]::IsNullOrEmpty($Alias)) { $this.Alias = $Note }
-
-        # Keep legacy Snippet populated for Snippet kind so old code keeps working
-        if ($this.Kind -eq [PSNoteKind]::Snippet) {
-            $this.Snippet = $Target
-        }
     }
 
     PSNote([object]$object) {
-        $this.Note = $object.Note
-        $this.Details = $object.Details
-        $this.Alias = $object.Alias
-        $this.Tags = $object.Tags
-        $this.Catalog = $object.Catalog
+        $this.Note = $this.GetObjectProperty($object, 'Note')
+        $this.Details = $this.GetObjectProperty($object, 'Details')
+        $this.Alias = $this.GetObjectProperty($object, 'Alias')
+        $this.Tags = $this.GetObjectProperty($object, 'Tags')
+        $this.Catalog = $this.GetObjectProperty($object, 'Catalog')
+        $this.Snippet = $this.GetObjectProperty($object, 'Snippet')
 
         # Run (existing behavior)
+        $objRun = $this.GetObjectProperty($object, 'Run')
         $tryRun = $false
-        if ([bool]::TryParse($object.Run, [ref]$tryRun)) { $this.Run = $tryRun } else { $this.Run = $false }
+        if ([bool]::TryParse($objRun, [ref]$tryRun)) { $this.Run = $tryRun } else { $this.Run = $false }
 
-        if ([string]::IsNullOrEmpty($this.Alias)) { $this.Alias = $object.Note }
+        if ([string]::IsNullOrEmpty($this.Alias)) { $this.Alias = $this.GetObjectProperty($object, 'Note') }
 
         # --- Kind (new, but tolerate missing/invalid) ---
         $kindText = $null
@@ -112,25 +104,13 @@ class PSNote {
             try { $this.Kind = [PSNoteKind]::$kindText }
             catch { $this.Kind = [PSNoteKind]::Snippet }
         }
+    }
 
-        # --- Target (new canonical field; fall back to Snippet from older stores) ---
-        $targetField = $null
-        if ($null -ne $object.PSObject.Properties['Target']) {
-            $targetField = [string]$object.Target
+    [object] GetObjectProperty([object]$object, [string]$propertyName) {
+        if ($null -ne $object.PSObject.Properties[$propertyName]) {
+            return $object.$propertyName
         }
-        if ([string]::IsNullOrWhiteSpace($targetField) -and $null -ne $object.PSObject.Properties['Snippet']) {
-            $targetField = [string]$object.Snippet
-        }
-        $this.Target = $targetField
-
-        # Maintain legacy Snippet for old callers
-        if ($this.Kind -eq [PSNoteKind]::Snippet) {
-            $this.Snippet = $this.Target
-        }
-        else {
-            # Script notes: Snippet is not the canonical payload
-            $this.Snippet = $object.Snippet  # keep whatever was there (often null), harmless
-        }
+        return $null
     }
 
     [string] GetKey() {
@@ -255,10 +235,11 @@ class NoteCatalog {
 
         if (-not [string]::IsNullOrWhiteSpace($Json)) {
             $data = $Json | ConvertFrom-Json -ErrorAction Stop
+            $dataStoreVersion = $data.psobject.Properties | Where-Object { $_.Name -eq 'StoreVersion' } | Select-Object -ExpandProperty Value
 
             # Migration / backward-compat:
             # If older store was just an array of notes, wrap it.
-            $jsonData = if ($data.StoreVersion -eq $this.StoreVersion) {
+            $jsonData = if ($dataStoreVersion -eq $this.StoreVersion) {
                 $data.Notes
             }
             else {
@@ -517,6 +498,10 @@ class NoteStore {
     [void] InitializeAliases() {
         $this.Notes | ForEach-Object {
             Write-Debug "Alias : $($_.Alias)"
+            if([string]::IsNullOrWhiteSpace($_.Alias)) { 
+                Write-Warning "Note '$( $_.Note )' has an empty Alias. Skipping alias creation."
+                return 
+            }
             Set-Alias -Name $_.Alias -Value Get-PSNoteAlias -Scope Global -Force
         }
     }
@@ -558,16 +543,24 @@ class NoteStore {
     }
 
     [void] UpdateNote([PSNote] $note) {
-        $update = $this.Notes | Where-Object { $_.Note -eq $note.Note }
-        if ($update.Catalog -eq $note.Catalog) {
-            $this.RemoveNote($note.Note, $note.Catalog)
+        $noteNote = if ($null -ne $note.PSObject.Properties['Note']) {
+            [string]$note.Note
+        }
+        $noteCatalog = if ($null -ne $note.PSObject.Properties['Kind']) {
+            [string]$note.Catalog
+        }
+        $update = $this.Notes | Where-Object { $_.Note -eq $noteNote }
+        
+        if(-not $update) {
+            Write-Warning "Note '$($noteNote)' not found in catalog '$($noteCatalog)'. No action taken."
+            return
+        }
+        elseif ($update.Catalog -eq $noteCatalog) {
+            $this.RemoveNote($noteNote, $noteCatalog)
             $this.AddNote($note)
         }
-        elseif ($update) {
-            Write-Warning "Note '$($note.Note)' exists in catalog '$($update.Catalog)'. Cannot update note in different catalog at this time '$($note.Catalog)'. No action taken."
-        }
         else {
-            Write-Warning "Note '$($note.Note)' not found in catalog '$($note.Catalog)'. No action taken."
+            Write-Warning "Note '$($noteNote)' exists in catalog '$($update.Catalog)'. Cannot update note in different catalog at this time '$($noteCatalog)'. No action taken."
         }
     }
 

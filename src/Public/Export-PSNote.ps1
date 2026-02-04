@@ -49,7 +49,7 @@ Function Export-PSNote{
     begin{
         Test-PSNotesInitalize
         [System.Collections.Generic.List[PSNoteExport]] $ExportObjects = @()
-        Write-Verbose "$($noteObject | FT | Out-String)"
+        Write-Verbose "$($noteObject | Format-Table | Out-String)"
     }
     process{
         # If All add all objects otherwise only add those passed
@@ -60,7 +60,7 @@ Function Export-PSNote{
         }
     }
     end{
-        Write-Verbose "$($ExportObjects | FT | Out-String)"
+        Write-Verbose "$($ExportObjects | Format-Table | Out-String)"
         # if append add append objects before exporting
         if($Append){
             if(-not (Test-Path $path)){

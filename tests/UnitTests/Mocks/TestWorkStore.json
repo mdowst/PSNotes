@@ -3,7 +3,7 @@
   "Notes": [
     {
       "Note": "creds",
-      "Target": "Get-Credential",
+      "Snippet": "Get-Credential",
       "Details": "Credential helpers",
       "Alias": "creds",
       "Tags": [
@@ -11,18 +11,20 @@
         "Auth"
       ],
       "Catalog": "Work",
-      "Run": false
+      "Run": false,
+      "Kind": 0
     },
     {
       "Note": "creds2",
-      "Target": "Write-Output creds2",
+      "Snippet": "Write-Output creds2",
       "Details": "More creds",
       "Alias": "c2",
       "Tags": [
         "Auth"
       ],
       "Catalog": "Work",
-      "Run": false
+      "Run": false,
+      "Kind": 0
     }
   ]
 }

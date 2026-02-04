@@ -46,28 +46,34 @@ Function Set-PSNote {
     
     
     #>
-    [cmdletbinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', DefaultParameterSetName = "Note")]
+    [cmdletbinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', DefaultParameterSetName = "Snippet")]
     param(
         [parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$True)]
         [string]$Note,
         [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)]
         [string]$Catalog,
-        [parameter(Mandatory = $false, ParameterSetName = "Snippet")]
+        [parameter(Mandatory = $false, ParameterSetName = "Snippet",ValueFromPipelineByPropertyName=$True)]
         [string]$Snippet,
-        [parameter(Mandatory = $false, ParameterSetName = "ScriptBlock")]
+        [parameter(Mandatory = $false, ParameterSetName = "ScriptBlock",ValueFromPipelineByPropertyName=$True)]
         [ScriptBlock]$ScriptBlock,
-        [parameter(Mandatory = $false)]
+        [parameter(Mandatory = $false,ValueFromPipelineByPropertyName=$True)]
         [string]$Details,
-        [parameter(Mandatory = $false)]
+        [parameter(Mandatory = $false,ValueFromPipelineByPropertyName=$True)]
         [string]$Alias,
-        [parameter(Mandatory = $false)]
+        [parameter(Mandatory = $false,ValueFromPipelineByPropertyName=$True)]
         [string[]]$Tags
     )
-    Test-PSNotesInitalize
-    $check = $script:_noteStore.Notes | Where-Object { $_.Note -eq $Note -and $_.Catalog -eq $Catalog }
-    if (-not $check) {
-        Write-Warning "The note '$Note' does not exist in catalog '$Catalog'. An attempt will be made to create it."
-    } 
+    
+    begin {
+        Test-PSNotesInitalize
+    }
+    
+    process {
+        $check = $script:_noteStore.Notes | Where-Object { $_.Note -eq $Note -and $_.Catalog -eq $Catalog }
+        if (-not $check) {
+            Write-Warning "The note '$Note' does not exist in catalog '$Catalog'. An attempt will be made to create it."
+        } 
 
-    New-PSNote @PSBoundParameters -Force
+        New-PSNote @PSBoundParameters -Force
+    }
 }

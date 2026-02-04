@@ -101,7 +101,6 @@
             $_.Alias   -like "*$SearchString*" -or
             $_.Details -like "*$SearchString*" -or
             $_.Snippet -like "*$SearchString*" -or
-            $_.Target  -like "*$SearchString*" -or
             ($_.Tags | Where-Object { $_ -like "*$SearchString*" } | Select-Object -First 1)
         }
     } elseif($Tag){
@@ -125,7 +124,7 @@
 
     if($copy){
         if(Get-Command -Name 'Set-Clipboard' -ErrorAction SilentlyContinue){
-            $returned | Select-Object -First 1 -ExpandProperty Target | Set-Clipboard
+            $returned | Select-Object -First 1 -ExpandProperty Snippet | Set-Clipboard
         } else {
             Write-Debug "Cmdlet 'Set-Clipboard' not found."
         }

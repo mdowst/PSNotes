@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>PSNotes</id>
+        <version>1.0.0.0</version>
+        <description>PSNotes</description>
+        <authors>Matthew Dowst</authors>
+        <tags>PSModule</tags>
+    </metadata>
+</package>

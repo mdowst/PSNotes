@@ -20,7 +20,7 @@
         Filter by catalog name (wildcards supported; accepts multiple values).
 
     .PARAMETER SearchString
-        Free-text search across Note/Alias/Details/Snippet/Target/Tags.
+        Free-text search across Note/Alias/Details/Snippet/Tags.
 
     .PARAMETER Force
         Suppress confirmation prompts (still honors -WhatIf).

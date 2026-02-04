@@ -7,6 +7,7 @@ Function Write-NoteSnippet {
     An array of PSNote objects to create a menu with
     
     #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     [cmdletbinding()]
     param(
         [PSNote[]]$NoteSelection

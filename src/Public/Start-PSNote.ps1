@@ -1,5 +1,8 @@
 function Start-PSNote {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseProcessBlockForPipelineCommand', '')]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '')]
     param()
 
     # ---------- Init ----------
@@ -45,7 +48,7 @@ function Start-PSNote {
 
     while (-not $exitUI) {
         Clear-Host
-        Write-PSNotesHeaderBar -Store $Store -State $state
+        Write-PSNotesHeaderBar -State $state
 
         switch ($state.Mode) {
             'AllCatalogs' {
@@ -203,7 +206,7 @@ function Start-PSNote {
                                 }
                             }
                             'Tags' {
-                                $tags = Get-PSNotesTags -Notes @($Store.Notes)
+                                $tags = Get-PSNotesTag -Notes @($Store.Notes)
                                 if ($idx -ge 0 -and $idx -lt $tags.Count) {
                                     Set-PSNotesTagScope -State $state -Tag $tags[$idx] -AllNotes @($Store.Notes)
                                 }
@@ -256,6 +259,7 @@ function Start-PSNote {
 # -----------------------------
 
 function Set-PSNotesCatalogScope {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '')]
     param($State, [NoteCatalog]$Catalog)
 
     $State.Catalog = $Catalog
@@ -265,6 +269,7 @@ function Set-PSNotesCatalogScope {
 }
 
 function Set-PSNotesTagScope {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseShouldProcessForStateChangingFunctions', '')]
     param($State, [string]$Tag, [PSNote[]]$AllNotes)
 
     $State.Tag = $Tag
@@ -301,9 +306,8 @@ function Invoke-PSNotesSearch {
 
 function Write-PSNotesHeaderBar {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(
-        [Parameter(Mandatory)]
-        [NoteStore] $Store,
         [Parameter(Mandatory)]
         $State,
 
@@ -364,6 +368,7 @@ function Get-PSNotesScopeText {
 
 function Write-PSNotesFooter {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(
         [Parameter(Mandatory)]
         [hashtable[]] $Items,
@@ -419,6 +424,7 @@ function Write-PSNotesFooter {
 }
 
 function Write-PSNotesCatalogList {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param([NoteStore]$Store)
 
     $cats = @($Store.Catalogs | Sort-Object Catalog)
@@ -432,7 +438,7 @@ function Write-PSNotesCatalogList {
     }
 }
 
-function Get-PSNotesTags {
+function Get-PSNotesTag {
     param([PSNote[]]$Notes)
 
     @(
@@ -446,9 +452,10 @@ function Get-PSNotesTags {
 }
 
 function Write-PSNotesTagList {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param([PSNote[]]$Notes)
 
-    $tags = Get-PSNotesTags -Notes $Notes
+    $tags = Get-PSNotesTag -Notes $Notes
     Write-Host "Tags" -ForegroundColor Cyan
     Write-Host ""
 
@@ -458,6 +465,7 @@ function Write-PSNotesTagList {
 }
 
 function Write-PSNotesNoteList {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(
         [PSNote[]]$Notes,
         [string]$Title,
@@ -487,6 +495,7 @@ function Write-PSNotesNoteList {
 }
 
 function Write-PSNotePreview {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param([PSNote]$Note)
 
     if (-not $Note) { return }
@@ -500,12 +509,23 @@ function Write-PSNotePreview {
     Write-Host $Note.Snippet
 }
 
+function Write-PSNotePreview {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+    param($Note)
+
+    Write-Host ""
+    Write-Host "Alias: $($Note.Alias)" -ForegroundColor Cyan
+    Write-Host "Tags : $($Note.Tags -join ', ')" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host $Note.Snippet -ForegroundColor White
+}
 # -----------------------------
 # Copy / Execute (prefer existing cmdlets)
 # -----------------------------
 
 function Invoke-PSNotesExecution {
     [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingInvokeExpression', '')]
     param([PSNote]$Note)
 
     if (-not $Note) { return }

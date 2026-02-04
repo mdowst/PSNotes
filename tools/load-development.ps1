@@ -19,7 +19,7 @@ $psm1Script = {
     }
 
     # Load all commands to noteObjects
-    Initialize-PSNotes
+    Initialize-PSNoteStore
 }
 
 $psm1Script.ToString() | Out-File -FilePath $psm1 -Encoding UTF8 -Force

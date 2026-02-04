@@ -59,19 +59,19 @@ Function Invoke-PSNote {
     
     switch ($Note.Kind) {
         Script {
-            if ([string]::IsNullOrWhiteSpace($Note.Target)) {
-                throw "Cannot invoke Script note '$($Note.Note)': Target is empty."
+            if ([string]::IsNullOrWhiteSpace($Note.Snippet)) {
+                throw "Cannot invoke Script note '$($Note.Note)': Path is empty."
             }
-            if (-not (Test-Path -LiteralPath $Note.Target)) {
-                throw "Cannot invoke Script note '$($Note.Note)': Script file not found at path: $($Note.Target)"
+            if (-not (Test-Path -LiteralPath $Note.Snippet)) {
+                throw "Cannot invoke Script note '$($Note.Note)': Script file not found at path: $($Note.Snippet)"
             }
-            & $Note.Target
+            & $Note.Snippet
         }
         Snippet {
-            if ([string]::IsNullOrWhiteSpace($Note.Target)) {
+            if ([string]::IsNullOrWhiteSpace($Note.Snippet)) {
                 throw "Cannot invoke Snippet note '$($Note.Note)': Snippet is empty."
             }
-            $scriptBlock = [ScriptBlock]::Create($Note.Target)
+            $scriptBlock = [ScriptBlock]::Create($Note.Snippet)
             Invoke-Command -ScriptBlock $scriptBlock
         }
         default {

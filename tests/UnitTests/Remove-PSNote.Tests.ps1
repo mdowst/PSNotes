@@ -1,5 +1,9 @@
 # Pester tests for Remove-PSNote
 Get-Module PSNotes | Remove-Module -Force
+$Global:TopLevel = $PSScriptRoot
+while ( -not (Test-Path (Join-Path $Global:TopLevel 'src'))) {
+    $Global:TopLevel = Split-Path $Global:TopLevel -Parent
+}
 BeforeAll {
     Set-StrictMode -Version Latest
     
@@ -10,12 +14,9 @@ BeforeAll {
     # Set up test environment variable
     $script:OriginalPSNotesHome = $env:PSNOTES_HOME
     $env:PSNOTES_HOME = $script:TestDir
+    $script:MockPath = Join-Path -Path $PSScriptRoot -ChildPath 'Mocks'
 
-    # Define a fake note store for testing
-    Copy-Item -Path (Join-Path -Path $PSScriptRoot -ChildPath 'Mocks\TestPersonalStore.json') -Destination (Join-Path -Path $env:PSNOTES_HOME -ChildPath 'Personal.json') -Force
-    Copy-Item -Path (Join-Path -Path $PSScriptRoot -ChildPath 'Mocks\TestWorkStore.json') -Destination (Join-Path -Path $env:PSNOTES_HOME -ChildPath 'Work.json') -Force
-
-    Import-Module '.\bin\PSNotes\0.2.0.1\PSNotes.psd1' -Force
+    Import-Module (Join-Path $Global:TopLevel 'bin\PSNotes\0.2.0.1\PSNotes.psd1') -Force
 }
 
 AfterAll {
@@ -31,10 +32,10 @@ AfterAll {
 Describe "Remove-PSNote" {
     BeforeEach {
         # Define a fake note store for testing
-        Copy-Item -Path (Join-Path -Path $PSScriptRoot -ChildPath 'Mocks\TestPersonalStore.json') -Destination (Join-Path -Path $env:PSNOTES_HOME -ChildPath 'Personal.json') -Force
-        Copy-Item -Path (Join-Path -Path $PSScriptRoot -ChildPath 'Mocks\TestWorkStore.json') -Destination (Join-Path -Path $env:PSNOTES_HOME -ChildPath 'Work.json') -Force
+        Copy-Item -Path (Join-Path -Path $script:MockPath -ChildPath 'TestPersonalStore.json') -Destination (Join-Path -Path $env:PSNOTES_HOME -ChildPath 'Personal.json') -Force
+        Copy-Item -Path (Join-Path -Path $script:MockPath -ChildPath 'TestWorkStore.json') -Destination (Join-Path -Path $env:PSNOTES_HOME -ChildPath 'Work.json') -Force
 
-        Initialize-PSNotes
+        Initialize-PSNoteStore
     }
 
     Context "Pipeline (ByObject parameter set)" {

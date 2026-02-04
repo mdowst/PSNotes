@@ -3,7 +3,7 @@
   "Notes": [
     {
       "Note": "az-login",
-      "Target": "Connect-AzAccount",
+      "Snippet": "Connect-AzAccount",
       "Details": "Azure login",
       "Alias": "azlogin",
       "Tags": [
@@ -11,12 +11,12 @@
         "Auth"
       ],
       "Catalog": "Personal",
-      "Run": true
-    }
-    ,
+      "Run": true,
+      "Kind": 0
+    },
     {
       "Note": "day-one",
-      "Target": "Write-Output day",
+      "Snippet": "Write-Output day",
       "Details": "Notes about day",
       "Alias": "day",
       "Tags": [
@@ -24,7 +24,8 @@
         "Auth"
       ],
       "Catalog": "Personal",
-      "Run": true
+      "Run": true,
+      "Kind": 0
     }
   ]
 }

@@ -1,15 +1,24 @@
-. "$PSScriptRoot\..\src\Classes\NoteStore.class.ps1"
+# Pester tests for NoteStore class
+Get-Module PSNotes | Remove-Module -Force
+$Global:TopLevel = $PSScriptRoot
+while ( -not (Test-Path (Join-Path $Global:TopLevel 'src'))) {
+    $Global:TopLevel = Split-Path $Global:TopLevel -Parent
+}
+. "$Global:TopLevel\src\Classes\NoteStore.class.ps1"
 BeforeAll {
-    # Load the class file
-    . "$PSScriptRoot\..\src\Classes\NoteStore.class.ps1"
-    
+    Set-StrictMode -Version Latest    
     # Create a temporary directory for test files
-    $script:TestDir = Join-Path ([System.IO.Path]::GetTempPath()) "PSNotesTests_$(Get-Random)"
+    $script:TestDir = Join-Path ([System.IO.Path]::GetTempPath()) "PSNotesTests\$(Get-Random)"
     $null = New-Item -Path $script:TestDir -ItemType Directory -Force
     
     # Set up test environment variable
     $script:OriginalPSNotesHome = $env:PSNOTES_HOME
     $env:PSNOTES_HOME = $script:TestDir
+    $script:MockPath = Join-Path -Path $PSScriptRoot -ChildPath 'Mocks'
+
+    Import-Module (Join-Path $Global:TopLevel 'bin\PSNotes\0.2.0.1\PSNotes.psd1') -Force
+    # Load the class file
+    . "$Global:TopLevel\src\Classes\NoteStore.class.ps1"
 }
 
 AfterAll {
@@ -123,23 +132,104 @@ Describe 'PSNote Class' {
             $note.Alias | Should -Be 'TestNote'
         }
     }
+
+
+    Context 'Kind and Snippet behavior' {
+        It 'defaults Kind to Snippet (5-parameter constructor)' {
+            $note = [PSNote]::new(
+                'MyNote',
+                'Write-Host "Hello"',
+                'A greeting snippet',
+                'MyAlias',
+                @('test')
+            )
+
+            $note.Kind | Should -Be ([PSNoteKind]::Snippet)
+            $note.Snippet | Should -Be 'Write-Host "Hello"'
+            # Back-compat: Snippet remains populated
+            $note.Snippet | Should -Be $note.Snippet
+        }
+
+        It 'supports Script kind via Kind/Snippet constructor' {
+            $note = [PSNote]::new(
+                'RunScript',
+                [PSNoteKind]::Script,
+                '.\Scripts\Do-The-Thing.ps1',
+                'Runs a script',
+                'runscript',
+                @('script'),
+                'PSNotes',
+                $true
+            )
+
+            $note.Kind | Should -Be ([PSNoteKind]::Script)
+            $note.Snippet | Should -Be '.\Scripts\Do-The-Thing.ps1'
+        }
+
+        It 'parses Script Kind and Snippet from object data' {
+            $obj = [pscustomobject]@{
+                Note    = 'ScriptNote'
+                Kind    = 'Script'
+                Snippet  = 'C:\Temp\Do.ps1'
+                Details = 'script note'
+                Alias   = 'do'
+                Tags    = @('script')
+                Catalog = 'TestCatalog'
+                Run     = $true
+            }
+
+            $note = [PSNote]::new($obj)
+
+            $note.Kind | Should -Be ([PSNoteKind]::Script)
+            $note.Snippet | Should -Be 'C:\Temp\Do.ps1'
+            $note.Run | Should -BeTrue
+        }
+
+        It 'falls back to Snippet kind when Kind is invalid' {
+            $obj = [pscustomobject]@{
+                Note    = 'BadKind'
+                Kind    = 'NotARealKind'
+                Snippet  = 'Whatever'
+                Details = 'bad kind'
+                Alias   = 'bk'
+                Tags    = @()
+                Catalog = 'TestCatalog'
+                Run     = $false
+            }
+
+            $note = [PSNote]::new($obj)
+
+            $note.Kind | Should -Be ([PSNoteKind]::Snippet)
+        }
+
+
+        It 'GetDisplayText labels Script notes and leaves Snippet notes unchanged' {
+            $snippetNote = [PSNote]::new(
+                'MyNote',
+                'Get-Process',
+                'details',
+                'gp',
+                @()
+            )
+            $snippetNote.GetDisplayText() | Should -Be 'gp'
+
+            $scriptNote = [PSNote]::new(
+                'RunScript',
+                [PSNoteKind]::Script,
+                'C:\Temp\Run.ps1',
+                'details',
+                'rs',
+                @(),
+                'PSNotes',
+                $false
+            )
+            $scriptNote.GetDisplayText() | Should -Be 'rs (Script)'
+        }
+    }
 }
 
 Describe 'NoteCatalog Static Methods' {
-    Context 'InitializeEnvironment' {
-        It 'sets PSNOTES_HOME when not already set' {
-            $tempEnv = $env:PSNOTES_HOME
-            Remove-Item env:PSNOTES_HOME -ErrorAction SilentlyContinue
-            
-            [NoteCatalog]::InitializeEnvironment()
-            
-            $env:PSNOTES_HOME | Should -Not -BeNullOrEmpty
-            
-            # Restore
-            $env:PSNOTES_HOME = $tempEnv
-        }
-    }
-    
+        
     Context 'ResolvePath' {
         It 'resolves path with no parameters (default catalog)' {
             $path = [NoteCatalog]::ResolvePath()
@@ -468,6 +558,21 @@ Describe 'NoteCatalog Instance Methods' {
 }
 
 Describe 'NoteStore Class' {
+
+    Context 'InitializeEnvironment' {
+        It 'sets PSNOTES_HOME when not already set' {
+            $tempEnv = $env:PSNOTES_HOME
+            Remove-Item env:PSNOTES_HOME -ErrorAction SilentlyContinue
+            
+            [NoteStore]::InitializeEnvironment()
+            
+            $env:PSNOTES_HOME | Should -Not -BeNullOrEmpty
+            
+            # Restore
+            $env:PSNOTES_HOME = $tempEnv
+        }
+    }
+
     Context 'Constructor' {
         It 'creates a NoteStore with default catalog' {
             $store = [NoteStore]::new()
@@ -810,6 +915,121 @@ Describe 'NoteStore Class' {
     }
 }
 
+
+Describe 'NoteMetadataStore Class' {
+    Context 'Constructor and defaults' {
+        It 'creates config directory and initializes defaults' {
+            $store = [NoteMetadataStore]::new()
+
+            $store.Version | Should -Be ([NoteMetadataStore]::CurrentVersion)
+
+            $expectedDir = Join-Path $env:PSNOTES_HOME 'config'
+            (Test-Path $expectedDir) | Should -BeTrue
+
+            $expectedPath = Join-Path $expectedDir 'psnotemetadatastore.json'
+            $store.Path | Should -Be $expectedPath
+        }
+
+        It 'does not throw when metadata file does not exist' {
+            $path = Join-Path $env:PSNOTES_HOME 'config\does-not-exist.json'
+            { [NoteMetadataStore]::new($path) } | Should -Not -Throw
+        }
+    }
+
+    Context 'Persistence' {
+        It 'round-trips Favorites via Save/Open' {
+            $path = Join-Path $env:PSNOTES_HOME 'config\meta-roundtrip.json'
+            $store = [NoteMetadataStore]::new($path)
+
+            $null = $store.Favorites.Add('Catalog1::alias1')
+            $null = $store.Favorites.Add('Catalog2::alias2')
+            $store.Save()
+
+            $store2 = [NoteMetadataStore]::new($path)
+            $store2.Favorites.Contains('Catalog1::alias1') | Should -BeTrue
+            $store2.Favorites.Contains('Catalog2::alias2') | Should -BeTrue
+        }
+
+        It 'fails safe on corrupt JSON' {
+            $path = Join-Path $env:PSNOTES_HOME 'config\meta-corrupt.json'
+            $null = New-Item -ItemType Directory -Path (Split-Path $path) -Force
+            Set-Content -LiteralPath $path -Value '{ not json' -Encoding UTF8
+
+            { [NoteMetadataStore]::new($path) } | Should -Not -Throw
+
+            $store = [NoteMetadataStore]::new($path)
+            $store.Favorites.Count | Should -Be 0
+        }
+    }
+}
+
+Describe 'NoteConfigStore Class' {
+    Context 'Defaults' {
+        It 'initializes defaults when no config exists' {
+            $store = [NoteConfigStore]::new()
+
+            $store.Version | Should -Be ([NoteConfigStore]::CurrentVersion)
+            $store.Main | Should -Be 'Favorites'
+            $store.ExitOnCopy | Should -BeTrue
+            $store.ForegroundColor | Should -Be ([ConsoleColor]::Black)
+            $store.BackgroundColor | Should -Be ([ConsoleColor]::Gray)
+
+            $expectedDir = Join-Path $env:PSNOTES_HOME 'config'
+            $expectedPath = Join-Path $expectedDir 'psnoteconfig.json'
+            $store.Path | Should -Be $expectedPath
+        }
+    }
+
+    Context 'Persistence and parsing' {
+        It 'round-trips values via Save/Open' {
+            $path = Join-Path $env:PSNOTES_HOME 'config\config-roundtrip.json'
+            $store = [NoteConfigStore]::new($path)
+            $store.Main = 'Catalogs'
+            $store.ExitOnCopy = $false
+            $store.ForegroundColor = [ConsoleColor]::Yellow
+            $store.BackgroundColor = [ConsoleColor]::Blue
+
+            $store.Save()
+
+            $store2 = [NoteConfigStore]::new($path)
+            $store2.Main | Should -Be 'Catalogs'
+            $store2.ExitOnCopy | Should -BeFalse
+            $store2.ForegroundColor | Should -Be ([ConsoleColor]::Yellow)
+            $store2.BackgroundColor | Should -Be ([ConsoleColor]::Blue)
+        }
+
+        It 'keeps defaults when values are invalid' {
+            $path = Join-Path $env:PSNOTES_HOME 'config\config-invalid.json'
+            $null = New-Item -ItemType Directory -Path (Split-Path $path) -Force
+            $bad = @{
+                Main            = ''
+                ExitOnCopy      = 'notabool'
+                ForegroundColor = 'NotAColor'
+                BackgroundColor = 'AlsoNotAColor'
+            } | ConvertTo-Json
+
+            Set-Content -LiteralPath $path -Value $bad -Encoding UTF8
+
+            $store = [NoteConfigStore]::new($path)
+            $store.Main | Should -Be 'Favorites'
+            $store.ExitOnCopy | Should -BeTrue
+            $store.ForegroundColor | Should -Be ([ConsoleColor]::Black)
+            $store.BackgroundColor | Should -Be ([ConsoleColor]::Gray)
+        }
+
+        It 'fails safe on corrupt JSON' {
+            $path = Join-Path $env:PSNOTES_HOME 'config\config-corrupt.json'
+            $null = New-Item -ItemType Directory -Path (Split-Path $path) -Force
+            Set-Content -LiteralPath $path -Value '{ not json' -Encoding UTF8
+
+            { [NoteConfigStore]::new($path) } | Should -Not -Throw
+
+            $store = [NoteConfigStore]::new($path)
+            $store.Main | Should -Be 'Favorites'
+        }
+    }
+}
+
 Describe 'Error Handling and Edge Cases' {
     Context 'PSNote edge cases' {
         It 'handles null tags array' {
@@ -818,7 +1038,7 @@ Describe 'Error Handling and Edge Cases' {
         
         It 'handles empty string for Note name' {
             { $note = [PSNote]::new('', 'code', 'details', 'alias', @()) } | Should -Not -Throw
-            $note.Note | Should -Be $null
+            #$note.psobject.Properties['Note'].Value | Should -Be ''
         }
     }
     

@@ -1,4 +1,4 @@
-Function Initialize-PSNotesRemoteJsonFile{
+Function Initialize-PSNoteStoreRemoteJsonFile{
 
     # Create PSNote.json in %APPDATA%\PSNotes to save users local settings
     if(-not (Test-Path $env:PSNotesRemoteJsonFile)){
@@ -18,6 +18,7 @@ Function Initialize-PSNotesRemoteJsonFile{
     }
     catch{
         # TODO: Write custom error message
+        Write-Error "Something went wrong downloading the remote PSNotes JSON file from '$uri'. `nError Details: $($_.Exception.Message)"
     } 
     $download
 }
