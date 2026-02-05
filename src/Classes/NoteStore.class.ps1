@@ -25,7 +25,7 @@ class PSNote {
         $this.Details = $Details
         $this.Alias = $Alias
         $this.Tags = $Tags
-        $this.Catalog = 'PSNotes'
+        $this.Catalog = 'Default'
 
         if ([string]::IsNullOrEmpty($Alias)) { $this.Alias = $Note }
 
@@ -127,7 +127,6 @@ class PSNote {
     }
 }
 
-
 class NoteCatalog {
     static [int] $CurrentStoreVersion = 1
 
@@ -138,8 +137,8 @@ class NoteCatalog {
 
     NoteCatalog() {
         [NoteStore]::InitializeEnvironment()
-        $this.Path = [NoteCatalog]::ResolvePath('PSNotes', $env:PSNOTES_HOME)
-        $this.Catalog = 'PSNotes'
+        $this.Path = [NoteCatalog]::ResolvePath('Default', $env:PSNOTES_HOME)
+        $this.Catalog = 'Default'
         $this.StoreVersion = [NoteCatalog]::CurrentStoreVersion
         $this.Notes = [System.Collections.Generic.List[PSNote]]::new()
         $this.Open()
@@ -155,20 +154,20 @@ class NoteCatalog {
     }
 
     NoteCatalog([bool] $blank) {
-        $this.Path = [NoteCatalog]::ResolvePath('PSNotes', $env:PSNOTES_HOME)
+        $this.Path = [NoteCatalog]::ResolvePath('Default', $env:PSNOTES_HOME)
         $this.StoreVersion = [NoteCatalog]::CurrentStoreVersion
         $this.Notes = [System.Collections.Generic.List[PSNote]]::new()
     }
 
     static [string] ResolvePath() {
-        return [NoteCatalog]::ResolvePath('PSNotes', $env:PSNOTES_HOME)
+        return [NoteCatalog]::ResolvePath('Default', $env:PSNOTES_HOME)
     }
 
     static [string] ResolvePath([string] $catalog) {
         return [NoteCatalog]::ResolvePath($catalog, $env:PSNOTES_HOME)
     }
 
-    static [string] ResolvePath([string] $catalog = 'PSNotes', [string] $rootPath = $env:PSNOTES_HOME) {
+    static [string] ResolvePath([string] $catalog = 'Default', [string] $rootPath = $env:PSNOTES_HOME) {
         if ([string]::IsNullOrWhiteSpace($rootPath)) {
             $rootPath = Join-Path $env:APPDATA 'PSNotes'
         }
@@ -215,19 +214,75 @@ class NoteCatalog {
         finally { $fs.Dispose() }
     }
 
-    static [void] WriteUtf8NoBomToLockedStream([System.IO.FileStream] $stream, [string] $content) {
+    static [void] AtomicSaveWithBackup([string] $path, [string] $content) {
         $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+        $directory = [System.IO.Path]::GetDirectoryName($path)
+        $fileName = [System.IO.Path]::GetFileName($path)
+        $tempPath = Join-Path $directory "$fileName.tmp"
+        $backupDir = Join-Path $directory 'backups'
+        $backupStamp = (Get-Date).ToString('yyyyMMdd_HHmmssfff')
+        $backupPath = Join-Path $backupDir "$fileName.$backupStamp.bak"
 
-        $stream.Seek(0, [System.IO.SeekOrigin]::Begin) | Out-Null
-        $stream.SetLength(0)
-
-        $sw = [System.IO.StreamWriter]::new($stream, $utf8NoBom, 4096, $true) # leaveOpen
-        try {
-            $sw.Write($content)
-            $sw.Flush()
-            $stream.Flush($true)
+        # Ensure directory exists
+        if (-not (Test-Path $directory)) {
+            $null = New-Item -Path $directory -ItemType Directory -Force
         }
-        finally { $sw.Dispose() }
+        # Ensure backup directory exists
+        if (-not (Test-Path $backupDir)) {
+            $null = New-Item -Path $backupDir -ItemType Directory -Force
+        }
+
+        try {
+            # Step 1: Write to temp file
+            [System.IO.File]::WriteAllText($tempPath, $content, $utf8NoBom)
+
+            # Step 2: Acquire lock on the target file (or create if doesn't exist)
+            $lockStream = [NoteCatalog]::AcquireLock($path, 5000, 50)
+            try {
+                $lockStream.Close()
+                $lockStream.Dispose()
+
+                # Step 3: Create backup if original exists
+                if (Test-Path $path) {
+                    # Copy current file to timestamped backup
+                    [System.IO.File]::Copy($path, $backupPath, $true)
+
+                    # Keep only the last 10 backups for this file
+                    $backupPattern = "$fileName.*.bak"
+                    $oldBackups = Get-ChildItem -Path $backupDir -Filter $backupPattern -File |
+                    Sort-Object -Property LastWriteTime -Descending |
+                    Select-Object -Skip 10
+                    foreach ($old in $oldBackups) {
+                        try { [System.IO.File]::Delete($old.FullName) } 
+                        catch { Write-Error "Failed to delete old backup file: $($_.Exception.Message)" }
+                    }
+                }
+
+                # Step 4: Replace original with temp (atomic operation on NTFS/most filesystems)
+                [System.IO.File]::Copy($tempPath, $path, $true)
+
+                # Step 5: Clean up temp file
+                if (Test-Path $tempPath) {
+                    [System.IO.File]::Delete($tempPath)
+                }
+            }
+            catch {
+                # If anything goes wrong, ensure lock is released
+                if ($null -ne $lockStream) {
+                    try { $lockStream.Dispose() } 
+                    catch { Write-Error "Failed to dispose lock stream: $_" }
+                }
+                throw
+            }
+        }
+        catch {
+            # Clean up temp file if it exists
+            if (Test-Path $tempPath) {
+                try { [System.IO.File]::Delete($tempPath) } 
+                catch { Write-Error "Failed to delete temp file: $_" }
+            }
+            throw "Failed to save note store atomically: $_"
+        }
     }
 
     [void] Open() {
@@ -239,13 +294,12 @@ class NoteCatalog {
 
             # Migration / backward-compat:
             # If older store was just an array of notes, wrap it.
-            $jsonData = if ($dataStoreVersion -eq $this.StoreVersion) {
-                $data.Notes
+            if ($dataStoreVersion -ne $this.StoreVersion) {
+                Write-Warning "Note catalog store version mismatch in $($this.Catalog). Expected: $($this.StoreVersion), Found: $($dataStoreVersion). Run Update-PSNoteStore to migrate."
+                return
             }
-            else {
-                $data
-            }
-            $jsonData | ForEach-Object {
+
+            $data.Notes | ForEach-Object {
                 $note = [PSNote]::New($_)
                 if ([string]::IsNullOrWhiteSpace($note.Catalog)) {
                     $note.Catalog = $this.Catalog
@@ -271,27 +325,18 @@ class NoteCatalog {
     [string] ToJson() {
         $obj = [pscustomobject]@{
             StoreVersion = $this.StoreVersion
-            Notes        = @($this.Notes)
+            Catalog      = $this.Catalog
+            Notes        = @($this.Notes | Select-Object -Property * -ExcludeProperty Catalog)
         }
         return ($obj | ConvertTo-Json -Depth 10)
     }
 
     [void] Save() {
-        $this.Save(5000)
-    }
-
-    [void] Save([int] $timeoutMs) {
         # Always write current version
         $this.StoreVersion = [NoteCatalog]::CurrentStoreVersion
 
-        $lockStream = [NoteCatalog]::AcquireLock($this.Path, $timeoutMs, 50)
-        try {
-            $json = $this.ToJson()
-            [NoteCatalog]::WriteUtf8NoBomToLockedStream($lockStream, $json)
-        }
-        finally {
-            $lockStream.Dispose()
-        }
+        $json = $this.ToJson()
+        [NoteCatalog]::AtomicSaveWithBackup($this.Path, $json)
     }
 }
 
@@ -347,13 +392,8 @@ class NoteMetadataStore {
     }
 
     [void] Save() {
-        $lockStream = [NoteCatalog]::AcquireLock($this.Path, 5000, 50)
-        try {
-            [NoteCatalog]::WriteUtf8NoBomToLockedStream($lockStream, $this.ToJson())
-        }
-        finally {
-            $lockStream.Dispose()
-        }
+        $json = $this.ToJson()
+        [NoteCatalog]::AtomicSaveWithBackup($this.Path, $json)
     }
 }
 
@@ -432,15 +472,11 @@ class NoteConfigStore {
     }
 
     [void] Save() {
-        $lockStream = [NoteCatalog]::AcquireLock($this.Path, 5000, 50)
-        try {
-            [NoteCatalog]::WriteUtf8NoBomToLockedStream($lockStream, $this.ToJson())
-        }
-        finally {
-            $lockStream.Dispose()
-        }
+        $json = $this.ToJson()
+        [NoteCatalog]::AtomicSaveWithBackup($this.Path, $json)
     }
 }
+
 class NoteStore {
     static [int] $CurrentStoreVersion = 1
 
@@ -466,11 +502,11 @@ class NoteStore {
     static [void] InitializeEnvironment() {
         if ([string]::IsNullOrEmpty($env:PSNOTES_HOME)) {
             if (Get-Variable -Name IsLinux -Scope Global -ValueOnly -ErrorAction SilentlyContinue) {
-                $env:PSNOTES_HOME = '/home/'
+                $env:PSNOTES_HOME = '/home/PSNotes'
             } 
             else {
                 $env:PSNOTES_HOME = Join-Path $env:APPDATA 'PSNotes'
-            } 
+            }
         }
     }
 
@@ -498,7 +534,7 @@ class NoteStore {
     [void] InitializeAliases() {
         $this.Notes | ForEach-Object {
             Write-Debug "Alias : $($_.Alias)"
-            if([string]::IsNullOrWhiteSpace($_.Alias)) { 
+            if ([string]::IsNullOrWhiteSpace($_.Alias)) { 
                 Write-Warning "Note '$( $_.Note )' has an empty Alias. Skipping alias creation."
                 return 
             }
@@ -514,6 +550,12 @@ class NoteStore {
 
     [void] AddNote([PSNote] $note) {
         $this.Notes.Add($note) | Out-Null
+
+        if (-not ($this.Catalogs | Where-Object { $_.Catalog -eq $note.Catalog })) {
+            $newCatalog = [NoteCatalog]::new($note.Catalog)
+            $this.Catalogs.Add($newCatalog)
+        }
+
         $catalogUpdates = $this.Catalogs | Where-Object { $_.Catalog -eq $note.Catalog } | ForEach-Object {
             $_.Notes.Add($note) | Out-Null
             $_
@@ -525,6 +567,10 @@ class NoteStore {
     }
 
     [void] RemoveNote([string] $note, [string] $catalog) {
+        $this.RemoveNote($note, $catalog, $true)
+    }
+
+    [void] RemoveNote([string] $note, [string] $catalog, [bool] $reload) {
         $remove = $this.Notes | Where-Object { $_.Note -eq $note -and $_.Catalog -eq $catalog }
         if ($remove) {
             $this.Notes.Remove($remove) | Out-Null
@@ -532,9 +578,12 @@ class NoteStore {
                 $_.Notes.Remove($remove) | Out-Null
                 $_
             }
-            $catalogUpdates | ForEach-Object {
-                $_.Save()
-                $this.LoadCatalog($_)
+            if ( $reload ) {
+                # TODO: $this.Metadata.RemoveFavorite($remove)
+                $catalogUpdates | ForEach-Object {
+                    $_.Save()
+                    $this.LoadCatalog($_)
+                }
             }
         }
         else {
@@ -551,12 +600,12 @@ class NoteStore {
         }
         $update = $this.Notes | Where-Object { $_.Note -eq $noteNote }
         
-        if(-not $update) {
+        if (-not $update) {
             Write-Warning "Note '$($noteNote)' not found in catalog '$($noteCatalog)'. No action taken."
             return
         }
         elseif ($update.Catalog -eq $noteCatalog) {
-            $this.RemoveNote($noteNote, $noteCatalog)
+            $this.RemoveNote($noteNote, $noteCatalog, $false)
             $this.AddNote($note)
         }
         else {
@@ -613,5 +662,3 @@ class NoteStore {
         return $list
     }
 }
-
-

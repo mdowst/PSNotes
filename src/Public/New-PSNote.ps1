@@ -83,7 +83,7 @@
         [parameter(Mandatory = $false)]
         [string[]]$Tags,
         [parameter(Mandatory = $false)]
-        [string]$Catalog = 'PSNotes',
+        [string]$Catalog = 'Default',
         [parameter(Mandatory = $false)]
         [bool]$Run = $false,
         [parameter(Mandatory = $false)]

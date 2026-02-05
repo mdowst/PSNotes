@@ -29,7 +29,7 @@
         Get-PSNote -SearchString 'cred' -Catalog 'Work*' | Remove-PSNote
 
     .EXAMPLE
-        Remove-PSNote -Note 'cred*' -Catalog 'PSNotes'
+        Remove-PSNote -Note 'cred*' -Catalog 'Default'
 
     .EXAMPLE
         Remove-PSNote -SearchString 'token' -Catalog 'Work*','Personal*' -Force

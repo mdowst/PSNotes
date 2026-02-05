@@ -6,7 +6,7 @@ Function Initialize-PSNoteStore {
     #Initialize-PSNoteStoreRemoteJsonFile
     $script:_noteStore = [NoteStore]::new()
     Write-Verbose "User PSNotes Path: $env:PSNOTES_HOME"
-    Get-ChildItem -Path $env:PSNOTES_HOME -Filter '*.json' | Where-Object{ $_.BaseName -ne 'PSNotes' } | ForEach-Object {
+    Get-ChildItem -Path $env:PSNOTES_HOME -Filter '*.json' | Where-Object{ $_.BaseName -notin 'Default' } | ForEach-Object {
         $script:_noteStore.LoadCatalog($_.BaseName)
     }
 
@@ -19,7 +19,7 @@ Function Initialize-PSNoteStore {
             }
         }
         else {
-            $warning = "Cmdlet 'Set-Clipboard' not found. Copy functionality will not work until this is resovled. " +
+            $warning = "Cmdlet 'Set-Clipboard' not found. Copy functionality will not work until this is resolved. " +
             "`n`t You can install the ClipboardText module from PowerShell Gallery, to add this functionality. " + 
             "`n`n`t`t Install-Module -Name ClipboardText`n" +
             "`n`t More Details: https://www.powershellgallery.com/packages/ClipboardText"

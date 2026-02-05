@@ -10,6 +10,13 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# This can some times cause old versions to load in the current session, so we capture the directory and then clean up anything that might have been added.
+$beforeFiles = if (Get-Variable -Name IsLinux -Scope Global -ValueOnly -ErrorAction SilentlyContinue) {
+    Get-ChildItem -Path '/home/PSNotes' -File
+}
+else {
+    Get-ChildItem -Path (Join-Path $env:APPDATA 'PSNotes') -File
+}
 
 # --- Ensure ModuleBuilder is available (build-time dependency) ---
 if (-not (Get-Module -ListAvailable -Name ModuleBuilder)) {
@@ -29,8 +36,11 @@ $destRoot = Join-Path $OutDir 'PSNotes'
 if (Test-Path -LiteralPath $destRoot) {
     Remove-Item -LiteralPath $destRoot -Recurse -Force
 }
+if (Test-Path -LiteralPath $OutDir) {
+    Get-ChildItem -LiteralPath $OutDir -Filter '*.nupkg' | Remove-Item -Force
+}
 
-..\PSNotes.ezformat.ps1 -formatPath (Join-Path $sourceRoot 'PSNotes.format.ps1xml') | Out-Null
+..\tools\PSNotes.ezformat.ps1 -formatPath (Join-Path $sourceRoot 'PSNotes.format.ps1xml') | Out-Null
 
 $linter = . '..\tests\ScriptAnalyzer\ScriptAnalyzer.Linter.ps1'
 if ($linter) {
@@ -39,20 +49,24 @@ if ($linter) {
 }
 
 $buildParams = @{
-    SourcePath        = $sourceRoot
-    OutputDirectory   = $destRoot
-    Encoding          = 'UTF8Bom'  # consistent cross-platform
+    SourcePath      = $sourceRoot
+    OutputDirectory = $destRoot
+    Encoding        = 'UTF8Bom'  # consistent cross-platform
 }
 
-if ($PSBoundParameters.ContainsKey('Version')) {
-    # Build-Module supports -Version (ModuleVersion) for manifest update
-    $buildParams['Version'] = $Version
+$sourceManifest = Join-Path $sourceRoot 'PSNotes.psd1'
+
+if (-not $PSBoundParameters.ContainsKey('Version')) {
+    $Version = (Import-PowerShellDataFile -Path $sourceManifest).ModuleVersion
 }
+$buildParams['Version'] = $Version
+
 
 Write-Host "Building PSNotes module..." -ForegroundColor Cyan
-Write-Host "  SourcePath:     $sourceRoot"
-Write-Host "  SourceManifest: $sourceManifest"
-Write-Host "  OutputDir:      $destRoot"
+Write-Host "  SourcePath     :  $sourceRoot"
+Write-Host "  SourceManifest : $sourceManifest"
+Write-Host "  OutputDir      : $destRoot"
+Write-Host "  Version        : $Version"
 
 Build-Module @buildParams | Out-Null
 
@@ -71,9 +85,28 @@ Get-ChildItem -LiteralPath $destRoot -Filter 'PSNotes.psm1' -Recurse | ForEach-O
 Set-Location -Path $PSScriptRoot
 $psd1 = Get-ChildItem $OutDir -Filter '*.psd1' -Recurse | Select-Object -Last 1
 $nuspec = Get-ChildItem $PSScriptRoot -Filter '*.nuspec' -Recurse | Foreach-Object {
-  Copy-Item -Path $_.FullName -Destination $psd1.DirectoryName -PassThru
+    Copy-Item -Path $_.FullName -Destination $psd1.DirectoryName -PassThru
 }
 
 .\nuget.exe pack "$($nuspec.FullName)" -OutputDirectory $OutDir -Version "$($Version)"
 
+Get-ChildItem $psd1.DirectoryName -Filter '*.nuspec' | Remove-Item -Force
+
 Set-Location -LiteralPath $currentPath
+
+
+# Clean up any loaded files that were not present before.
+if (Get-Variable -Name IsLinux -Scope Global -ValueOnly -ErrorAction SilentlyContinue) {
+    Get-ChildItem -Path '/home/PSNotes' -File | Where-Object {
+        $beforeFiles.Name -notcontains $_.Name
+    } | ForEach-Object {
+        Remove-Item -Path $_.FullName -Force
+    }
+}
+else {
+    Get-ChildItem -Path (Join-Path $env:APPDATA 'PSNotes') -File | Where-Object {
+        $beforeFiles.Name -notcontains $_.Name
+    } | ForEach-Object {
+        Remove-Item -Path $_.FullName -Force
+    }
+}

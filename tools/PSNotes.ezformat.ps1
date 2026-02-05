@@ -41,8 +41,9 @@ $views = @(
 )
 
 $views |
-    Out-FormatData -ModuleName 'PSNotes' |
-    Set-Content -Path $formatPath -Encoding UTF8
+Out-FormatData -ModuleName 'PSNotes' |
+Set-Content -Path $formatPath -Encoding UTF8
+
 
 # Emit the file path so build scripts can consume it easily.
 $formatPath

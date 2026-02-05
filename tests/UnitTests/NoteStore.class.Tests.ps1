@@ -47,7 +47,7 @@ Describe 'PSNote Class' {
             $note.Details | Should -Be 'A greeting snippet'
             $note.Alias | Should -Be 'MyAlias'
             $note.Tags | Should -Be @('test', 'example')
-            $note.Catalog | Should -Be 'PSNotes'
+            $note.Catalog | Should -Be 'Default'
         }
         
         It 'sets Alias to Note when Alias is empty' {
@@ -158,7 +158,7 @@ Describe 'PSNote Class' {
                 'Runs a script',
                 'runscript',
                 @('script'),
-                'PSNotes',
+                'Default',
                 $true
             )
 
@@ -220,7 +220,7 @@ Describe 'PSNote Class' {
                 'details',
                 'rs',
                 @(),
-                'PSNotes',
+                'Default',
                 $false
             )
             $scriptNote.GetDisplayText() | Should -Be 'rs (Script)'
@@ -234,7 +234,7 @@ Describe 'NoteCatalog Static Methods' {
         It 'resolves path with no parameters (default catalog)' {
             $path = [NoteCatalog]::ResolvePath()
             
-            $path | Should -Match 'PSNotes\.json$'
+            $path | Should -Match 'Default\.json$'
             (Split-Path -Parent $path) | Should -Exist
         }
         
@@ -382,7 +382,7 @@ Describe 'NoteCatalog Instance Methods' {
     Context 'Constructor without parameters' {
         It 'creates a default catalog' {
             $catalog = [NoteCatalog]::new()
-            $catalog.Catalog | Should -Be 'PSNotes'
+            $catalog.Catalog | Should -Be 'Default'
             $catalog.StoreVersion | Should -Be 1
 
             $catalog.Save()
@@ -530,21 +530,6 @@ Describe 'NoteCatalog Instance Methods' {
             $content | Should -Match '"SaveNote"'
         }
         
-        It 'saves with custom timeout' {
-            $catalog = [NoteCatalog]::new('TimeoutTest')
-            $testNote = [PSNote]::new(
-                'TimeoutNote',
-                'code',
-                'details',
-                'tn',
-                @('test')
-            )
-            $catalog.Notes.Add($testNote)
-            
-            { $catalog.Save(10000) } | Should -Not -Throw
-            Test-Path $catalog.Path | Should -Be $true
-        }
-        
         It 'updates StoreVersion before saving' {
             $catalog = [NoteCatalog]::new('VersionTest')
             $initialVersion = $catalog.StoreVersion
@@ -579,7 +564,7 @@ Describe 'NoteStore Class' {
             
             $store.Catalogs | Should -Not -BeNullOrEmpty
             $store.Catalogs.Count | Should -Be 1
-            $store.Catalogs[0].Catalog | Should -Be 'PSNotes'
+            $store.Catalogs[0].Catalog | Should -Be 'Default'
             #$store.Notes | Should -BeOfType 'System.Collections.Generic.List[PSNote]'
         }
     }
@@ -637,7 +622,7 @@ Describe 'NoteStore Class' {
                 'DupNote',
                 'code',
                 'details',
-                'PSNotes',
+                'Default',
                 @('tag'),
                 'DuplicateTestA',
                 $false
@@ -649,7 +634,7 @@ Describe 'NoteStore Class' {
                 'DupNote',
                 'code',
                 'details',
-                'PSNotes',
+                'Default',
                 @('tag'),
                 'DuplicateTestB',
                 $false
@@ -661,7 +646,7 @@ Describe 'NoteStore Class' {
                 $store.LoadCatalog($testCatalogB)
             } 3>&1
             Write-Host $warnings
-            $warnings | Should -Be "Duplicate Alias found: PSNotes. Skipping note: DupNote"
+            $warnings | Should -Be "Duplicate Alias found: Default. Skipping note: DupNote"
         }
     }
         

@@ -53,9 +53,9 @@
         Returns all notes with the word day in the name, details, snippet text, alias, or tags
 
     .EXAMPLE
-        Get-PSNote -Catalog 'PSNotes'
+        Get-PSNote -Catalog 'Default'
 
-        Returns all notes in the PSNotes catalog
+        Returns all notes in the Default catalog
 
     .EXAMPLE
         Get-PSNote -SearchString 'day' -Catalog 'Work*','Personal*'
