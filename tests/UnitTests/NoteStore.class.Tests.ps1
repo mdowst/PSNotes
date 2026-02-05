@@ -468,10 +468,34 @@ Describe 'NoteCatalog Instance Methods' {
             
             Set-Content -Path $testFile -Value $legacyJson
             
-            $catalog = [NoteCatalog]::Open($testFile)
+            $catalog = [NoteCatalog]::Migrate($testFile)
             
             $catalog.Notes.Count | Should -Be 1
             $catalog.Notes[0].Note | Should -Be 'Legacy1'
+        }
+
+        It 'loads legacy catalog format (array of notes)' {
+            $testFile = Join-Path $script:TestDir 'legacy_catalog.json'
+            
+            # Legacy format is just an array
+            $legacyJson = @(
+                [pscustomobject]@{
+                    Note    = 'Legacy1'
+                    Snippet = 'code'
+                    Details = 'details'
+                    Alias   = 'l1'
+                    Tags    = @('old')
+                    Catalog = ''
+                }
+            ) | ConvertTo-Json
+            
+            Set-Content -Path $testFile -Value $legacyJson
+            $warnings = & {
+                $catalog = [NoteCatalog]::Open($testFile)
+            } 3>&1
+            $warnings | Should -Match "Note catalog store version mismatch"
+            
+            # Migration should be handled elsewhere
         }
     }
     
@@ -645,7 +669,6 @@ Describe 'NoteStore Class' {
             $warnings = & {
                 $store.LoadCatalog($testCatalogB)
             } 3>&1
-            Write-Host $warnings
             $warnings | Should -Be "Duplicate Alias found: Default. Skipping note: DupNote"
         }
     }

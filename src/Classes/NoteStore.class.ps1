@@ -179,6 +179,138 @@ class NoteCatalog {
         return (Join-Path $rootPath $fileName)
     }
 
+    [void] Open() {
+        $json = [NoteCatalog]::ReadUtf8NoBom($this.Path)
+
+        if (-not [string]::IsNullOrWhiteSpace($Json)) {
+            $data = $Json | ConvertFrom-Json -ErrorAction Stop
+            $dataStoreVersion = $data.psobject.Properties | Where-Object { $_.Name -eq 'StoreVersion' } | Select-Object -ExpandProperty Value
+
+            # Migration / backward-compat:
+            # If older store was just an array of notes, wrap it.
+            if ($dataStoreVersion -ne $this.StoreVersion) {
+                Write-Warning "Note catalog store version mismatch in $($this.Catalog). Expected: $($this.StoreVersion), Found: $($dataStoreVersion)`n         Notes from $($this.Catalog) will not be loaded.`n`n    Run 'Update-PSNoteStore' to migrate legacy store catalogs.`n"
+                return
+            }
+
+            $data.Notes | ForEach-Object {
+                $note = [PSNote]::New($_)
+                if ([string]::IsNullOrWhiteSpace($note.Catalog)) {
+                    $note.Catalog = $this.Catalog
+                }
+                $this.Notes.Add($note)
+            }
+        }
+
+        if ($null -eq $this.Catalog) {
+            $this.Catalog = [System.IO.Path]::GetFileNameWithoutExtension($this.Path)
+        }
+        # Future: if ($store.StoreVersion -lt CurrentStoreVersion) { $store.Migrate() }
+    }
+
+    static [NoteCatalog] Open([string] $catalogPath) {
+        $store = [NoteCatalog]::new($true)
+        $store.Path = $catalogPath
+        $store.Open()
+        
+        return $store
+    }
+
+    static [bool] VersionCheck([string] $catalogPath) {
+        $currentVersion = $false
+        $json = [NoteCatalog]::ReadUtf8NoBom($catalogPath)
+
+        if (-not [string]::IsNullOrWhiteSpace($Json)) {
+            $data = $Json | ConvertFrom-Json -ErrorAction Stop
+            $dataStoreVersion = $data.psobject.Properties | Where-Object { $_.Name -eq 'StoreVersion' } | Select-Object -ExpandProperty Value
+
+            # If store version matches current, return true
+            if ($dataStoreVersion -eq [NoteCatalog]::CurrentStoreVersion) {
+                $currentVersion = $true
+            }
+        }
+        return $currentVersion
+    }
+
+    static [NoteCatalog] Migrate([string] $catalogPath) {
+        $migrate = [NoteCatalog]::new($true)
+        $migrate.Path = $catalogPath
+        $migrate.Catalog = [System.IO.Path]::GetFileNameWithoutExtension($catalogPath)
+
+        # Read the old format JSON
+        $json = [NoteCatalog]::ReadUtf8NoBom($catalogPath)
+        if ([string]::IsNullOrWhiteSpace($json)) {
+            return $migrate
+        }
+        
+        try {
+            $oldData = $json | ConvertFrom-Json -ErrorAction Stop
+            
+            # Backup the original file before migration
+            $directory = [System.IO.Path]::GetDirectoryName($catalogPath)
+            $fileName = [System.IO.Path]::GetFileName($catalogPath)
+            $backupDir = Join-Path $directory 'backups'
+            
+            if (-not (Test-Path $backupDir)) {
+                $null = New-Item -Path $backupDir -ItemType Directory -Force
+            }
+            
+            $backupStamp = (Get-Date).ToString('yyyyMMdd_HHmmssfff')
+            $backupPath = Join-Path $backupDir "$fileName.pre-migration.$backupStamp.bak"
+            [System.IO.File]::Copy($catalogPath, $backupPath, $true)
+            
+            # Convert old format (array) to new format (object with StoreVersion, Catalog, Notes)
+            # Old format: [{ Note, Snippet, Details, Alias, Tags }, ...]
+            # New format: { StoreVersion, Catalog, Notes: [...] }
+            $oldData | ForEach-Object {
+                $note = [PSNote]::New($_)
+                if ([string]::IsNullOrWhiteSpace($note.Catalog)) {
+                    $note.Catalog = $migrate.Catalog
+                }
+                $migrate.Notes.Add($note)
+            }
+            
+            # Save in new format using atomic backup
+            [NoteCatalog]::AtomicSaveWithBackup($catalogPath, $json, 'migrationv1-')
+            $migrate.Save()
+            
+            Write-Verbose "Successfully migrated $fileName to new format. Backup saved to $backupPath"
+        }
+        catch {
+            throw "Failed to migrate catalog at $catalogPath : $_"
+        }
+        
+        return $migrate
+    }
+
+    [void] RemoveNote([string] $note) {
+        $remove = $this.Notes | Where-Object { $_.Note -eq $note }
+        if ($remove) {
+            $this.Notes.Remove($remove) | Out-Null
+            $this.Save()
+        }
+        else {
+            Write-Warning "Note '$note' not found in catalog. No action taken."
+        }
+    }
+
+    [string] ToJson() {
+        $obj = [pscustomobject]@{
+            StoreVersion = $this.StoreVersion
+            Catalog      = $this.Catalog
+            Notes        = @($this.Notes | Select-Object -Property * -ExcludeProperty Catalog)
+        }
+        return ($obj | ConvertTo-Json -Depth 10)
+    }
+
+    [void] Save() {
+        # Always write current version
+        $this.StoreVersion = [NoteCatalog]::CurrentStoreVersion
+
+        $json = $this.ToJson()
+        [NoteCatalog]::AtomicSaveWithBackup($this.Path, $json)
+    }
+
     static [System.IO.FileStream] AcquireLock([string] $path, [int] $timeoutMs = 5000, [int] $retryDelayMs = 50) {
         $sw = [System.Diagnostics.Stopwatch]::StartNew()
         $last = $null
@@ -215,13 +347,17 @@ class NoteCatalog {
     }
 
     static [void] AtomicSaveWithBackup([string] $path, [string] $content) {
+        [NoteCatalog]::AtomicSaveWithBackup($path, $content, '')
+    }
+
+    static [void] AtomicSaveWithBackup([string] $path, [string] $content, [string] $prefix) {
         $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
         $directory = [System.IO.Path]::GetDirectoryName($path)
         $fileName = [System.IO.Path]::GetFileName($path)
         $tempPath = Join-Path $directory "$fileName.tmp"
         $backupDir = Join-Path $directory 'backups'
         $backupStamp = (Get-Date).ToString('yyyyMMdd_HHmmssfff')
-        $backupPath = Join-Path $backupDir "$fileName.$backupStamp.bak"
+        $backupPath = Join-Path $backupDir "$prefix$fileName.$backupStamp.bak"
 
         # Ensure directory exists
         if (-not (Test-Path $directory)) {
@@ -283,60 +419,6 @@ class NoteCatalog {
             }
             throw "Failed to save note store atomically: $_"
         }
-    }
-
-    [void] Open() {
-        $json = [NoteCatalog]::ReadUtf8NoBom($this.Path)
-
-        if (-not [string]::IsNullOrWhiteSpace($Json)) {
-            $data = $Json | ConvertFrom-Json -ErrorAction Stop
-            $dataStoreVersion = $data.psobject.Properties | Where-Object { $_.Name -eq 'StoreVersion' } | Select-Object -ExpandProperty Value
-
-            # Migration / backward-compat:
-            # If older store was just an array of notes, wrap it.
-            if ($dataStoreVersion -ne $this.StoreVersion) {
-                Write-Warning "Note catalog store version mismatch in $($this.Catalog). Expected: $($this.StoreVersion), Found: $($dataStoreVersion). Run Update-PSNoteStore to migrate."
-                return
-            }
-
-            $data.Notes | ForEach-Object {
-                $note = [PSNote]::New($_)
-                if ([string]::IsNullOrWhiteSpace($note.Catalog)) {
-                    $note.Catalog = $this.Catalog
-                }
-                $this.Notes.Add($note)
-            }
-        }
-
-        if ($null -eq $this.Catalog) {
-            $this.Catalog = [System.IO.Path]::GetFileNameWithoutExtension($this.Path)
-        }
-        # Future: if ($store.StoreVersion -lt CurrentStoreVersion) { $store.Migrate() }
-    }
-
-    static [NoteCatalog] Open([string] $catalogPath) {
-        $store = [NoteCatalog]::new($true)
-        $store.Path = $catalogPath
-        $store.Open()
-        
-        return $store
-    }
-
-    [string] ToJson() {
-        $obj = [pscustomobject]@{
-            StoreVersion = $this.StoreVersion
-            Catalog      = $this.Catalog
-            Notes        = @($this.Notes | Select-Object -Property * -ExcludeProperty Catalog)
-        }
-        return ($obj | ConvertTo-Json -Depth 10)
-    }
-
-    [void] Save() {
-        # Always write current version
-        $this.StoreVersion = [NoteCatalog]::CurrentStoreVersion
-
-        $json = $this.ToJson()
-        [NoteCatalog]::AtomicSaveWithBackup($this.Path, $json)
     }
 }
 
