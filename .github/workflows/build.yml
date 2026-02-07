@@ -47,16 +47,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          path: Build
+          path: bin
           pattern: my-build-*
           merge-multiple: true
-      - run: ls -R Build
+      - run: ls -R bin
         
       - name: Install Modules
         shell: pwsh
         run: |
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module Pester -MinimumVersion 5.5.0
+          Install-Module ModuleBuilder,PSScriptAnalyzer,EZOut
 
       - name: Test build
         shell: pwsh
