@@ -99,7 +99,7 @@ Set-Location -LiteralPath $currentPath
 
 
 # Clean up any loaded files that were not present before.
-if (Test-Path $homePath) { {
+if (Test-Path $homePath) {
     Get-ChildItem -Path $homePath -File | Where-Object {
         $beforeFiles.Name -notcontains $_.Name
     } | ForEach-Object {
