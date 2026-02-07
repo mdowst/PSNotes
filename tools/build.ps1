@@ -75,9 +75,7 @@ while ($versionParts.Count -lt 4) {
 $Version = $versionParts -join '.'
 
 $testVersion = [version]$Version
-if ($testVersion.Revision -lt 0) {
-    $testVersion.Revision = 0
-}
+
 $buildParams['Version'] = $testVersion
 
 

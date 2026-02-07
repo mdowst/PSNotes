@@ -34,7 +34,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: my-build-${{ matrix.runs-on }}
-          path: Build
+          path: bin
         
   test-module:
     needs: build-module
