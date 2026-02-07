@@ -1,0 +1,63 @@
+name: build module
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-module:
+    name: Run build and upload artifacts
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+
+      - name: Install Modules
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module ModuleBuilder,PSScriptAnalyzer,EZOut
+          Install-Module Pester -MinimumVersion 5.5.0
+
+      - name: Run build
+        shell: pwsh
+        run: |
+          $Version = git describe --tags --abbrev=0 
+          Write-Host "Version : $Version"
+          .\tools\build.ps1 -Version $Version
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-build-${{ matrix.runs-on }}
+          path: Build
+        
+  test-module:
+    needs: build-module
+    name: Test Module
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: Build
+          pattern: my-build-*
+          merge-multiple: true
+      - run: ls -R Build
+        
+      - name: Install Modules
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module Pester -MinimumVersion 5.5.0
+
+      - name: Test build
+        shell: pwsh
+        run: .\tools\tests.ps1
