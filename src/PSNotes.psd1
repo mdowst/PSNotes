@@ -12,7 +12,7 @@
 RootModule = '.\PSNotes.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.2.0.1'
+ModuleVersion = '0.9.9.9'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()

@@ -16,7 +16,7 @@ BeforeAll {
     $env:PSNOTES_HOME = $script:TestDir
     $script:MockPath = Join-Path -Path $PSScriptRoot -ChildPath 'Mocks'
 
-    Import-Module (Join-Path $Global:TopLevel 'bin\PSNotes\0.2.0.1\PSNotes.psd1') -Force
+    Import-Module (Join-Path $Global:TopLevel 'bin\PSNotes\0.9.9.9\PSNotes.psd1') -Force
 }
 
 AfterAll {

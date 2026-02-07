@@ -9,7 +9,7 @@ if(-not (Test-Path $binPath)){
    New-Item -ItemType Directory -Force -Path $binPath | Out-Null
 }
 
-. "$Parent\tools\build.ps1" -Version '0.2.0.1'
+. "$Parent\tools\build.ps1" -Version '0.9.9.9'
 Get-Module PSNotes | Remove-Module -Force
 
 # Run Unit Tests
