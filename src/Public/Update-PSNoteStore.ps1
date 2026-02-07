@@ -17,81 +17,8 @@ function Update-PSNoteStore {
     }
 
     foreach ($catalogPath in $toMigrate) {
-        $migratedStore = [NoteCatalog]::Migrate($catalogPath.FullName)
-        do {
-            $dup = $script:_noteStore.Notes | Where-Object { $_.Alias -in $migratedStore.Notes.Alias } | Select-Object -First 1
-            if ($dup) {
-                $mn = $migratedStore.Notes | Where-Object { $_.Alias -eq $dup.Alias } | Select-Object -First 1
-                Write-Warning "Duplicate note alias found during migration: $($mn.Alias)."
-                $lines = @(
-                    "Existing Note"
-                    "-------------"
-                    "Catalog : $($dup.Catalog)"
-                    "Note    : $($dup.Note)"
-                    "Alias   : $($dup.Alias)"
-                    "Snippet : $($dup.Snippet.Trim().Split("`n")[0])"
-                )
-                $buffer = $lines | ForEach-Object { $_.Length } | Sort-Object -Descending | Select-Object -First 1
-                $lines[2] = "Catalog : `e[38;2;0;128;255m$($dup.Catalog)`e[0m"
-                $lines[0] = $lines[0].PadRight($buffer + 10) + "Migrated Note"
-                $lines[1] = $lines[1].PadRight($buffer + 10) + "-------------"
-                $lines[2] = $lines[2].PadRight($buffer + 31) + "Catalog : `e[38;2;255;255;0m$($mn.Catalog)`e[0m"
-                $lines[3] = $lines[3].PadRight($buffer + 10) + "Note    : $($mn.Note)"
-                $lines[4] = $lines[4].PadRight($buffer + 10) + "Alias   : $($mn.Alias)"
-                $lines[5] = $lines[5].PadRight($buffer + 10) + "Snippet : $($mn.Snippet.Trim().Split("`n")[0])"
-
-                $lines = "Select an action:"
-                $lines = "1. Skip migrating this note."
-                $lines = "   (Item in `e[38;2;255;255;0m$($mn.Catalog)`e[0m will be deleted.)"
-                $lines = "2. Overwrite existing note with migrated note."
-                $lines = "   (Item in `e[38;2;0;128;255m$($dup.Catalog)`e[0m will be deleted.)"
-                $lines = "3. Set new alias."
-                $lines = "4. View details of each note."
-                $lines = "Enter choice (1, 2, 3, or 4) and hit [Enter]"
-                $prompt = ($lines -join ("`n"))
-                if (-not [string]::IsNullOrEmpty($additionalNote)) {
-                    $prompt = $additionalNote + "`n" + $prompt
-                }
-                # Determine choice based on DefaultBehavior
-                if ($DefaultBehavior -eq 'SkipMigratedNotes') {
-                    $choice = '1'
-                }
-                elseif ($DefaultBehavior -eq 'OverwriteExistingNotes') {
-                    $choice = '2'
-                }
-                else{
-                    $choice = Read-Host $prompt
-                }
-                
-                if ($choice -eq '1') {
-                    Write-Verbose "Skipping migration of note with alias: $($mn.Alias)"
-                    $migratedStore.RemoveNote($mn.Note)
-                }
-                elseif ($choice -eq '2') {
-                    Write-Verbose "Overwriting existing note with alias: $($mn.Alias)"
-                    $script:_noteStore.RemoveNote($dup.Note, $dup.Catalog, $true )
-                }
-                elseif ($choice -eq '3') {
-                    $newAlias = Read-Host "Enter new alias for the migrated note"
-                    if (-not ($script:_noteStore.Notes | Where-Object { $_.Alias -eq $newAlias })) {
-                        $mn.Alias = $newAlias
-                        $migratedStore.Save()
-                    }
-                    else {
-                        $additionalNote = "`e[38;2;255;255;0mAlias $newAlias already exists. Please choose another.`e[0m"
-                    }
-                }
-                elseif ($choice -eq '4') {
-                    $additionalNote = "`e[38;2;0;128;255mExisting Note`n$( ($dup | Format-List * -Force | Out-String).Trim() )`e[0m"
-                    $additionalNote = $additionalNote + "`n-------------------------`n"
-                    $additionalNote = $additionalNote + "`e[38;2;255;255;0mMigrated Note`n$( ($mn | Format-List * -Force | Out-String).Trim() )`e[0m"
-                }
-                else {
-                    $additionalNote = "`e[38;2;255;0;0mInvalid choice. Please enter 1, 2, 3, or 4.`e[0m"
-                }
-            }
-        } while ($dup)
-        $script:_noteStore.LoadCatalog($catalogPath.BaseName)
+        $migratedStore = [NoteCatalog]::Migrate($catalogPath.FullName, $true)
+        Import-PSNoteCatalog -ImportedCatalog $migratedStore -DestinationCatalog $migratedStore.Catalog -DefaultBehavior $DefaultBehavior
     }
 
     Write-Verbose "PSNoteStore update complete."

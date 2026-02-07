@@ -1,4 +1,4 @@
-Function Import-PSNote{
+Function Import-PSNote {
     <#
     .SYNOPSIS
         Use to import a PSNotes JSON fiile
@@ -31,33 +31,33 @@ Function Import-PSNote{
     .LINK
         https://github.com/mdowst/PSNotes
     #>
-    [cmdletbinding(DefaultParameterSetName="Note")]
+    [cmdletbinding(DefaultParameterSetName = "Note")]
     param(    
-        [parameter(Mandatory=$true)]
+        [parameter(Mandatory = $true)]
         [string]$Path,
-        [parameter(Mandatory=$false)]
-        [string]$Catalog
+        [parameter(Mandatory = $false)]
+        [string]$Catalog = 'Default',
+        [ValidateSet('Prompt', 'SkipMigratedNotes', 'OverwriteExistingNotes')]
+        [parameter(Mandatory = $false)]
+        [string]$DefaultBehavior = 'Prompt'
     )
     Test-PSNotesInitalize
-    # If Catalog check name and set path
-    if($Catalog){
-        # confirm the Catalog string is a valid file name
-        if($Catalog.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()) -ne -1){
-            throw "The catalog name '$Catalog' is an invalid file name. Invalid characater found in place $($Catalog.IndexOfAny([System.IO.Path]::GetInvalidFileNameChars()))"
-        }
-        # Set path the path for the catalog item 
-        $CatalogPath = Join-Path $env:PSNOTES_HOME "$Catalog.json"
-    } else {
-        $CatalogPath = $env:PSNotesUserJsonFile
+    
+
+    $validation = [NoteCatalog]::ValidateNotes($Path)
+
+    if(-not $validation.IsValid) {
+        Write-Error "The provided PSNotes JSON file is not in the correct format. Please ensure the file is a valid PSNotes catalog. Validation Errors: $($validation.Errors -join '; ')"
+        return
+    }
+    elseif($validation.StoreVersion -eq 'Current') {
+        $importedCatalog = [NoteCatalog]::Open($Path)
+    }
+    else {
+        $importedCatalog = [NoteCatalog]::Migrate($Path, $false)
     }
 
-    [System.Collections.Generic.List[PSNote]] $ImportObjects = @()
-    $(Get-Content $Path -Raw | ConvertFrom-Json) | Select-Object Note, Snippet, Details, Alias, Tags, @{l='file';e={$CatalogPath}}| 
-        ForEach-Object{ $ImportObjects.Add([PSNote]::New($_)) }
-    
-    # Append the new notes to the appropriate file
-    Export-PSNote -NoteObject $ImportObjects -Path $CatalogPath -Append 
+    Import-PSNoteCatalog -ImportedCatalog $importedCatalog -DestinationCatalog $Catalog -DefaultBehavior $DefaultBehavior
 
-    # Reinitialize the Json files to reload everything
-    Initialize-PSNoteStoreJsonFile
+    Write-Verbose "PSNoteStore update complete."
 }

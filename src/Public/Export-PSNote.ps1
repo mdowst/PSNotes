@@ -1,4 +1,4 @@
-Function Export-PSNote{
+Function Export-PSNote {
     <#
     .SYNOPSIS
         Use to export your PSNotes to copy to another machine or share with others
@@ -35,46 +35,43 @@ Function Export-PSNote{
     .LINK
         https://github.com/mdowst/PSNotes
     #>
-    [cmdletbinding(DefaultParameterSetName="Note")]
+    [cmdletbinding(DefaultParameterSetName = "Note")]
     param(    
-        [parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="Note")]
+        [parameter(Mandatory = $true, ValueFromPipeline = $true, ParameterSetName = "Note")]
         [PSNote[]]$NoteObject,
-        [parameter(Mandatory=$false, ParameterSetName="All")]
-        [switch]$All,
-        [parameter(Mandatory=$true)]
+        [parameter(Mandatory = $true, ParameterSetName = "Catalog")]
+        [string]$Catalog,
+        [parameter(Mandatory = $true)]
         [string]$Path,
-        [parameter(Mandatory=$false)]
-        [switch]$Append
+        [parameter(Mandatory = $false)]
+        [switch]$Force
     )
-    begin{
+    begin {
         Test-PSNotesInitalize
-        [System.Collections.Generic.List[PSNoteExport]] $ExportObjects = @()
-        Write-Verbose "$($noteObject | Format-Table | Out-String)"
-    }
-    process{
-        # If All add all objects otherwise only add those passed
-        if($All){
-            $script:_noteObjects | ForEach-Object{ $ExportObjects.Add( [PSNoteExport]::New( $_ ) ) }
-        } else {
-            $noteObject | ForEach-Object{ $ExportObjects.Add( [PSNoteExport]::New( $_ ) ) }
+        #[System.Collections.Generic.List[NoteCatalog]] $ExportObjects = @()
+        Write-Debug "$($noteObject | Format-Table | Out-String)"
+        # If Catalog is specified, add all objects from that catalog, otherwise only add those passed
+        if ($PSCmdlet.ParameterSetName -eq 'Catalog') {
+            $ExportObjects = [NoteCatalog]::new($Catalog)
+        }
+        else {
+            $ExportObjects = [NoteCatalog]::new($false)
+            $ExportObjects.Catalog = 'Export'
+            #$noteObject | ForEach-Object { $ExportObjects.Notes.Add( $_ ) }
         }
     }
-    end{
-        Write-Verbose "$($ExportObjects | Format-Table | Out-String)"
-        # if append add append objects before exporting
-        if($Append){
-            if(-not (Test-Path $path)){
-                Write-Verbose "File '$path' not found. Will continue with export, but will not append."
-            } else {
-                # import existing from JSON, but overwrite any matching Notes with the new value
-                $(Get-Content $Path -Raw | ConvertFrom-Json) | Select-Object Note, Snippet, Details, Alias, Tags | 
-                    Where-Object{ $ExportObjects.Alias -notcontains $_.Alias } | ForEach-Object{ 
-                        $ExportObjects.Add([PSNoteExport]::New( $_ )) 
-                }
-            }
-            
-        }
+    process {
+        # If Catalog is specified, add all objects from that catalog, otherwise only add those passed
+        $noteObject | ForEach-Object { $ExportObjects.Notes.Add( $_ ) }
+    }
+    end {
+        Write-Debug "$($ExportObjects | Format-Table | Out-String)"
 
-        $ExportObjects | ConvertTo-Json | Out-File $Path -Encoding UTF8NoBOM
+        if ((Test-Path $Path) -and -not $Force) {
+            Write-Error "File already exists at '$Path'. Use -Force to overwrite."
+        }
+        else {
+            $ExportObjects | Select-Object -Property * -ExcludeProperty Path | ConvertTo-Json -Depth 5 | Out-File $Path -Encoding UTF8NoBOM
+        }        
     }
 }

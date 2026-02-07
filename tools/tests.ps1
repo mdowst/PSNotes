@@ -1,8 +1,16 @@
-$TestPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'tests'
-$binPath = Join-Path (Split-Path $PSScriptRoot -Parent) 'bin'
+$Parent = $PSScriptRoot
+while ( -not (Test-Path (Join-Path $Parent 'src'))) {
+    $Parent = Split-Path $Parent -Parent
+}
+
+$TestPath = Join-Path $Parent 'tests'
+$binPath = Join-Path $Parent 'bin'
 if(-not (Test-Path $binPath)){
    New-Item -ItemType Directory -Force -Path $binPath | Out-Null
 }
+
+. "$Parent\tools\build.ps1" -Version '0.2.0.1'
+Get-Module PSNotes | Remove-Module -Force
 
 # Run Unit Tests
 $config = New-PesterConfiguration

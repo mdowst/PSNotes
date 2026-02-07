@@ -468,7 +468,7 @@ Describe 'NoteCatalog Instance Methods' {
             
             Set-Content -Path $testFile -Value $legacyJson
             
-            $catalog = [NoteCatalog]::Migrate($testFile)
+            $catalog = [NoteCatalog]::Migrate($testFile, $true)
             
             $catalog.Notes.Count | Should -Be 1
             $catalog.Notes[0].Note | Should -Be 'Legacy1'

@@ -232,7 +232,107 @@ class NoteCatalog {
         return $currentVersion
     }
 
-    static [NoteCatalog] Migrate([string] $catalogPath) {
+    static [hashtable] ValidateNotes([string] $catalogPath) {
+        $result = @{
+            IsValid      = $true
+            StoreVersion = $null
+            Errors       = [System.Collections.Generic.List[string]]::new()
+            Warnings     = [System.Collections.Generic.List[string]]::new()
+        }
+
+        try {
+            $json = [NoteCatalog]::ReadUtf8NoBom($catalogPath)
+            
+            if ([string]::IsNullOrWhiteSpace($json)) {
+                $result.IsValid = $false
+                $result.Errors.Add("File is empty or does not exist")
+                return $result
+            }
+
+            $data = $json | ConvertFrom-Json -ErrorAction Stop
+
+            # Check the store version
+            $dataStoreVersion = $data.psobject.Properties | Where-Object { $_.Name -eq 'StoreVersion' } | Select-Object -ExpandProperty Value
+            if ($dataStoreVersion -eq [NoteCatalog]::CurrentStoreVersion) {
+                $result.StoreVersion = 'Current'
+            }
+            elseif (-not [string]::IsNullOrWhiteSpace($dataStoreVersion)) {
+                $result.StoreVersion = $dataStoreVersion
+                $result.Warnings.Add("Note catalog store version mismatch. Expected: $([NoteCatalog]::CurrentStoreVersion), Found: $dataStoreVersion")
+            }
+            else {
+                $result.StoreVersion = 'Legacy'
+            }
+            # Determine if this is old format (array) or new format (object with Notes property)
+            $legacyNotes = $data.psobject.Properties | Where-Object { $_.Name -eq 'Note' } | Select-Object -ExpandProperty Value
+            $currentNotes = $data.psobject.Properties | Where-Object { $_.Name -eq 'Notes' } | Select-Object -ExpandProperty Value
+            $vnotes = if ($data -is [array] -or $null -ne $legacyNotes) {
+                $data
+                $result.Warnings.Add("Legacy note catalog format detected (array). Consider migrating to new format.")
+            }
+            elseif ($null -ne $currentNotes) {
+                $data.Notes
+            }
+            else {
+                $result.IsValid = $false
+                $result.Errors.Add("Invalid JSON structure: expected array or object with 'Notes' property")
+                return $result
+            }
+
+            if ($null -eq $vnotes -or @($vnotes).Count -eq 0) {
+                $result.IsValid = $false
+                $result.Errors.Add("No notes found in catalog")
+                return $result
+            }
+
+            $index = 0
+            foreach ($note in $vnotes) {
+                $noteErrors = [System.Collections.Generic.List[string]]::new()
+                
+                # Check for Note property
+                $noteValue = $null
+                if ($null -ne $note.PSObject.Properties['Note']) {
+                    $noteValue = [string]$note.Note
+                }
+                if ([string]::IsNullOrWhiteSpace($noteValue)) {
+                    $noteErrors.Add("Note[$index]: Missing or empty 'Note' property")
+                }
+
+                # Check for Snippet property
+                $snippetValue = $null
+                if ($null -ne $note.PSObject.Properties['Snippet']) {
+                    $snippetValue = [string]$note.Snippet
+                }
+                if ([string]::IsNullOrWhiteSpace($snippetValue)) {
+                    $noteErrors.Add("Note[$index]: Missing or empty 'Snippet' property")
+                }
+
+                # Additional validation: warn if Alias is missing (will default to Note)
+                if ($null -eq $note.PSObject.Properties['Alias'] -or [string]::IsNullOrWhiteSpace([string]$note.Alias)) {
+                    if (-not [string]::IsNullOrWhiteSpace($noteValue)) {
+                        $result.Warnings.Add("Note[$index] '$noteValue': Missing 'Alias' property (will default to Note name)")
+                    }
+                }
+
+                if ($noteErrors.Count -gt 0) {
+                    $result.IsValid = $false
+                    foreach ($err in $noteErrors) {
+                        $result.Errors.Add($err)
+                    }
+                }
+
+                $index++
+            }
+        }
+        catch {
+            $result.IsValid = $false
+            $result.Errors.Add("Failed to parse JSON: $($_.Exception.Message)")
+        }
+
+        return $result
+    }
+
+    static [NoteCatalog] Migrate([string] $catalogPath, [bool] $backup = $true) {
         $migrate = [NoteCatalog]::new($true)
         $migrate.Path = $catalogPath
         $migrate.Catalog = [System.IO.Path]::GetFileNameWithoutExtension($catalogPath)
@@ -245,20 +345,19 @@ class NoteCatalog {
         
         try {
             $oldData = $json | ConvertFrom-Json -ErrorAction Stop
-            
-            # Backup the original file before migration
-            $directory = [System.IO.Path]::GetDirectoryName($catalogPath)
             $fileName = [System.IO.Path]::GetFileName($catalogPath)
-            $backupDir = Join-Path $directory 'backups'
-            
+            $backupDir = Join-Path $env:PSNOTES_HOME 'backups'
+            $backupStamp = (Get-Date).ToString('yyyyMMdd_HHmmssfff')
+            $backupPath = Join-Path $backupDir "$fileName.pre-migration.$backupStamp.bak"
+            $tempPath = Join-Path $backupDir "$fileName.$backupStamp.tmp"
+            $migrate.Path = $tempPath
+            # Backup the original file before migration
             if (-not (Test-Path $backupDir)) {
                 $null = New-Item -Path $backupDir -ItemType Directory -Force
             }
-            
-            $backupStamp = (Get-Date).ToString('yyyyMMdd_HHmmssfff')
-            $backupPath = Join-Path $backupDir "$fileName.pre-migration.$backupStamp.bak"
             [System.IO.File]::Copy($catalogPath, $backupPath, $true)
-            
+            [System.IO.File]::Copy($catalogPath, $tempPath, $true)
+
             # Convert old format (array) to new format (object with StoreVersion, Catalog, Notes)
             # Old format: [{ Note, Snippet, Details, Alias, Tags }, ...]
             # New format: { StoreVersion, Catalog, Notes: [...] }
@@ -270,11 +369,18 @@ class NoteCatalog {
                 $migrate.Notes.Add($note)
             }
             
-            # Save in new format using atomic backup
-            [NoteCatalog]::AtomicSaveWithBackup($catalogPath, $json, 'migrationv1-')
+            if ($backup) {
+                # Save in new format using atomic backup
+                [NoteCatalog]::AtomicSaveWithBackup($tempPath, $json, 'migrationv1-')
+                
+                # Confirm that $catalogPath and $backupPath are the same and if so delete $catalogPath
+                if ((Get-FileHash -Path $catalogPath).Hash -eq (Get-FileHash -Path $backupPath).Hash) {
+                    [System.IO.File]::Delete($catalogPath)
+                }
+                
+                Write-Verbose "Successfully migrated $fileName to new format. Backup saved to $backupPath"
+            }
             $migrate.Save()
-            
-            Write-Verbose "Successfully migrated $fileName to new format. Backup saved to $backupPath"
         }
         catch {
             throw "Failed to migrate catalog at $catalogPath : $_"
@@ -283,11 +389,13 @@ class NoteCatalog {
         return $migrate
     }
 
-    [void] RemoveNote([string] $note) {
+    [void] RemoveNote([string] $note, [bool] $save = $true) {
         $remove = $this.Notes | Where-Object { $_.Note -eq $note }
         if ($remove) {
             $this.Notes.Remove($remove) | Out-Null
-            $this.Save()
+            if ($save) {
+                $this.Save()
+            }
         }
         else {
             Write-Warning "Note '$note' not found in catalog. No action taken."
@@ -352,7 +460,7 @@ class NoteCatalog {
 
     static [void] AtomicSaveWithBackup([string] $path, [string] $content, [string] $prefix) {
         $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
-        $directory = [System.IO.Path]::GetDirectoryName($path)
+        $directory = $ENV:PSNOTES_HOME
         $fileName = [System.IO.Path]::GetFileName($path)
         $tempPath = Join-Path $directory "$fileName.tmp"
         $backupDir = Join-Path $directory 'backups'
