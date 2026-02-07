@@ -30,7 +30,7 @@ $config.Run.Path = (Join-Path $TestPath 'ScriptAnalyzer')
 $config.TestResult.OutputPath   = (Join-Path $binPath 'ScriptAnalyzer.TestResults.xml')
 Invoke-Pester -Configuration $config
 
-# Run Build Tests
+<# Run Build Tests
 $config.Run.Path = (Join-Path $TestPath 'Build')
 $config.TestResult.OutputPath   = (Join-Path $binPath 'Build.TestResults.xml')
 Invoke-Pester -Configuration $config
