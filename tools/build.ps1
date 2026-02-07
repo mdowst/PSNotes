@@ -59,7 +59,7 @@ $buildParams = @{
 
 $sourceManifest = Join-Path $sourceRoot 'PSNotes.psd1'
 
-if (-not $PSBoundParameters.ContainsKey('Version')) {
+if (-not $PSBoundParameters.ContainsKey('Version') -or [string]::IsNullOrEmpty($Version)) {
     $Version = (Import-PowerShellDataFile -Path $sourceManifest).ModuleVersion
 }
 $buildParams['Version'] = $Version
