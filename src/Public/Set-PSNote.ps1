@@ -1,34 +1,32 @@
 Function Set-PSNote {
     <#
     .SYNOPSIS
-        Use to add or update a PSNote object
+        Add or update a PSNote
 
     .DESCRIPTION
-        Allows you to add or update a PSNote object. If note already
-        exists you must supply the Force switch to overwrite it.
-        Only values supplied with be updated.
+        Adds or updates a PSNote. If the note does not exist, it will be created.
+        Only the values you supply are updated.
 
     .PARAMETER Note
-        The note you want to add/update.
+        The name of the note to add or update.
 
     .PARAMETER Snippet
-        The text of the snippet to add/update.
+        The text of the snippet to add or update.
 
     .PARAMETER ScriptBlock
-        Specifies the snippet to save. Enclose the commands in braces { } to create a script block
+        Specifies the snippet to save. Enclose the commands in braces { } to create a script block.
 
     .PARAMETER Details
-        The Details of the snippet to add/update.
-
-    .PARAMETER Tag
-        The tag of the note(s) you want to return.
+        The details to add or update for the note.
 
     .PARAMETER Alias
-        The Alias to create to copy this snippet to your clipboard. If not
-        supplied it will use the Note value
+        The alias to create for this note. If not supplied it will use the Note value.
 
     .PARAMETER Tags
-        A string array of tags to add/update for the Note
+        A string array of tags to add or update for the note.
+
+    .PARAMETER Catalog
+        The catalog to add or update the note in.
     
     .EXAMPLE
         Set-PSNote -Note 'ADUser' -Tags 'AD','Users' 
@@ -82,12 +80,6 @@ Function Set-PSNote {
         } | Set-PSNote
 
         Creates or updates a note using a custom object via pipeline
-
-    .EXAMPLE
-        Import-Csv .\notes.csv | Set-PSNote
-
-        Imports multiple notes from a CSV file and updates them. The CSV should have columns 
-        matching the parameter names (Note, Snippet, Details, Tags, etc.)
 
     .LINK
         https://github.com/mdowst/PSNotes

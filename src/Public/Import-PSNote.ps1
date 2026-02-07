@@ -1,32 +1,36 @@
 Function Import-PSNote {
     <#
     .SYNOPSIS
-        Use to import a PSNotes JSON fiile
+        Import a PSNotes JSON file
 
     .DESCRIPTION
-        Allows you to import shared PSNotes JSON files to your local notes. They can be imported to your personal
-        store, or they can be imported to a seperate file. 
-
-    .PARAMETER NoteObject
-        The PSNote objects you want to export. Use Get-PSNote to build the object and pass it to the parameter
-        or use a pipeline to pass it.
+        Imports PSNotes from a JSON catalog file into your local note store. You can import into the default
+        catalog or a named catalog, and control how existing notes are handled.
 
     .PARAMETER Path
-        The path to the PSNotes JSON file to export to.
+        The path to the PSNotes JSON catalog file to import.
 
     .PARAMETER Catalog
-        Use to output snippets to a seperate file stored in the folder %APPDATA%\PSNotes.
-        Useful for when you want to share different snippet types.
+        The destination catalog name to import into. Defaults to 'Default'.
+
+    .PARAMETER DefaultBehavior
+        Determines how to handle existing notes when conflicts are detected.
+        Valid values: Prompt, SkipMigratedNotes, OverwriteExistingNotes.
 
     .EXAMPLE
         Import-PSNote -Path C:\Import\MyPSNotes.json
 
-        Imports the contents of the file MyPSNotes.json and saves it to your personal PSNotes.json file
+        Imports the contents of MyPSNotes.json into the Default catalog.
 
     .EXAMPLE
         Import-PSNote -Path C:\Export\MyPSNotes.json -Catalog 'ADNotes'
 
-        Imports the contents of the file MyPSNotes.json and saves it to the file ADNotes.json in the folder %APPDATA%\PSNotes
+        Imports the contents of MyPSNotes.json into the ADNotes catalog.
+
+    .EXAMPLE
+        Import-PSNote -Path C:\Export\MyPSNotes.json -Catalog 'Work' -DefaultBehavior OverwriteExistingNotes
+
+        Imports into the Work catalog and overwrites existing notes when conflicts occur.
     
     .LINK
         https://github.com/mdowst/PSNotes

@@ -1,80 +1,52 @@
-﻿# Get-CommandSplatting
+---
+external help file: PSNotes-help.xml
+Module Name: PSNotes
+online version: 
+schema: 2.0.0
+---
 
-<a name="Get-CommandSplatting"></a>
-## Get-CommandSplatting
+# Get-CommandSplatting
 
-![Get-CommandSplatting01](media/Get-CommandSplatting01.png)
+## SYNOPSIS
 
-### Synopsis
 Use to output the parameters for a command in splatting format
-### Description
-Use to output the parameters for a command in splatting format
 
-### Syntax
-```powershell
-Get-CommandSplatting [-Command] <string> [[-ParameterSet] <string>] [-IncludeCommon] [-Copy] [<CommonParameters>]
+## SYNTAX
 
-Get-CommandSplatting [-Command] <string> [-ListParameterSets] [-IncludeCommon] [-Copy] [<CommonParameters>]
+### ParameterSet (Default)
 
-Get-CommandSplatting [-Command] <string> [-All] [-IncludeCommon] [-Copy] [<CommonParameters>]
 ```
-### Parameters
-#### Command &lt;String&gt;
-    The command to get the parameters for
-    
-    Required?                    true
-    Position?                    1
-    Default value                
-    Accept pipeline input?       false
-    Accept wildcard characters?  false
-#### ParameterSet &lt;String&gt;
-    Use to specify a specific parameter set. Use the -ListParameterSets to get a quick
-    view of all the different Parameter Set names.
-    
-    Required?                    false
-    Position?                    2
-    Default value                
-    Accept pipeline input?       false
-    Accept wildcard characters?  false
-#### ListParameterSets [&lt;SwitchParameter&gt;]
-    Use to list the different Parameter Sets available for the command. Output is shortened 
-    to only show the names. Use -All to return splatting for all parameter sets.
-    
-    Required?                    false
-    Position?                    2
-    Default value                False
-    Accept pipeline input?       false
-    Accept wildcard characters?  false
-#### All [&lt;SwitchParameter&gt;]
-    Use to return full splatting for all parameter sets
-    
-    Required?                    false
-    Position?                    2
-    Default value                False
-    Accept pipeline input?       false
-    Accept wildcard characters?  false
-#### IncludeCommon [&lt;SwitchParameter&gt;]
-    Use to include the PowerShell common parameters in the splatting output. (e.g. Verbose, ErrorAction, etc.)
-    
-    Required?                    false
-    Position?                    3
-    Default value                False
-    Accept pipeline input?       false
-    Accept wildcard characters?  false
-#### Copy [&lt;SwitchParameter&gt;]
-    
-    Required?                    false
-    Position?                    4
-    Default value                False
-    Accept pipeline input?       false
-    Accept wildcard characters?  false
-### Examples
-#### Example 1: Get the default parameter set for a command
-```powershell
+Get-CommandSplatting [-Command] <String> [[-ParameterSet <String>]] [-IncludeCommon] [-Copy] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+```
+
+### ListParameterSets
+
+```
+Get-CommandSplatting [-Command] <String> [-ListParameterSets] [-IncludeCommon] [-Copy] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+```
+
+### All
+
+```
+Get-CommandSplatting [-Command] <String> [-All] [-IncludeCommon] [-Copy] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+```
+
+## DESCRIPTION
+
+Use to output the parameters for a command in splatting format
+
+
+## EXAMPLES
+
+### Example 1: EXAMPLE 1
+
+```
 Get-CommandSplatting -Command 'Get-Item'
 ```
-###### Output
-```
+
+Get the default parameter set for a command
+
+--- Output ----
 Name      : Path
 IsDefault : True
 SetBlock :
@@ -96,23 +68,41 @@ HashBlock :
                 Stream     = $Stream
         }
         Get-Item @Item
+
+
+
+
+
+### Example 2: EXAMPLE 2
+
 ```
-#### Example 2: List the available parameter sets for a command
-```powershell
 Get-CommandSplatting -Command 'Get-Item' -ListParameterSets
 ```
-###### Output
-```
+
+List the available parameter sets for a command
+
+--- Output ----
 ParameterSet : Path
 IsDefault    : True
 Parameters   : Path, Filter, Include, Exclude, Force, Credential, Stream
+
+ParameterSet : LiteralPath
+IsDefault    : False
+Parameters   : LiteralPath, Filter, Include, Exclude, Force, Credential, Stream
+
+
+
+
+
+### Example 3: EXAMPLE 3
+
 ```
-#### Example 3: Get specific parameter set for a command
-```powershell
 Get-CommandSplatting -Command 'Get-Item' -ParameterSet LiteralPath
 ```
-###### Output
-```
+
+Get specific parameter set for a command
+
+--- Output ----
 ParameterSet : LiteralPath
 IsDefault    : False
 SetBlock     :
@@ -134,13 +124,20 @@ HashBlock  :
                 Stream      = $Stream
         }
         Get-Item @ItemLiteralPath
+
+
+
+
+
+### Example 4: EXAMPLE 4
+
 ```
-#### Example 4: Get all parameter sets for a command
-```powershell
 Get-CommandSplatting -Command 'Get-Item' -All
 ```
-###### Output
-```
+
+Get all parameter sets for a command
+
+--- Output ----
 ParameterSet : Path
 IsDefault    : True
 SetBlock     :
@@ -183,4 +180,158 @@ HashBlock  :
                 Stream      = $Stream
         }
         Get-Item @ItemLiteralPath
+
+
+
+
+
+
+## PARAMETERS
+
+### -All
+
+Use to return full splatting for all parameter sets
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: All
+Aliases: 
+Accepted values: 
+
+Required: True (None) False (All)
+Position: 1
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+DontShow: False
 ```
+
+### -Command
+
+The command to get the parameters for
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases: 
+Accepted values: 
+
+Required: True (All) False (None)
+Position: 0
+Default value: 
+Accept pipeline input: False
+Accept wildcard characters: False
+DontShow: False
+```
+
+### -Copy
+
+{{ Fill Copy Description }}
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: 
+Accepted values: 
+
+Required: True (None) False (All)
+Position: 3
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+DontShow: False
+```
+
+### -IncludeCommon
+
+Use to include the PowerShell common parameters in the splatting output.
+(e.g.
+Verbose, ErrorAction, etc.)
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases: 
+Accepted values: 
+
+Required: True (None) False (All)
+Position: 2
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+DontShow: False
+```
+
+### -ListParameterSets
+
+Use to list the different Parameter Sets available for the command.
+Output is shortened 
+to only show the names.
+Use -All to return splatting for all parameter sets.
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: ListParameterSets
+Aliases: 
+Accepted values: 
+
+Required: True (None) False (ListParameterSets)
+Position: 1
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+DontShow: False
+```
+
+### -ParameterSet
+
+Use to specify a specific parameter set.
+Use the -ListParameterSets to get a quick
+view of all the different Parameter Set names.
+
+```yaml
+Type: String
+Parameter Sets: ParameterSet
+Aliases: 
+Accepted values: 
+
+Required: True (None) False (ParameterSet)
+Position: 1
+Default value: 
+Accept pipeline input: False
+Accept wildcard characters: False
+DontShow: False
+```
+
+### -ProgressAction
+
+{{ Fill ProgressAction Description }}
+
+```yaml
+Type: ActionPreference
+Parameter Sets: (All)
+Aliases: proga
+Accepted values: 
+
+Required: True (None) False (All)
+Position: Named
+Default value: 
+Accept pipeline input: False
+Accept wildcard characters: False
+DontShow: False
+```
+
+
+### CommonParameters
+
+This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
+
+## NOTES
+
+General notes
+
+
+## RELATED LINKS
+
+Fill Related Links Here
+

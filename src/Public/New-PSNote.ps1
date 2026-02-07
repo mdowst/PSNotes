@@ -1,55 +1,55 @@
 ﻿Function New-PSNote {
     <#
     .SYNOPSIS
-        Use to add or update a PSNote object
+        Create a new PSNote
 
     .DESCRIPTION
-        Allows you to add or update a PSNote object. If note already
-        exists you must supply the Force switch to overwrite it.
-        Only values supplied with be updated.
+        Creates a new PSNote. If a note with the same name already exists,
+        you must supply the Force switch to overwrite its properties.
 
     .PARAMETER Note
-        The note you want to add/update.
+        The name of the note to create.
 
     .PARAMETER Snippet
-        The text of the snippet to add/update.
+        The text of the snippet to store.
 
     .PARAMETER ScriptBlock
         Specifies the snippet to save. Enclose the commands in braces { } to create a script block.
 
     .PARAMETER Details
-        The Details of the snippet to add/update.
-
-    .PARAMETER Tag
-        The tag of the note(s) you want to return.
+        Additional details about the note.
 
     .PARAMETER Alias
-        The Alias to create to copy this snippet to your clipboard. If not
-        supplied it will use the Note value
+        The alias to create for this note. If not supplied it will use the Note value.
 
     .PARAMETER Tags
-        A string array of tags to add/update for the Note
+        A string array of tags to associate with the note.
+
+    .PARAMETER Catalog
+        The catalog to add the note to. Defaults to 'Default'.
+
+    .PARAMETER Run
+        Indicates whether the note should be set to run by default.
 
     .PARAMETER Force
-        If Note already exists the Force switch is required to overwrite it
+        If the note already exists, the Force switch is required to overwrite it.
     
     .EXAMPLE
-        New-PSNote -Note 'ADUser' -Snippet 'Get-AdUser -Filter *' -Details "Use to return all AD users" -Tags 'AD','Users' 
+        New-PSNote -Note 'ADUser' -Snippet 'Get-ADUser -Filter *' -Details "Return all AD users" -Tags 'AD','Users'
 
-        Creates a new Note for the Get-ADUser cmdlet
+        Creates a new note using a snippet string.
 
     .EXAMPLE
         New-PSNote -Note 'CpuUsage' -Tags 'perf' -Alias 'cpu' -ScriptBlock {
-            Get-WmiObject win32_processor | Measure-Object -property LoadPercentage -Average
+            Get-WmiObject win32_processor | Measure-Object -Property LoadPercentage -Average
         }
 
-        Creates a new Note using a script block instead of a snippet string
-    
-    .EXAMPLE
-        $Snippet = '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)'
-        New-PSNote -Note 'DayOfWeek' -Snippet $Snippet -Details "Use to name of the day of the week" -Tags 'date' -Alias 'today'
+        Creates a new note using a script block instead of a snippet string.
 
-        Creates a new Note for the to get the current day's abbrevation with the custom Alias of today
+    .EXAMPLE
+        New-PSNote -Note 'DayOfWeek' -Snippet '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)' -Details "Name of the day of week" -Tags 'date' -Alias 'today'
+
+        Creates a new note with a custom alias.
 
     .EXAMPLE
         $Snippet = @'
@@ -59,9 +59,19 @@
         }
         $stringBuilder.ToString()
         '@
-        New-PSNote -Note 'StringBuilder' -Snippet $Snippet -Details "Use StringBuilder to combine multiple strings" -Tags 'string'
+        New-PSNote -Note 'StringBuilder' -Snippet $Snippet -Details "Combine multiple strings" -Tags 'string'
 
-        Creates a new Note with a new mulitple line snippet using a here-string
+        Creates a new note with a multi-line snippet using a here-string.
+
+    .EXAMPLE
+        New-PSNote -Note 'GetDateIso' -Snippet 'Get-Date -Format "yyyy-MM-dd"' -Catalog 'Work' -Tags 'date'
+
+        Creates a new note in the Work catalog.
+
+    .EXAMPLE
+        New-PSNote -Note 'PingGoogle' -Snippet 'Test-Connection -ComputerName 8.8.8.8 -Count 2' -Run $true
+
+        Creates a new note that is configured to run by default.
 
     .LINK
         https://github.com/mdowst/PSNotes

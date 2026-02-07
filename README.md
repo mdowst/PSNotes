@@ -37,17 +37,29 @@ The import and export functionality allows you to share notes between machines a
 
 # Getting Started
 ## Install Instructions
-PowerShell v5+ and PowerShell Core v6+
+PowerShell v5+ and PowerShell v7+
 ```powershell
 Install-Module PSNotes
 ```
 
-Note: At of the time of publishing Set-Clipboard is not supported in PowerShell Core. To use the copy to clipboard functionality of this module, it is recommended that you also install the ClipboardText module.
+[top](#psnotes)
+# Commands
 
+| Cmdlet | Synopsis |
+| ------ | -------- |
+| [ConvertTo-Splatting](Documentation/ConvertTo-Splatting.md) | Use to convert an existing PowerShell command to splatting |
+| [Export-PSNote](Documentation/Export-PSNote.md) | Use to export your PSNotes to copy to another machine or share with others |
+| [Get-CommandSplatting](Documentation/Get-CommandSplatting.md) | Use to output the parameters for a command in splatting format |
+| [Get-PSNote](Documentation/Get-PSNote.md) | Use to search for or list the different PSNotes |
+| [Get-PSNoteAlias](Documentation/Get-PSNoteAlias.md) | Use display snippet and copy to clipboard using an Alias |
+| [Import-PSNote](Documentation/Import-PSNote.md) | Use to import a PSNotes JSON fiile |
+| [Initialize-PSNoteStore](Documentation/Initialize-PSNoteStore.md) | {{ Fill in the Synopsis }} |
+| [New-PSNote](Documentation/New-PSNote.md) | Use to add or update a PSNote object |
+| [Remove-PSNote](Documentation/Remove-PSNote.md) | Remove one or more PSNotes from the note store. |
+| [Set-PSNote](Documentation/Set-PSNote.md) | Use to add or update a PSNote object |
+| [Start-PSNote](Documentation/Start-PSNote.md) | {{ Fill in the Synopsis }} |
+| [Update-PSNoteStore](Documentation/Update-PSNoteStore.md) | {{ Fill in the Synopsis }} |
 
-```powershell
-Install-Module -Name ClipboardText
-```
 [top](#psnotes)
 ## Output and Run Notes
 When you create a note in the PSNotes module you assign an alias to it. You can use this alias at any time to output, copy, or run a note. Simply type the name of the alias and hit enter to output it to your PowerShell console. You can also add the `-copy` switch to have the note copied to your clipboard or use the `-run` to execute the note directly.

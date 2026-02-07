@@ -1,4 +1,27 @@
 Function Initialize-PSNoteStore {
+    <#
+    .SYNOPSIS
+        Initialize the PSNotes store
+
+    .DESCRIPTION
+        Loads all PSNotes catalogs from $env:PSNOTES_HOME into the in-memory note store
+        and verifies clipboard support. This is typically called internally by other
+        commands, but can be invoked to refresh the store after external changes.
+
+    .EXAMPLE
+        Initialize-PSNoteStore
+
+        Initializes the PSNotes store by loading catalogs from $env:PSNOTES_HOME.
+
+    .EXAMPLE
+        $env:PSNOTES_HOME = 'C:\Users\Me\AppData\Roaming\PSNotes'
+        Initialize-PSNoteStore
+
+        Initializes the store using a custom PSNotes home path.
+
+    .LINK
+        https://github.com/mdowst/PSNotes
+    #>
     [CmdletBinding()]
     param()
 

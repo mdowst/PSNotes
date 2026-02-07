@@ -28,11 +28,22 @@
     .EXAMPLE
         Get-PSNote -SearchString 'cred' -Catalog 'Work*' | Remove-PSNote
 
+        Removes notes matched by search string from catalogs that start with 'Work'.
+
     .EXAMPLE
         Remove-PSNote -Note 'cred*' -Catalog 'Default'
 
+        Removes notes with names starting with 'cred' from the Default catalog.
+
     .EXAMPLE
         Remove-PSNote -SearchString 'token' -Catalog 'Work*','Personal*' -Force
+
+        Removes notes matching 'token' in the Work and Personal catalogs without confirmation.
+
+    .EXAMPLE
+        Get-PSNote -Tag 'deprecated' | Remove-PSNote -Force
+
+        Removes all notes tagged 'deprecated' via pipeline without confirmation.
 
     .LINK
         https://github.com/mdowst/PSNotes

@@ -1,68 +1,81 @@
 ﻿Function Get-PSNote{
     <#
     .SYNOPSIS
-        Use to search for or list the different PSNotes
+        Search for or list PSNotes
 
     .DESCRIPTION
-        Allows you to search for snippets by name or by tag. You can also search all 
-        properties by using the SearchString parameter
+        Searches notes by name, tag, or text across all note properties. You can also
+        filter by catalog and optionally copy or run the returned snippet.
 
     .PARAMETER Note
-        The note you want to return. Accepts wildcards
+        The note name to return. Accepts wildcards.
 
     .PARAMETER Tag
-        The tag of the note(s) you want to return.
+        Return notes that contain the specified tag.
 
     .PARAMETER Catalog
         Filter notes by catalog name. Accepts wildcards and multiple values.
 
     .PARAMETER Copy
-        If specfied the the Snippet will be copied to your clipboard
+        Copy the selected snippet to the clipboard.
+
+    .PARAMETER Run
+        Run the selected snippet via Invoke-PSNote.
 
     .PARAMETER SearchString
-        Use to search for text in the note's name, details, snippet, alias, and tags
+        Search for text in the note's name, details, snippet, alias, or tags.
 
     .EXAMPLE
         Get-PSNote
 
-        Returns all notes
+        Returns all notes.
 
     .EXAMPLE
-        Get-PSNote -Note 'creds'
+        Get-PSNote -Note 'Creds'
 
-        Returns the note creds
-    
-    .EXAMPLE
-        Get-PSNote -Note 'cred*'
-
-        Returns all notes that start with cred
+        Returns the note named 'Creds'.
 
     .EXAMPLE
-        Get-PSNote -tag 'AD'
+        Get-PSNote -Note 'Cred*'
 
-        Returns all notes with the tag 'AD'
+        Returns all notes with names that start with 'Cred'.
 
     .EXAMPLE
-        Get-PSNote -Note '*user*' -tag 'AD'
+        Get-PSNote -Tag 'AD'
 
-        Returns all notes with user in the name and the tag 'AD'
+        Returns all notes with the tag 'AD'.
+
+    .EXAMPLE
+        Get-PSNote -Note '*User*' -Tag 'AD'
+
+        Returns notes with 'User' in the name and the tag 'AD'.
 
     .EXAMPLE
         Get-PSNote -SearchString 'day'
 
-        Returns all notes with the word day in the name, details, snippet text, alias, or tags
+        Returns notes where 'day' appears in the name, details, snippet, alias, or tags.
 
     .EXAMPLE
         Get-PSNote -Catalog 'Default'
 
-        Returns all notes in the Default catalog
+        Returns all notes in the Default catalog.
 
     .EXAMPLE
         Get-PSNote -SearchString 'day' -Catalog 'Work*','Personal*'
 
-        Searches only within the matching catalogs
+        Searches only within the matching catalogs.
 
-        .LINK
+    .EXAMPLE
+        Get-PSNote -Note 'CpuUsage' -Copy
+
+        Copies the snippet for the selected note to the clipboard.
+
+    .EXAMPLE
+        Get-PSNote -SearchString 'token' -Run
+
+        Runs the selected note; prompts to choose if multiple notes match.
+
+    .LINK
         https://github.com/mdowst/PSNotes
     #>
     [cmdletbinding(DefaultParameterSetName="Note")]
