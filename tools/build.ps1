@@ -99,15 +99,8 @@ Set-Location -LiteralPath $currentPath
 
 
 # Clean up any loaded files that were not present before.
-if (Get-Variable -Name IsLinux -Scope Global -ValueOnly -ErrorAction SilentlyContinue) {
-    Get-ChildItem -Path '/home/PSNotes' -File | Where-Object {
-        $beforeFiles.Name -notcontains $_.Name
-    } | ForEach-Object {
-        Remove-Item -Path $_.FullName -Force
-    }
-}
-else {
-    Get-ChildItem -Path (Join-Path $env:APPDATA 'PSNotes') -File | Where-Object {
+if (Test-Path $homePath) { {
+    Get-ChildItem -Path $homePath -File | Where-Object {
         $beforeFiles.Name -notcontains $_.Name
     } | ForEach-Object {
         Remove-Item -Path $_.FullName -Force

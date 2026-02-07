@@ -33,13 +33,61 @@ Function Set-PSNote {
     .EXAMPLE
         Set-PSNote -Note 'ADUser' -Tags 'AD','Users' 
 
-        Set the tags AD and User for the note ADUser
+        Updates the tags for the note 'ADUser' to 'AD' and 'Users'
     
     .EXAMPLE
         $Snippet = '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)'
         Set-PSNote -Note 'DayOfWeek' -Snippet $Snippet
 
-        Updates the snippet for the note DayOfWeek
+        Updates the snippet for the note 'DayOfWeek'
+
+    .EXAMPLE
+        Set-PSNote -Note 'CpuUsage' -ScriptBlock {
+            Get-WmiObject win32_processor | Measure-Object -property LoadPercentage -Average
+        }
+
+        Updates the note 'CpuUsage' with a new script block
+
+    .EXAMPLE
+        Set-PSNote -Note 'CpuUsage' -Details "Returns CPU usage percentage" -Alias 'cpu'
+
+        Updates the Details and Alias for the note 'CpuUsage'
+
+    .EXAMPLE
+        Set-PSNote -Note 'ADUser' -Catalog 'Work' -Tags 'AD','Users','Production'
+
+        Updates the tags for the note 'ADUser' in the 'Work' catalog
+
+    .EXAMPLE
+        Set-PSNote -Note 'GetDate' -Snippet 'Get-Date -Format "yyyy-MM-dd"' -Details "Returns current date in ISO format" -Tags 'date','formatting'
+
+        Updates multiple properties of the note 'GetDate' at once
+
+    .EXAMPLE
+        Get-PSNote -Note 'ADUser' | Set-PSNote -Tags 'AD','Users','Updated'
+
+        Retrieves the note 'ADUser' and updates its tags via pipeline
+
+    .EXAMPLE
+        Get-PSNote -Tag 'deprecated' | Set-PSNote -Tags 'archived','old'
+
+        Updates all notes tagged 'deprecated' to have tags 'archived' and 'old' instead
+
+    .EXAMPLE
+        [PSCustomObject]@{
+            Note = 'MyNote'
+            Snippet = 'Get-Process | Select-Object -First 10'
+            Details = 'Top 10 processes'
+            Tags = @('process','monitoring')
+        } | Set-PSNote
+
+        Creates or updates a note using a custom object via pipeline
+
+    .EXAMPLE
+        Import-Csv .\notes.csv | Set-PSNote
+
+        Imports multiple notes from a CSV file and updates them. The CSV should have columns 
+        matching the parameter names (Note, Snippet, Details, Tags, etc.)
 
     .LINK
         https://github.com/mdowst/PSNotes
