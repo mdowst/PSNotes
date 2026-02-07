@@ -11,11 +11,14 @@ param(
 
 $ErrorActionPreference = 'Stop'
 # This can some times cause old versions to load in the current session, so we capture the directory and then clean up anything that might have been added.
-$beforeFiles = if (Get-Variable -Name IsLinux -Scope Global -ValueOnly -ErrorAction SilentlyContinue) {
-    Get-ChildItem -Path '/home/PSNotes' -File
+$homePath = if (Get-Variable -Name IsLinux -Scope Global -ValueOnly -ErrorAction SilentlyContinue) {
+    '/home/PSNotes'
 }
 else {
-    Get-ChildItem -Path (Join-Path $env:APPDATA 'PSNotes') -File
+    Join-Path $env:APPDATA 'PSNotes'
+}
+$beforeFiles = if (Test-Path $homePath) {
+    Get-ChildItem -Path $homePath -File
 }
 
 # --- Ensure ModuleBuilder is available (build-time dependency) ---
