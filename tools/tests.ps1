@@ -9,11 +9,11 @@ if(-not (Test-Path $binPath)){
    New-Item -ItemType Directory -Force -Path $binPath | Out-Null
 }
 
-Get-ChildItem -Path $binPath -Recurse
-
-<#
-. "$Parent\tools\build.ps1" -Version '0.9.9.9'
-Get-Module PSNotes | Remove-Module -Force
+$psd1 = Get-ChildItem -Path $binPath -Recurse -Filter 'PSNotes.psd1' | Select-Object -Last 1 -ExpandProperty FullName
+if(-not $psd1){
+    Write-Host "PSNotes.psd1 not found in $binPath. Please build the module before running tests."
+    exit 1
+}
 
 # Run Unit Tests
 $config = New-PesterConfiguration

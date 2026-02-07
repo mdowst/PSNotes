@@ -66,6 +66,14 @@ if (-not $PSBoundParameters.ContainsKey('Version') -or [string]::IsNullOrEmpty($
 if($Version -match '^v'){
 	$Version = $Version.Replace('v','')
 }
+
+# Ensure version has 4 parts (major.minor.patch.revision)
+$versionParts = $Version -split '\.'
+while ($versionParts.Count -lt 4) {
+    $versionParts += '0'
+}
+$Version = $versionParts -join '.'
+
 $testVersion = [version]$Version
 if ($testVersion.Revision -lt 0) {
     $testVersion.Revision = 0

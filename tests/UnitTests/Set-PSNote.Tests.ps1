@@ -92,7 +92,7 @@ Describe "Set-PSNote" {
 
             $result = Get-PSNote -Note 'SetTestNote'
             $result.Snippet | Should -Be $scriptFile
-            $result.Kind | Should -Be ([PSNoteKind]::Script)
+            $result.Kind | Should -Be 'Script'
         }
 
         It "updates multiple properties at once" {
@@ -140,7 +140,7 @@ Describe "Set-PSNote" {
 
             $result = Get-PSNote -Note 'CreatedFromScriptPath'
             $result.Snippet | Should -Be $scriptFile
-            $result.Kind | Should -Be ([PSNoteKind]::Script)
+            $result.Kind | Should -Be 'Script'
         }
     }
 
@@ -188,7 +188,7 @@ Describe "Set-PSNote" {
 
             $result = Get-PSNote -Note 'PipelineScriptPathNote'
             $result.Snippet | Should -Be $scriptFile
-            $result.Kind | Should -Be ([PSNoteKind]::Script)
+            $result.Kind | Should -Be 'Script'
         }
     }
 

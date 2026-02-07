@@ -176,18 +176,18 @@ Function Set-PSNote {
     .LINK
         Remove-PSNote
     #>
-    [cmdletbinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', DefaultParameterSetName = "Snippet")]
+    [cmdletbinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low')]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '')]
     param(
         [parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$True)]
         [string]$Note,
         [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)]
         [string]$Catalog,
-        [parameter(Mandatory = $false, ParameterSetName = "Snippet",ValueFromPipelineByPropertyName=$True)]
+        [parameter(Mandatory = $false, ValueFromPipelineByPropertyName=$True)]
         [string]$Snippet,
-        [parameter(Mandatory = $false, ParameterSetName = "ScriptBlock",ValueFromPipelineByPropertyName=$True)]
+        [parameter(Mandatory = $false, ValueFromPipelineByPropertyName=$True)]
         [ScriptBlock]$ScriptBlock,
-        [parameter(Mandatory = $false, ParameterSetName = "ScriptPath",ValueFromPipelineByPropertyName=$True)]
+        [parameter(Mandatory = $false, ValueFromPipelineByPropertyName=$True)]
         [string]$ScriptPath,
         [parameter(Mandatory = $false,ValueFromPipelineByPropertyName=$True)]
         [string]$Details,

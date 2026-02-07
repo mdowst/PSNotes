@@ -69,7 +69,7 @@ Describe "New-PSNote" {
             $result = Get-PSNote -Note 'TestScriptPath'
             $result.Note | Should -Be 'TestScriptPath'
             $result.Snippet | Should -Be $scriptFile
-            $result.Kind | Should -Be ([PSNoteKind]::Script)
+            $result.Kind | Should -Be 'Script'
             $result.Details | Should -Be 'Test script path'
         }
 
@@ -162,7 +162,7 @@ $stringBuilder.ToString()
 
             $result = Get-PSNote -Note 'UpdateTest'
             $result.Snippet | Should -Be $scriptFile
-            $result.Kind | Should -Be ([PSNoteKind]::Script)
+            $result.Kind | Should -Be 'Script'
         }
     }
 
