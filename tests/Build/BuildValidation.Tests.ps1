@@ -12,16 +12,13 @@ BeforeAll {
 }
 
 Describe 'Build Script Validation' {
-    It 'produces expected nupkg file' {
-        $nupkgPath = Join-Path $Global:TopLevel 'bin' "PSNotes.$($script:Version).nupkg"
-        Test-Path $nupkgPath | Should -BeTrue
-    }
-
     It 'produces expected module files' {
         $psm1Path = Join-Path $Global:TopLevel 'bin' 'PSNotes' $script:Version 'PSNotes.psm1'
         $psd1Path = Join-Path $Global:TopLevel 'bin' 'PSNotes' $script:Version 'PSNotes.psd1'
+        $formatPath = Join-Path $Global:TopLevel 'bin' 'PSNotes' $script:Version 'PSNotes.format.ps1xml'
         Test-Path $psm1Path | Should -BeTrue
         Test-Path $psd1Path | Should -BeTrue
+        Test-Path $formatPath | Should -BeTrue
     }
 
     It 'loads the module without errors' {

@@ -33,7 +33,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: my-build-${{ matrix.runs-on }}
+          name: my-build
           path: bin
         
   test-module:
@@ -42,13 +42,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest]
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: bin
-          pattern: my-build-*
+          pattern: my-build
           merge-multiple: true
       - run: ls -R bin
         
@@ -62,3 +62,11 @@ jobs:
       - name: Test build
         shell: pwsh
         run: .\tools\tests.ps1
+
+      - name: Test Report
+        uses: dorny/test-reporter@v2
+        if: ${{ !cancelled() }}
+        with:
+          name: PESTER Tests
+          path: bin/*.TestResults.xml
+          reporter: dotnet-nunit
