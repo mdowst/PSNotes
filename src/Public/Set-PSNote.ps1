@@ -47,6 +47,7 @@ Function Set-PSNote {
     
     #>
     [cmdletbinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', DefaultParameterSetName = "Snippet")]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '')]
     param(
         [parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$True)]
         [string]$Note,
