@@ -16,7 +16,8 @@ BeforeAll {
     $script:OriginalPSNotesHome = $env:PSNOTES_HOME
     $env:PSNOTES_HOME = $script:TestDir
 
-    Import-Module (Join-Path $Global:TopLevel 'bin\PSNotes\0.9.9.9\PSNotes.psd1') -Force
+    $psd1 = Get-ChildItem -Path (Join-Path $Global:TopLevel 'bin') -Recurse -Filter 'PSNotes.psd1' | Select-Object -Last 1 -ExpandProperty FullName
+    Import-Module $psd1 -Force
 }
 
 AfterAll {

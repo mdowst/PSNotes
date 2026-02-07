@@ -16,7 +16,8 @@ BeforeAll {
     $env:PSNOTES_HOME = $script:TestDir
     $script:MockPath = Join-Path -Path $PSScriptRoot -ChildPath 'Mocks'
 
-    Import-Module (Join-Path $Global:TopLevel 'bin\PSNotes\0.9.9.9\PSNotes.psd1') -Force
+    $psd1 = Get-ChildItem -Path (Join-Path $Global:TopLevel 'bin') -Recurse -Filter 'PSNotes.psd1' | Select-Object -Last 1 -ExpandProperty FullName
+    Import-Module $psd1 -Force
     # Load the class file
     . "$Global:TopLevel\src\Classes\NoteStore.class.ps1"
 }

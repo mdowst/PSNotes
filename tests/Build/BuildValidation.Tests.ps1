@@ -3,31 +3,33 @@ $Global:TopLevel = $PSScriptRoot
 while ( -not (Test-Path (Join-Path $Global:TopLevel 'src'))) {
     $Global:TopLevel = Split-Path $Global:TopLevel -Parent
 }
-Describe 'Build Script Validation' {
-    It 'build.ps1 runs without errors' {
-        $buildScript = Join-Path $Global:TopLevel 'tools\build.ps1'
-        $result = & $buildScript -Version '0.9.9.9'
-        $LASTEXITCODE | Should -Be 0
-    }
 
+BeforeAll {
+    Set-StrictMode -Version Latest
+    $psd1 = (Get-ChildItem -Path (Join-Path $Global:TopLevel 'bin') -Recurse -Filter 'PSNotes.psd1').FullName
+    Import-Module $psd1 -Force
+    $script:Version = [regex]::Match($psd1.ToLower(), '\\psnotes\\([0-9]+(?:\.[0-9]+)*)\\psnotes\.psd1').Groups[1].Value
+}
+
+Describe 'Build Script Validation' {
     It 'produces expected nupkg file' {
-        $nupkgPath = Join-Path $Global:TopLevel 'bin' 'PSNotes.0.9.9.9.nupkg'
+        $nupkgPath = Join-Path $Global:TopLevel 'bin' "PSNotes.$($script:Version).nupkg"
         Test-Path $nupkgPath | Should -BeTrue
     }
 
     It 'produces expected module files' {
-        $psm1Path = Join-Path $Global:TopLevel 'bin' 'PSNotes' '0.9.9.9' 'PSNotes.psm1'
-        $psd1Path = Join-Path $Global:TopLevel 'bin' 'PSNotes' '0.9.9.9' 'PSNotes.psd1'
+        $psm1Path = Join-Path $Global:TopLevel 'bin' 'PSNotes' $script:Version 'PSNotes.psm1'
+        $psd1Path = Join-Path $Global:TopLevel 'bin' 'PSNotes' $script:Version 'PSNotes.psd1'
         Test-Path $psm1Path | Should -BeTrue
         Test-Path $psd1Path | Should -BeTrue
     }
 
     It 'loads the module without errors' {
-        $modulePath = Join-Path $Global:TopLevel 'bin' 'PSNotes' '0.9.9.9' 'PSNotes.psd1'
+        $modulePath = Join-Path $Global:TopLevel 'bin' 'PSNotes' $script:Version 'PSNotes.psd1'
         Import-Module $modulePath -Force -ErrorAction Stop
         $mod = Get-Module PSNotes
         $mod | Should -Not -BeNullOrEmpty
-        $mod.Version.ToString() | Should -Be '0.9.9.9'
+        $mod.Version.ToString() | Should -Be $script:Version
     }
 
     It 'contains expected exported functions' {

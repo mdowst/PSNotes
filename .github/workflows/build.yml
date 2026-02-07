@@ -57,7 +57,7 @@ jobs:
         run: |
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module Pester -MinimumVersion 5.5.0
-          Install-Module ModuleBuilder,PSScriptAnalyzer,EZOut
+          Install-Module PSScriptAnalyzer
 
       - name: Test build
         shell: pwsh

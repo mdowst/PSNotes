@@ -6,7 +6,7 @@ param(
     [string] $OutDir = (Join-Path (Split-Path $PSScriptRoot) 'bin'),
 
     [Parameter()]
-    [version] $Version
+    [string] $Version
 )
 
 $ErrorActionPreference = 'Stop'
@@ -59,20 +59,26 @@ $buildParams = @{
 
 $sourceManifest = Join-Path $sourceRoot 'PSNotes.psd1'
 
+$Version = "v1.0.0" 
 if (-not $PSBoundParameters.ContainsKey('Version') -or [string]::IsNullOrEmpty($Version)) {
     $Version = (Import-PowerShellDataFile -Path $sourceManifest).ModuleVersion
 }
-elseif($Version -match '^v'){
+if($Version -match '^v'){
 	$Version = $Version.Replace('v','')
 }
-$buildParams['Version'] = $Version
+$testVersion = [version]$Version
+if ($testVersion.Revision -lt 0) {
+    $testVersion.Revision = 0
+}
+$buildParams['Version'] = $testVersion
+
 
 
 Write-Host "Building PSNotes module..." -ForegroundColor Cyan
 Write-Host "  SourcePath     :  $sourceRoot"
 Write-Host "  SourceManifest : $sourceManifest"
 Write-Host "  OutputDir      : $destRoot"
-Write-Host "  Version        : $Version"
+Write-Host "  Version        : $testVersion"
 
 Build-Module @buildParams | Out-Null
 
