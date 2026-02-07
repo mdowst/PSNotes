@@ -59,6 +59,19 @@ Describe "New-PSNote" {
             $result.Details | Should -Be 'Test scriptblock'
         }
 
+        It "creates a new note with ScriptPath parameter" {
+            $scriptFile = Join-Path $script:TestDir 'TestScriptPath.ps1'
+            Set-Content -Path $scriptFile -Value 'Get-Date' -Force
+
+            New-PSNote -Note 'TestScriptPath' -ScriptPath $scriptFile -Details 'Test script path'
+            
+            $result = Get-PSNote -Note 'TestScriptPath'
+            $result.Note | Should -Be 'TestScriptPath'
+            $result.Snippet | Should -Be $scriptFile
+            $result.Kind | Should -Be ([PSNoteKind]::Script)
+            $result.Details | Should -Be 'Test script path'
+        }
+
         It "creates a note with multiple tags" {
             New-PSNote -Note 'TestMultiTags' -Snippet 'Get-ChildItem' -Tags 'Files', 'Test', 'PowerShell'
             
@@ -139,6 +152,17 @@ $stringBuilder.ToString()
             $result = Get-PSNote -Note 'UpdateTest'
             $result.Alias | Should -Be 'new-alias'
         }
+
+        It "updates existing note to ScriptPath with -Force" {
+            $scriptFile = Join-Path $script:TestDir 'UpdateTestScript.ps1'
+            Set-Content -Path $scriptFile -Value 'Get-Process' -Force
+
+            New-PSNote -Note 'UpdateTest' -ScriptPath $scriptFile -Force
+
+            $result = Get-PSNote -Note 'UpdateTest'
+            $result.Snippet | Should -Be $scriptFile
+            $result.Kind | Should -Be ([PSNoteKind]::Script)
+        }
     }
 
     Context "Alias validation" {
@@ -170,12 +194,23 @@ $stringBuilder.ToString()
             { New-PSNote -Note 'ScriptBlockParam' -ScriptBlock { Get-Date } } | Should -Not -Throw
         }
 
+        It "accepts ScriptPath parameter" {
+            $scriptFile = Join-Path $script:TestDir 'ParamScriptPath.ps1'
+            Set-Content -Path $scriptFile -Value 'Get-ChildItem' -Force
+            { New-PSNote -Note 'ScriptPathParam' -ScriptPath $scriptFile } | Should -Not -Throw
+        }
+
         It "converts ScriptBlock to string for storage" {
             $sb = { Get-Process | Select-Object -First 5 }
             New-PSNote -Note 'ScriptBlockConversion' -ScriptBlock $sb
             
             $result = Get-PSNote -Note 'ScriptBlockConversion'
             $result.Snippet | Should -Be $sb.ToString()
+        }
+
+        It "throws when ScriptPath does not exist" {
+            $missingFile = Join-Path $script:TestDir 'MissingScript.ps1'
+            { New-PSNote -Note 'MissingScriptPath' -ScriptPath $missingFile } | Should -Throw
         }
     }
 

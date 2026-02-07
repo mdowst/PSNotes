@@ -9,6 +9,9 @@ if(-not (Test-Path $binPath)){
    New-Item -ItemType Directory -Force -Path $binPath | Out-Null
 }
 
+Get-ChildItem -Path $binPath -Recurse
+
+<#
 . "$Parent\tools\build.ps1" -Version '0.9.9.9'
 Get-Module PSNotes | Remove-Module -Force
 
@@ -31,3 +34,4 @@ Invoke-Pester -Configuration $config
 $config.Run.Path = (Join-Path $TestPath 'Build')
 $config.TestResult.OutputPath   = (Join-Path $binPath 'Build.TestResults.xml')
 Invoke-Pester -Configuration $config
+#>

@@ -83,6 +83,17 @@ Describe "Set-PSNote" {
             $result.Snippet | Should -Be $scriptBlock.ToString()
         }
 
+        It "updates with ScriptPath parameter" {
+            $scriptFile = Join-Path $script:TestDir 'SetTestScriptPath.ps1'
+            Set-Content -Path $scriptFile -Value 'Get-Date' -Force
+
+            Set-PSNote -Note 'SetTestNote' -ScriptPath $scriptFile -Catalog 'Personal'
+
+            $result = Get-PSNote -Note 'SetTestNote'
+            $result.Snippet | Should -Be $scriptFile
+            $result.Kind | Should -Be ([PSNoteKind]::Script)
+        }
+
         It "updates multiple properties at once" {
             Set-PSNote -Note 'SetTestNote' -Snippet 'Get-Date' -Details 'New details' -Tags 'Updated','Time' -Alias 'date-alias' -Catalog 'Personal'
             
@@ -119,6 +130,17 @@ Describe "Set-PSNote" {
             $result = Get-PSNote -Note 'CreatedWithAlias'
             $result.Alias | Should -Be 'custom-alias'
         }
+
+        It "creates a new note from ScriptPath when note doesn't exist" {
+            $scriptFile = Join-Path $script:TestDir 'CreateScriptPath.ps1'
+            Set-Content -Path $scriptFile -Value 'Get-Process' -Force
+
+            Set-PSNote -Note 'CreatedFromScriptPath' -ScriptPath $scriptFile -Catalog 'Personal'
+
+            $result = Get-PSNote -Note 'CreatedFromScriptPath'
+            $result.Snippet | Should -Be $scriptFile
+            $result.Kind | Should -Be ([PSNoteKind]::Script)
+        }
     }
 
     Context "Pipeline input" {
@@ -149,6 +171,24 @@ Describe "Set-PSNote" {
             $result = Get-PSNote -Note 'PipelineTestNote'
             $result.Snippet | Should -Be 'Get-Content'
         }
+
+        It "accepts ScriptPath from pipeline by property name" {
+            New-PSNote -Note 'PipelineScriptPathNote' -Snippet 'Get-Date' -Catalog 'Personal' -Force
+            $scriptFile = Join-Path $script:TestDir 'PipelineScriptPath.ps1'
+            Set-Content -Path $scriptFile -Value 'Get-ChildItem' -Force
+
+            $noteObject = [PSCustomObject]@{
+                Note       = 'PipelineScriptPathNote'
+                ScriptPath = $scriptFile
+                Catalog    = 'Personal'
+            }
+
+            $noteObject | Set-PSNote
+
+            $result = Get-PSNote -Note 'PipelineScriptPathNote'
+            $result.Snippet | Should -Be $scriptFile
+            $result.Kind | Should -Be ([PSNoteKind]::Script)
+        }
     }
 
     Context "Alias validation" {
@@ -176,12 +216,23 @@ Describe "Set-PSNote" {
             { Set-PSNote -Note 'ScriptBlockParamSet' -ScriptBlock { Get-Date } -Catalog 'Personal' } | Should -Not -Throw
         }
 
+        It "accepts ScriptPath parameter" {
+            $scriptFile = Join-Path $script:TestDir 'ScriptPathParamSet.ps1'
+            Set-Content -Path $scriptFile -Value 'Get-ChildItem' -Force
+            { Set-PSNote -Note 'ScriptPathParamSet' -ScriptPath $scriptFile -Catalog 'Personal' } | Should -Not -Throw
+        }
+
         It "converts ScriptBlock to string for storage" {
             $sb = { Get-Process | Select-Object -First 5 }
             Set-PSNote -Note 'ScriptBlockConversionSet' -ScriptBlock $sb -Catalog 'Personal'
             
             $result = Get-PSNote -Note 'ScriptBlockConversionSet'
             $result.Snippet | Should -Be $sb.ToString()
+        }
+
+        It "throws when ScriptPath does not exist" {
+            $missingFile = Join-Path $script:TestDir 'MissingScriptPath.ps1'
+            { Set-PSNote -Note 'MissingScriptPath' -ScriptPath $missingFile -Catalog 'Personal' } | Should -Throw
         }
     }
 
