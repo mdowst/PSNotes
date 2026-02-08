@@ -62,11 +62,3 @@ jobs:
       - name: Test build
         shell: pwsh
         run: .\tools\tests.ps1
-
-      - name: Test Report
-        uses: dorny/test-reporter@v2
-        if: ${{ !cancelled() }}
-        with:
-          name: PESTER Tests
-          path: bin/*.TestResults.xml
-          reporter: dotnet-nunit
