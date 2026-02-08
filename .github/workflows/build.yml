@@ -29,12 +29,24 @@ jobs:
           $Version = git describe --tags --abbrev=0 
           Write-Host "Version : $Version"
           .\tools\build.ps1 -Version $Version
-
+    
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: my-build
+          name: psnotes-build
           path: bin
+
+      - name: Test build
+        shell: pwsh
+        run: .\tools\tests-build.ps1
+
+      - name: Deployment Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+            name: Build Tests
+            path: '.\bin\*.TestResults.xml' 
+            reporter: java-junit
         
   test-module:
     needs: build-module
@@ -48,7 +60,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: bin
-          pattern: my-build
+          pattern: psnotes-build
           merge-multiple: true
       - run: ls -R bin
         
@@ -65,8 +77,8 @@ jobs:
 
       - name: Deployment Report
         uses: dorny/test-reporter@v1
-        if: success() || failure()    # run this step even if previous step failed
+        if: success() || failure()
         with:
             name: Pester Tests
-            path: '*.TestResults.xml' 
+            path: '.\bin\*.TestResults.xml' 
             reporter: java-junit
