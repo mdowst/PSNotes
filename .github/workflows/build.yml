@@ -36,11 +36,11 @@ jobs:
           name: psnotes-build
           path: bin
 
-      - name: Test build
+      - name: Build Tests
         shell: pwsh
         run: .\tools\tests-build.ps1
 
-      - name: Deployment Report
+      - name: Build Report
         uses: dorny/test-reporter@v1
         if: success() || failure()
         with:
@@ -71,11 +71,11 @@ jobs:
           Install-Module Pester -MinimumVersion 5.5.0
           Install-Module PSScriptAnalyzer
 
-      - name: Test build
+      - name: Unit Tests
         shell: pwsh
         run: .\tools\tests.ps1
 
-      - name: Deployment Report
+      - name: Test Report
         uses: dorny/test-reporter@v1
         if: success() || failure()
         with:
