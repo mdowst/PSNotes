@@ -32,6 +32,7 @@ Function Initialize-PSNoteStore {
     Get-ChildItem -Path $env:PSNOTES_HOME -Filter '*.json' | Where-Object{ $_.BaseName -notin 'Default' } | ForEach-Object {
         $script:_noteStore.LoadCatalog($_.BaseName)
     }
+    $script:_noteStore.InitializeAliases()
 
     # Check id Set-Clipboard cmdlet is found. If not
     if (-not (Get-Command -Name 'Set-Clipboard' -ErrorAction SilentlyContinue)) {

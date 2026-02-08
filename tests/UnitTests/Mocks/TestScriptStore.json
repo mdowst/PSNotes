@@ -1,0 +1,15 @@
+{
+  "StoreVersion": 1,
+  "Catalog": "Default",
+  "Notes": [
+    {
+      "Note": "TestScriptPath",
+      "Snippet": "C:\\Users\\mdows\\AppData\\Local\\Temp\\PSNotesTests\\GetPSNoteAlias\\TestScriptPath.ps1",
+      "Details": "Test script path",
+      "Alias": "TestScriptPath",
+      "Tags": null,
+      "Run": true,
+      "Kind": 1
+    }
+  ]
+}

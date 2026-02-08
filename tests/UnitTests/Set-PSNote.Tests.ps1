@@ -8,7 +8,10 @@ BeforeAll {
     Set-StrictMode -Version Latest
     
     # Create a temporary directory for test files
-    $script:TestDir = Join-Path ([System.IO.Path]::GetTempPath()) "PSNotesTests\$(Get-Random)"
+    $script:TestDir = Join-Path ([System.IO.Path]::GetTempPath()) "PSNotesTests\SetPSNote"
+    if(Test-Path $script:TestDir) {
+        Remove-Item -Path $script:TestDir -Recurse -Force
+    }
     $null = New-Item -Path $script:TestDir -ItemType Directory -Force
     
     # Set up test environment variable
@@ -23,11 +26,6 @@ BeforeAll {
 AfterAll {
     # Restore original environment
     $env:PSNOTES_HOME = $script:OriginalPSNotesHome
-    
-    # Clean up test directory
-    if (Test-Path $script:TestDir) {
-        #Remove-Item -Path $script:TestDir -Recurse -Force
-    }
 }
 
 Describe "Set-PSNote" {

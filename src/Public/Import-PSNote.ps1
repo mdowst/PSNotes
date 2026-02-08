@@ -63,5 +63,6 @@ Function Import-PSNote {
 
     Import-PSNoteCatalog -ImportedCatalog $importedCatalog -DestinationCatalog $Catalog -DefaultBehavior $DefaultBehavior
 
+    $script:_noteStore.InitializeAliases()
     Write-Verbose "PSNoteStore update complete."
 }

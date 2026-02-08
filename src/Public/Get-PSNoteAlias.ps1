@@ -12,7 +12,13 @@
     .LINK
         https://github.com/mdowst/PSNotes
     
-    
+    .NOTES
+        This function is designed to be called via an alias created for each note.
+        The alias name matches the note name by default but can be customized when creating the note.
+        When invoked, it retrieves the corresponding note and either executes the snippet or copies it to the clipboard based on parameters and note settings.
+         - If the note is set to run by default or the -Run switch is used, it executes the snippet.
+         - If the -Copy switch is used, it copies the snippet to the clipboard instead of executing it.
+        Eventhough the function cannot be called directly, it has to be public to be accessible via the aliases.
     #>
     [cmdletbinding()]
     param(
@@ -31,7 +37,7 @@
             Invoke-PSNote -Note $aliasObject
         } else {
             if(Get-Command -Name 'Set-Clipboard' -ErrorAction SilentlyContinue){
-                $returned | Select-Object -First 1 -ExpandProperty Snippet | Set-Clipboard
+                $aliasObject | Select-Object -First 1 -ExpandProperty Snippet | Set-Clipboard
             } else {
                 Write-Debug "Cmdlet 'Set-Clipboard' not found."
             }

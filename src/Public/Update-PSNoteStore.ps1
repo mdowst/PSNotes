@@ -52,5 +52,6 @@ function Update-PSNoteStore {
         Import-PSNoteCatalog -ImportedCatalog $migratedStore -DestinationCatalog $migratedStore.Catalog -DefaultBehavior $DefaultBehavior
     }
 
+    $script:_noteStore.InitializeAliases()
     Write-Verbose "PSNoteStore update complete."
 }
