@@ -62,3 +62,11 @@ jobs:
       - name: Test build
         shell: pwsh
         run: .\tools\tests.ps1
+
+      - name: Deployment Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()    # run this step even if previous step failed
+        with:
+            name: Pester Tests
+            path: '*.TestResults.xml' 
+            reporter: java-junit

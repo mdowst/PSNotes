@@ -21,7 +21,7 @@ $config.Output.Verbosity = 'Detailed'
 $config.Run.Path = (Join-Path $TestPath 'UnitTests')
 $config.Run.Throw = $false
 $config.TestResult.Enabled = $true
-$config.TestResult.OutputFormat = 'NUnitXml'
+$config.TestResult.OutputFormat = 'JUnitXml'
 $config.TestResult.OutputPath   = (Join-Path $binPath 'Pester.TestResults.xml')
 Invoke-Pester -Configuration $config
 
