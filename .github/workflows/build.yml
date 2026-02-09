@@ -76,9 +76,9 @@ jobs:
         run: .\tools\tests.ps1
 
       - name: Test Report
-        uses: dorny/test-reporter@v1
-        if: success() || failure()
+        uses: dorny/test-reporter@v2
+        if: ${{ !cancelled() }}
         with:
             name: Pester Tests
-            path: '.\bin\*.TestResults.xml' 
+            path: 'bin/*.TestResults.xml'
             reporter: java-junit
