@@ -9,7 +9,7 @@ BeforeAll {
     
     # Create a temporary directory for test files
     $script:TestDir = Join-Path ([System.IO.Path]::GetTempPath()) "PSNotesTests\NewPSNote"
-    if(Test-Path $script:TestDir) {
+    if (Test-Path $script:TestDir) {
         Remove-Item -Path $script:TestDir -Recurse -Force
     }
     $null = New-Item -Path $script:TestDir -ItemType Directory -Force
@@ -87,11 +87,11 @@ Describe "New-PSNote" {
             $result.Alias | Should -Be 'ping-test'
         }
 
-        It "uses Note name as Alias when Alias is not specified" {
+        It "leave Alias blank when Alias is not specified" {
             New-PSNote -Note 'TestDefaultAlias' -Snippet 'Get-Date'
             
             $result = Get-PSNote -Note 'TestDefaultAlias'
-            $result.Alias | Should -Be 'TestDefaultAlias'
+            $result.Alias | Should -Be ''
         }
 
         It "creates a note with multiline snippet using here-string" {
@@ -106,6 +106,62 @@ $stringBuilder.ToString()
             
             $result = Get-PSNote -Note 'TestMultiline'
             $result.Snippet | Should -Be $multilineSnippet
+        }
+    }
+
+    Context "Run and Alias properties" {
+
+        It "creates a note without an Alias and without Run" {
+            New-PSNote -Note 'TestNoAliasNoRun' -Snippet 'Write-Output "Test snippet"' -Details 'Test snippet' -Tags 'Test' -Catalog 'TestCatalog'
+            
+            { TestNoAliasNoRun } | Should -Throw
+
+            $result = Get-PSNote -Note 'TestNoAliasNoRun'
+            $result.Run | Should -Be $false
+            $result.Alias | Should -Be ''
+            
+            Get-PSNote -Note 'TestNoAliasNoRun' -Run | Should -Be "Test snippet"
+        }
+
+        It "creates a note with an Alias and without Run" {
+            New-PSNote -Note 'TestAliasNoRun' -Snippet 'Write-Output "Test Alias and without Run"' -Details 'Test Alias and without Run' -Tags 'Test' -Catalog 'TestCatalog' -Alias 'testaliasnorun'
+            
+            testaliasnorun | Should -Be 'Write-Output "Test Alias and without Run"'
+            testaliasnorun -run | Should -Be 'Test Alias and without Run'
+            testaliasnorun -copy | Should -Be 'Write-Output "Test Alias and without Run"'
+            
+            $result = Get-PSNote -Note 'TestAliasNoRun'
+            $result.Run | Should -Be $false
+            $result.Alias | Should -Be 'testaliasnorun'
+
+            Get-PSNote -Note 'TestAliasNoRun' -Run | Should -Be 'Test Alias and without Run'
+        }
+
+        It "creates a note with an Alias and with Run" {
+            New-PSNote -Note 'TestRunAliasRun' -Snippet 'Write-Output "Test Alias and with Run"' -Details 'Test Alias and with Run' -Tags 'Test' -Catalog 'TestCatalog' -Alias 'testrunaliasrun' -Run $true
+            
+            testrunaliasrun | Should -Be 'Test Alias and with Run'
+            testrunaliasrun -run | Should -Be 'Test Alias and with Run'
+            testrunaliasrun -copy | Should -Be 'Write-Output "Test Alias and with Run"'
+            
+            $result = Get-PSNote -Note 'TestRunAliasRun'
+            $result.Run | Should -Be $true
+            $result.Alias | Should -Be 'testrunaliasrun'
+
+            Get-PSNote -Note 'TestRunAliasRun' -Run | Should -Be 'Test Alias and with Run'
+        }
+
+        It "creates a note without an Alias and with Run" {
+            New-PSNote -Note 'TestRunNoAliasRun' -Snippet 'Write-Output "Test no alias and with Run"' -Details 'Test no alias and with Run' -Tags 'Test' -Catalog 'TestCatalog' -Run $true
+            
+            { TestRunNoAliasRun } | Should -Throw
+
+            Get-PSNote -Note 'TestRunNoAliasRun'
+            $result = Get-PSNote -Note 'TestRunNoAliasRun'
+            $result.Run | Should -Be $true
+            $result.Alias | Should -Be ''
+
+            Get-PSNote -Note 'TestRunNoAliasRun' -Run | Should -Be 'Test no alias and with Run'
         }
     }
 

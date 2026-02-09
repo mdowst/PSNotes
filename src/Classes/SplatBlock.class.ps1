@@ -5,7 +5,7 @@ class SplatBlock {
 	[string]$HashBlock
     [string]$SetBlock
 
-    PSNoteExport(
+    SplatBlock(
         [object]$object
     ){
         $this.Command = $object.Command

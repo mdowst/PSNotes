@@ -8,6 +8,7 @@ $views = @(
     Write-FormatView -TypeName 'PSNote' -Name 'PSNote' -Action {
         "$('-' * 40)`n`n" +
         "Note    : $($_.Note)`n" +
+        "Catalog : $($_.Catalog)`n" +
         "Details : $($_.Details)`n" +
         "Alias   : $($_.Alias)`n" +
         "Snippet :`n`n" +
@@ -33,11 +34,9 @@ $views = @(
         }
     }
 
-    Write-FormatView -TypeName 'PSNoteSearch' -Name 'PSNoteSearch' -Property Note, Details, Alias, Tags, Snippet -Width 25, 15, 15, 15, 0
+    Write-FormatView -TypeName 'PSNote' -Name 'PSNote' -Property Note, Catalog, Alias, Tags, Snippet -Width 25, 15, 15, 15, 0
 
-    Write-FormatView -TypeName 'PSNote' -Name 'PSNote' -Property Note, Details, Alias, Tags, Snippet -Width 25, 15, 15, 15, 0
-
-    Write-FormatView -TypeName 'PSNote' -Name 'PSNote' -Property Note, Details, Alias, Tags, Snippet -AsList
+    Write-FormatView -TypeName 'PSNote' -Name 'PSNote' -Property Note, Catalog, Alias, Tags, Snippet -AsList
 )
 
 $views |

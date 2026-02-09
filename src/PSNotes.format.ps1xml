@@ -15,6 +15,7 @@
                 <ScriptBlock>
         "$('-' * 40)`n`n" +
         "Note    : $($_.Note)`n" +
+        "Catalog : $($_.Catalog)`n" +
         "Details : $($_.Details)`n" +
         "Alias   : $($_.Alias)`n" +
         "Snippet :`n`n" +
@@ -61,56 +62,6 @@
       </CustomControl>
     </View>
     <View>
-      <Name>PSNoteSearch</Name>
-      <ViewSelectedBy>
-        <TypeName>PSNoteSearch</TypeName>
-      </ViewSelectedBy>
-      <TableControl>
-        <TableHeaders>
-          <TableColumnHeader>
-            <Alignment>left</Alignment>
-            <Width>25</Width>
-          </TableColumnHeader>
-          <TableColumnHeader>
-            <Alignment>left</Alignment>
-            <Width>15</Width>
-          </TableColumnHeader>
-          <TableColumnHeader>
-            <Alignment>left</Alignment>
-            <Width>15</Width>
-          </TableColumnHeader>
-          <TableColumnHeader>
-            <Alignment>left</Alignment>
-            <Width>15</Width>
-          </TableColumnHeader>
-          <TableColumnHeader>
-            <Alignment>left</Alignment>
-          </TableColumnHeader>
-        </TableHeaders>
-        <TableRowEntries>
-          <TableRowEntry>
-            <TableColumnItems>
-              <TableColumnItem>
-                <PropertyName>Note</PropertyName>
-              </TableColumnItem>
-              <TableColumnItem>
-                <PropertyName>Details</PropertyName>
-              </TableColumnItem>
-              <TableColumnItem>
-                <PropertyName>Alias</PropertyName>
-              </TableColumnItem>
-              <TableColumnItem>
-                <PropertyName>Tags</PropertyName>
-              </TableColumnItem>
-              <TableColumnItem>
-                <PropertyName>Snippet</PropertyName>
-              </TableColumnItem>
-            </TableColumnItems>
-          </TableRowEntry>
-        </TableRowEntries>
-      </TableControl>
-    </View>
-    <View>
       <Name>PSNote</Name>
       <ViewSelectedBy>
         <TypeName>PSNote</TypeName>
@@ -144,7 +95,7 @@
                 <PropertyName>Note</PropertyName>
               </TableColumnItem>
               <TableColumnItem>
-                <PropertyName>Details</PropertyName>
+                <PropertyName>Catalog</PropertyName>
               </TableColumnItem>
               <TableColumnItem>
                 <PropertyName>Alias</PropertyName>
@@ -173,7 +124,7 @@
                 <PropertyName>Note</PropertyName>
               </ListItem>
               <ListItem>
-                <PropertyName>Details</PropertyName>
+                <PropertyName>Catalog</PropertyName>
               </ListItem>
               <ListItem>
                 <PropertyName>Alias</PropertyName>

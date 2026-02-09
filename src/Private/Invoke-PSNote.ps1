@@ -78,4 +78,5 @@ Function Invoke-PSNote {
             throw "Cannot invoke note '$($Note.Note)': Unknown Kind: $($Note.Kind)"
         }
     }
+    
 }

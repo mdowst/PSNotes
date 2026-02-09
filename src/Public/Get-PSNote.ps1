@@ -87,6 +87,7 @@
         [parameter(Mandatory=$false, ParameterSetName="Note")]
         [switch]$Copy,
         [parameter(Mandatory=$false, ParameterSetName="Note")]
+        [parameter(Mandatory=$false, ParameterSetName="Search")]
         [switch]$Run,
         [parameter(Mandatory=$false, ParameterSetName="Note")]
         [parameter(Mandatory=$false, ParameterSetName="Search")]

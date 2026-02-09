@@ -27,8 +27,6 @@ class PSNote {
         $this.Tags = $Tags
         $this.Catalog = 'Default'
 
-        if ([string]::IsNullOrEmpty($Alias)) { $this.Alias = $Note }
-
         $this.Kind = [PSNoteKind]::Snippet
     }
 
@@ -48,8 +46,6 @@ class PSNote {
         $this.Tags = $Tags
         $this.Catalog = $Catalog
         $this.Run = $Run
-
-        if ([string]::IsNullOrEmpty($Alias)) { $this.Alias = $Note }
 
         $this.Kind = [PSNoteKind]::Snippet
     }
@@ -73,7 +69,6 @@ class PSNote {
         $this.Catalog = $Catalog
         $this.Run = $Run
 
-        if ([string]::IsNullOrEmpty($Alias)) { $this.Alias = $Note }
     }
 
     PSNote([object]$object) {
@@ -88,8 +83,6 @@ class PSNote {
         $objRun = $this.GetObjectProperty($object, 'Run')
         $tryRun = $false
         if ([bool]::TryParse($objRun, [ref]$tryRun)) { $this.Run = $tryRun } else { $this.Run = $false }
-
-        if ([string]::IsNullOrEmpty($this.Alias)) { $this.Alias = $this.GetObjectProperty($object, 'Note') }
 
         # --- Kind (new, but tolerate missing/invalid) ---
         $kindText = $null
@@ -710,7 +703,9 @@ class NoteStore {
             $newNote = $_
             $dup = $this.Notes | Where-Object { $_.Alias -eq $newNote.Alias }
             if ($dup -and $dup.Catalog -ne $newNote.Catalog) {
-                Write-Warning "Duplicate Alias found: $($newNote.Alias). Skipping note: $($newNote.Note)"
+                if(-not [string]::IsNullOrWhiteSpace($newNote.Alias)){
+                    Write-Warning "Duplicate Alias found: $($newNote.Alias). Skipping note: $($newNote.Note)"
+                }
             }
             elseif (-not $dup) {
                 $this.Notes.Add($newNote) 
@@ -725,10 +720,11 @@ class NoteStore {
         $this.Notes | ForEach-Object {
             Write-Debug "Alias : $($_.Alias)"
             if ([string]::IsNullOrWhiteSpace($_.Alias)) { 
-                Write-Warning "Note '$( $_.Note )' has an empty Alias. Skipping alias creation."
-                return 
+                Write-Verbose "Note '$( $_.Note )' has an empty Alias. Skipping alias creation." 
             }
-            Set-Alias -Name $_.Alias -Value Get-PSNoteAlias -Scope Global -Force
+            else{
+                Set-Alias -Name $_.Alias -Value Get-PSNoteAlias -Scope Global -Force
+            }
         }
     }
 

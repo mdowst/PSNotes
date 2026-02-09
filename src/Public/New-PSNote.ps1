@@ -229,14 +229,17 @@
     }
     else {
         if ([string]::IsNullOrEmpty($Alias)) {
-            $Alias = $Note
+            $Alias = ''
         }
-
-        Test-NoteAlias $Alias
+        else{
+            Test-NoteAlias $Alias
+        }
         
         $newNote = [PSNote]::New($Note, $Kind, $Snippet, $Details, $Alias, $Tags, $Catalog, $Run)
         $script:_noteStore.AddNote($newNote)
     }
     
-    Set-Alias -Name $newNote.Alias -Value Get-PSNoteAlias -Scope Global
+    if (-not [string]::IsNullOrEmpty($newNote.Alias)) {
+        Set-Alias -Name $newNote.Alias -Value Get-PSNoteAlias -Scope Global -Force
+    }
 }

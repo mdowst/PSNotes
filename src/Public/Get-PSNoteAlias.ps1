@@ -28,6 +28,7 @@
         [switch]$Run
     )
     Test-PSNotesInitalize
+    # The function is designed to be called via an alias, so we check if the invocation name matches the command name.
     if($MyInvocation.MyCommand.Name -eq $MyInvocation.InvocationName){
         Write-Error "The Get-PSNoteAlias cmdlet is designed to be called using an alias and not directly."
     } else {

@@ -1,7 +1,22 @@
+param(
+    [switch]$Refresh
+)
 $Path = Join-Path (Split-Path $PSScriptRoot) 'src'
 
 $psd1 = Join-Path -Path $Path -ChildPath 'PSNotes.psd1'
 $psm1 = Join-Path -Path $Path -ChildPath 'PSNotes.psm1'
+
+# Create a temporary directory for test files
+$script:TestDir = Join-Path ([System.IO.Path]::GetTempPath()) "PSNotesTests\MyTests"
+$null = New-Item -Path $script:TestDir -ItemType Directory -Force
+
+# Set up test environment variable
+$script:OriginalPSNotesHome = $env:PSNOTES_HOME
+$env:PSNOTES_HOME = $script:TestDir
+if ($Refresh -and (Test-Path $env:PSNOTES_HOME)) {
+    Remove-Item -Path $env:PSNOTES_HOME -Recurse -Force
+}
+$null = New-Item -Path $env:PSNOTES_HOME -ItemType Directory -Force
 
 # Create the .psm1 file by dot sourcing all .ps1 files in the src folder and subfolders
 $psm1Script = {
