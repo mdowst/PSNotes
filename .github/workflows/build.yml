@@ -41,11 +41,11 @@ jobs:
         run: .\tools\tests-build.ps1
 
       - name: Build Report
-        uses: dorny/test-reporter@v1
-        if: success() || failure()
+        uses: dorny/test-reporter@v2
+        if: ${{ !cancelled() }}
         with:
             name: Build Tests
-            path: '.\bin\*.TestResults.xml' 
+            path: 'bin/*.TestResults.xml' 
             reporter: java-junit
         
   test-module:
