@@ -24,3 +24,7 @@ $config.TestResult.OutputFormat = 'JUnitXml'
 $config.Run.Path = (Join-Path $TestPath 'Build')
 $config.TestResult.OutputPath   = (Join-Path $binPath 'Build.TestResults.xml')
 Invoke-Pester -Configuration $config
+
+Get-ChildItem -Path $binPath -Recurse -Filter '*.TestResults.xml' | ForEach-Object {
+    Write-Host "Test results found: $($_.FullName)"
+}
