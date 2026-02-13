@@ -182,7 +182,7 @@ Function Set-PSNote {
         [parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$True)]
         [string]$Note,
         [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)]
-        [string]$Catalog,
+        [string]$Catalog = 'Default',
         [parameter(Mandatory = $false, ValueFromPipelineByPropertyName=$True)]
         [string]$Snippet,
         [parameter(Mandatory = $false, ValueFromPipelineByPropertyName=$True)]

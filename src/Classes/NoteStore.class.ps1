@@ -701,11 +701,14 @@ class NoteStore {
     [void] LoadCatalog([NoteCatalog] $catalog) {
         $catalog.Notes | ForEach-Object { 
             $newNote = $_
-            $dup = $this.Notes | Where-Object { $_.Alias -eq $newNote.Alias }
+            $dup = if(-not [string]::IsNullOrWhiteSpace($newNote.Alias)){
+                $this.Notes | Where-Object { $_.Alias -eq $newNote.Alias }
+            }
+            else {
+                $this.Notes | Where-Object { $_.Note -eq $newNote.Note }
+            }
             if ($dup -and $dup.Catalog -ne $newNote.Catalog) {
-                if(-not [string]::IsNullOrWhiteSpace($newNote.Alias)){
-                    Write-Warning "Duplicate Alias found: $($newNote.Alias). Skipping note: $($newNote.Note)"
-                }
+                Write-Warning "Duplicate Alias found: $($newNote.Alias). Skipping note: $($newNote.Note)"
             }
             elseif (-not $dup) {
                 $this.Notes.Add($newNote) 

@@ -83,7 +83,7 @@ Describe "Get-PSNoteAlias" {
             $scriptFile = Join-Path $script:TestDir 'TestScriptPath.ps1'
             Set-Content -Path $scriptFile -Value '"Hello Pester"' -Force
 
-            New-PSNote -Note 'TestScriptPath' -ScriptPath $scriptFile -Details 'Test script path' -Catalog 'TestScriptStore'
+            New-PSNote -Note 'TestScriptPath' -ScriptPath $scriptFile -Details 'Test script path' -Catalog 'TestScriptStore' -Alias 'TestScriptPath'
 
             TestScriptPath | Should -Be 'Hello Pester'
         }
@@ -92,7 +92,7 @@ Describe "Get-PSNoteAlias" {
             $scriptFile = Join-Path $script:TestDir 'TestScriptPath.ps1'
             Set-Content -Path $scriptFile -Value '"Hello Pester"' -Force
 
-            New-PSNote -Note 'TestScriptPath' -ScriptPath $scriptFile -Details 'Test script path' -Catalog 'TestScriptStore'
+            New-PSNote -Note 'TestScriptPath' -ScriptPath $scriptFile -Details 'Test script path' -Catalog 'TestScriptStore' -Alias 'TestScriptPath'
 
             TestScriptPath -Copy | Should -Be $scriptFile
         }
@@ -101,7 +101,7 @@ Describe "Get-PSNoteAlias" {
             $scriptFile = Join-Path $script:TestDir 'TestScriptPath.ps1'
             Set-Content -Path $scriptFile -Value '"Hello Pester"' -Force
 
-            New-PSNote -Note 'TestScriptPath' -ScriptPath $scriptFile -Details 'Test script path' -Catalog 'TestScriptStore'
+            New-PSNote -Note 'TestScriptPath' -ScriptPath $scriptFile -Details 'Test script path' -Catalog 'TestScriptStore' -Alias 'TestScriptPath'
 
             TestScriptPath -Copy | Should -Be $scriptFile
         }

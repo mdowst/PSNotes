@@ -116,11 +116,18 @@ Describe "Set-PSNote" {
             $warn.Count | Should -BeGreaterThan 0
         }
 
-        It "creates a new note with default alias when creating non-existent note" {
-            Set-PSNote -Note 'CreatedNote' -Snippet 'Test' -Catalog 'Personal'
+        It "creates a new note with blank alias when creating non-existent note" {
+            Set-PSNote -Note 'CreatedNoteBlank' -Snippet 'Test' -Catalog 'Personal'
             
-            $result = Get-PSNote -Note 'CreatedNote'
-            $result.Alias | Should -Be 'CreatedNote'
+            $result = Get-PSNote -Note 'CreatedNoteBlank'
+            $result.Alias | Should -Be ''
+        }
+
+        It "creates a new note with alias when creating non-existent note" {
+            Set-PSNote -Note 'CreatedNoteAlias' -Snippet 'Test' -Catalog 'Personal' -Alias 'CreatedNoteAlias'
+            
+            $result = Get-PSNote -Note 'CreatedNoteAlias'
+            $result.Alias | Should -Be 'CreatedNoteAlias'
         }
 
         It "creates a new note with custom alias when creating non-existent note" {

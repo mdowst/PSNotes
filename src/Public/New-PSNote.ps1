@@ -58,12 +58,12 @@
         the catalog. Without this switch, an error will be thrown if the note already exists.
     
     .EXAMPLE
-        New-PSNote -Note 'GetServices' -Snippet 'Get-Service | Where-Object Status -eq Running'
+        New-PSNote -Note 'GetServices' -Snippet 'Get-Service | Where-Object Status -eq Running' -Alias 'running'
 
-        Creates a simple note with a one-line snippet. The alias will default to 'GetServices'.
+        Creates a simple note with a one-line snippet. The snippet can be retrieved or executed using the alias 'running'.
 
     .EXAMPLE
-        New-PSNote -Note 'ADUser' -Snippet 'Get-ADUser -Filter *' -Details "Retrieves all Active Directory users" -Tags 'AD','Users','Query'
+        New-PSNote -Note 'DayOfWeek' -Alias 'today' -Snippet '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)' -Details "Returns the abbreviated name of the current day" -Tags 'date','time'
 
         Creates a note with a snippet, description, and multiple tags for easy searching.
 
@@ -75,11 +75,6 @@
         }
 
         Creates a note using a script block with multi-line code and a custom alias 'cpu'.
-
-    .EXAMPLE
-        New-PSNote -Note 'DayOfWeek' -Alias 'today' -Snippet '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)' -Details "Returns the abbreviated name of the current day" -Tags 'date','time'
-
-        Creates a note with a custom alias that differs from the note name.
 
     .EXAMPLE
         $MultiLineSnippet = @'
@@ -99,7 +94,7 @@
         Creates a new note in the 'Work' catalog instead of the default catalog.
 
     .EXAMPLE
-        New-PSNote -Note 'TestConnection' -Snippet 'Test-Connection -ComputerName 8.8.8.8 -Count 2 -Quiet' -Run $true -Details "Quick connectivity test"
+        New-PSNote -Note 'TestConnection' -Alias 'test-conn' -Snippet 'Test-Connection -ComputerName 8.8.8.8 -Count 2 -Quiet' -Run $true -Details "Quick connectivity test"
 
         Creates a note that will automatically execute when retrieved (Run = $true).
 
@@ -225,13 +220,16 @@
         $toUpdate | ForEach-Object {
             Write-Verbose "Updating Note: $($_.Note)"
             $script:_noteStore.UpdateNote($_)
+            if (-not [string]::IsNullOrEmpty($_.Alias)) {
+                Set-Alias -Name $_.Alias -Value Get-PSNoteAlias -Scope Global -Force
+            }
         }
     }
     else {
         if ([string]::IsNullOrEmpty($Alias)) {
             $Alias = ''
         }
-        else{
+        else {
             Test-NoteAlias $Alias
         }
         

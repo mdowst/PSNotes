@@ -49,7 +49,7 @@ Describe 'PSNote Class' {
             $note.Catalog | Should -Be 'Default'
         }
         
-        It 'sets Alias to Note when Alias is empty' {
+        It 'sets Alias to Blank when Alias is empty' {
             $note = [PSNote]::new(
                 'MyNote',
                 'Write-Host "Hello"',
@@ -58,7 +58,7 @@ Describe 'PSNote Class' {
                 @('test')
             )
             
-            $note.Alias | Should -Be 'MyNote'
+            $note.Alias | Should -Be ''
         }
     }
     
@@ -78,7 +78,7 @@ Describe 'PSNote Class' {
             $note.Catalog | Should -Be 'CustomCatalog'
         }
         
-        It 'sets Alias to Note when Alias is empty with custom catalog' {
+        It 'sets Alias to Blank when Alias is empty with custom catalog' {
             $note = [PSNote]::new(
                 'MyNote',
                 'Write-Host "Hello"',
@@ -89,7 +89,7 @@ Describe 'PSNote Class' {
                 $false
             )
             
-            $note.Alias | Should -Be 'MyNote'
+            $note.Alias | Should -Be ''
         }
     }
     
@@ -115,7 +115,7 @@ Describe 'PSNote Class' {
             $note.Catalog | Should -Be 'TestCatalog'
         }
         
-        It 'sets Alias to Note from object when Alias is empty' {
+        It 'sets Alias to Blank when Alias is empty' {
             $obj = [pscustomobject]@{
                 Note    = 'TestNote'
                 Snippet = '$x = 1'
@@ -128,7 +128,7 @@ Describe 'PSNote Class' {
             
             $note = [PSNote]::new($obj)
             
-            $note.Alias | Should -Be 'TestNote'
+            $note.Alias | Should -Be ''
         }
     }
 
