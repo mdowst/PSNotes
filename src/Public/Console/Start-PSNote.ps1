@@ -1,4 +1,4 @@
-function Start-PSNote {
+﻿function Start-PSNote {
     <#
     .SYNOPSIS
         Launch the PSNotes interactive UI
@@ -53,7 +53,7 @@ function Start-PSNote {
     # Default view: Favorites if any exist; otherwise Catalogs
     $favorites = @($Store.GetFavorites())
     $state.Mode = if ($favorites.Count -gt 0) { 'Favorites' } else { 'Catalogs' }
-
+    <#
     $footerItems = @(
         @{ Key = '[M]'; Label = 'Main' },
         @{ Key = '[F]'; Label = 'Favorites' },
@@ -63,6 +63,19 @@ function Start-PSNote {
         @{ Key = '[B]'; Label = 'Back' },
         @{ Key = '[A]'; Label = 'All' },
         @{ Key = '[T]'; Label = 'Tags' },
+        @{ Key = '[O]'; Label = 'Options' },
+        @{ Key = '[Q]'; Label = 'Quit' }
+    )
+        #>
+    $footerItems = @(
+        @{ Key = '[M]'; Label = 'Main' },
+        @{ Key = '[F]'; Label = 'Favorites' },
+        @{ Key = '[G]'; Label = 'Catalogs' },
+        @{ Key = '[S]'; Label = 'Search' },
+        @{ Key = '[H]'; Label = 'Help' },
+        @{ Key = '[B]'; Label = 'Back' },
+        @{ Key = '[N]'; Label = 'New' },
+        @{ Key = '[A]'; Label = 'All' },
         @{ Key = '[O]'; Label = 'Options' },
         @{ Key = '[Q]'; Label = 'Quit' }
     )
@@ -184,12 +197,30 @@ function Start-PSNote {
                     }
                 }
                 'N' {
-                    if ($i -ge $Notes.Count - 1 ) { 
-                        $state.Mode = $state.ReturnMode[-2]
-                        $state.ReturnMode = $state.ReturnMode[0..($state.ReturnMode.Count - 2)] 
+                    if ($state.Mode -eq 'Preview') {
+                        if ($i -ge $Notes.Count - 1 ) {
+                            $state.Mode = $state.ReturnMode[-2]
+                            $state.ReturnMode = $state.ReturnMode[0..($state.ReturnMode.Count - 2)]
+                        }
+                        else {
+                            $i++
+                        }
                     }
                     else {
-                        $i++
+                        Invoke-PSNotesNewNoteWizard -Store $Store
+
+                        # Keep the UI consistent by refreshing scope notes after creation
+                        if (-not $state.Catalog -and -not $state.Tag) {
+                            $state.ScopeNotes = @($Store.Notes)
+                        }
+                        elseif ($state.Catalog) {
+                            # If they’re scoped to a catalog, re-scope so the new note appears
+                            Set-PSNotesCatalogScope -State $state -Catalog $state.Catalog
+                        }
+                        elseif ($state.Tag) {
+                            # If they’re scoped to a tag, just re-run tag scope
+                            Set-PSNotesTagScope -State $state -Tag $state.Tag -AllNotes @($Store.Notes)
+                        }
                     }
                 }
                 'C' {
@@ -276,4 +307,3 @@ function Start-PSNote {
         Invoke-PSNotesExecution -Note $state.ExecuteOnExit
     }
 }
-

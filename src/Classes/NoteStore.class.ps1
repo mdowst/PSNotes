@@ -803,7 +803,7 @@ class NoteStore {
     }
 
     [string] GetNoteKey([PSNote] $note) {
-        return "$($note.Catalog)::$($note.Alias)"
+        return "$($note.Catalog)::$($note.Note)::$($note.Alias)"
     }
 
     [bool] IsFavorite([PSNote] $note) {

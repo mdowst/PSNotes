@@ -243,26 +243,20 @@ function Write-PSNotePreview {
     param([PSNote]$Note)
 
     if (-not $Note) { return }
-
-    Write-Host ("[{0}] {1}" -f $Note.Catalog, $Note.Alias) -ForegroundColor Cyan
-    if ($Note.Tags) { Write-Host ("Tags: {0}" -f ($Note.Tags -join ', ')) -ForegroundColor DarkGray }
-    if ($Note.Note) { Write-Host ("Title: {0}" -f $Note.Note) -ForegroundColor Gray }
+ 
+    Write-Host "Catalog : " -NoNewline
+    Write-Host $Note.Catalog -ForegroundColor Cyan
+    Write-Host "Alias   : " -NoNewline
+    Write-Host $Note.Alias -ForegroundColor Cyan
+    if ($Note.Note) { Write-Host ("Title   : {0}" -f $Note.Note) -ForegroundColor Gray }
+    if ($Note.Tags) { Write-Host ("Tags    : {0}" -f ($Note.Tags -join ', ')) -ForegroundColor DarkGray }
+    
     if ($Note.Details) { Write-Host $Note.Details -ForegroundColor Gray }
     Write-Host ""
     Write-Host "Snippet:" -ForegroundColor Yellow
     Write-Host $Note.Snippet
 }
 
-function Write-PSNotePreview {
-    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
-    param($Note)
-
-    Write-Host ""
-    Write-Host "Alias: $($Note.Alias)" -ForegroundColor Cyan
-    Write-Host "Tags : $($Note.Tags -join ', ')" -ForegroundColor DarkGray
-    Write-Host ""
-    Write-Host $Note.Snippet -ForegroundColor White
-}
 # -----------------------------
 # Copy / Execute (prefer existing cmdlets)
 # -----------------------------
@@ -283,3 +277,169 @@ function Invoke-PSNotesExecution {
     Invoke-Expression -Command $Note.Snippet
 }
 
+function Invoke-PSNotesNewNoteWizard {
+    [CmdletBinding()]
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+    param(
+        [Parameter(Mandatory)]
+        $Store
+    )
+
+    Clear-Host
+    Write-Host "PSNotes - New Note Wizard" -ForegroundColor Yellow
+    Write-Host "----------------------------------------" -ForegroundColor DarkGray
+    Write-Host ""
+
+    # --- Catalog selection ---
+    $catalogs = @($Store.Catalogs | Sort-Object Catalog)
+
+    Write-Host "Select a catalog:" -ForegroundColor Cyan
+
+    for ($c = 0; $c -lt $catalogs.Count; $c++) {
+        Write-Host ("  {0}) {1}" -f ($c + 1), $catalogs[$c].Catalog)
+    }
+
+    Write-Host "Enter a number (1..$($catalogs.Count)). To create a new catalog, enter a name instead of a number." -ForegroundColor DarkGray
+
+    $catalogName = $null
+    while ([string]::IsNullOrWhiteSpace($catalogName)) {
+        $catSel = (Read-Host "Catalog").Trim()
+
+        if ($catSel -match '^\d+$') {
+            $idx = [int]$catSel
+
+            if ($idx -ge 1 -and $idx -le $catalogs.Count) {
+                $catalogName = $catalogs[$idx - 1].Catalog
+            }
+            else {
+                Write-Host "Invalid catalog selection." -ForegroundColor Red
+            }
+        }
+        elseif (-not [string]::IsNullOrWhiteSpace($catSel)) {
+            $newCat = $catSel
+            # If it already exists (case-insensitive), just use existing
+            $existing = $catalogs | Where-Object { $_.Catalog -ieq $newCat } | Select-Object -First 1
+            $catalogName = if ($existing) { $existing.Catalog } else { $newCat }
+        }
+            
+        if ([string]::IsNullOrWhiteSpace($catalogName)) {
+            Write-Host "Invalid catalog selection." -ForegroundColor Red
+        }
+    }
+
+    Write-Host ""
+    Write-Host ("Catalog: {0}" -f $catalogName) -ForegroundColor DarkYellow
+    Write-Host ""
+
+    # --- Note name ---
+    $noteName = $null
+    while ([string]::IsNullOrWhiteSpace($noteName)) {
+        $noteName = (Read-Host "Note name").Trim()
+        if ([string]::IsNullOrWhiteSpace($noteName)) {
+            Write-Host "Note name is required." -ForegroundColor Red
+        }
+    }
+
+    # --- Kind (Snippet vs Script) ---
+    Write-Host ""
+    Write-Host "Note type:" -ForegroundColor Cyan
+    Write-Host "  1) Snippet (inline code)" -ForegroundColor Gray
+    Write-Host "  2) Script  (path to .ps1)" -ForegroundColor Gray
+
+    $kind = $null
+    while ($kind -notin 'Snippet', 'Script') {
+        $k = (Read-Host "Type #").Trim()
+        switch ($k) {
+            '1' { $kind = 'Snippet' }
+            '2' { $kind = 'Script' }
+            default { Write-Host "Choose 1 or 2." -ForegroundColor Red }
+        }
+    }
+
+    # --- Snippet or ScriptPath ---
+    $snippet = $null
+    $scriptPath = $null
+
+    if ($kind -eq 'Snippet') {
+        Write-Host ""
+        Write-Host "Enter snippet text. (Tip: you can paste multi-line text.)" -ForegroundColor Cyan
+        $snippet = Read-Host "Snippet"
+        if ([string]::IsNullOrWhiteSpace($snippet)) {
+            Write-Host "Snippet cannot be empty." -ForegroundColor Red
+            Read-Host "Press Enter to cancel"
+            return
+        }
+    }
+    else {
+        Write-Host ""
+        $scriptPath = (Read-Host "Script path (.ps1)").Trim()
+        if ([string]::IsNullOrWhiteSpace($scriptPath)) {
+            Write-Host "Script path cannot be empty." -ForegroundColor Red
+            Read-Host "Press Enter to cancel"
+            return
+        }
+
+        if (-not (Test-Path -Path $scriptPath)) {
+            Write-Host ("Script file not found: {0}" -f $scriptPath) -ForegroundColor Red
+            Read-Host "Press Enter to cancel"
+            return
+        }
+    }
+
+    # --- Optional alias ---
+    Write-Host ""
+    $alias = (Read-Host "Alias (optional; leave blank for none)").Trim()
+    if ($alias -and -not $alias -match '^[a-zA-Z0-9_-]+$') {
+        Write-Host "Alias can only contain letters, numbers, dashes, and underscores." -ForegroundColor Red
+        Read-Host "Press Enter to cancel"
+        return
+    }
+
+    # --- Optional tags ---
+    Write-Host ""
+    do {
+        $tagInput = (Read-Host "Tags (optional; comma-separated) enter 'L' to list current tags").Trim()
+        if ($tagInput -eq 'L') {
+            Write-Host "$($Store.Notes | ForEach-Object { $_.Tags } | Where-Object { $_ } | Sort-Object -Unique | Select-Object @{l='Tag';e={$_}} | Format-Wide -AutoSize | Out-String)"  -ForegroundColor DarkGray
+        }
+    } while ($tagInput -eq 'L')
+    $tags = @()
+    if (-not [string]::IsNullOrWhiteSpace($tagInput)) {
+        $tags = @(
+            $tagInput -split ',' |
+            ForEach-Object { $_.Trim() } |
+            Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+            Select-Object -Unique
+        )
+    }
+
+    Write-Host ""
+    Write-Host "Confirm note:" -ForegroundColor Green
+    Write-Host ("  Catalog : {0}" -f $catalogName)
+    Write-Host ("  Note    : {0}" -f $noteName)
+    Write-Host ("  Alias   : {0}" -f $alias)
+    if ($tags.Count -gt 0) {
+        Write-Host ("  Tags    : {0}" -f ($tags -join ', '))
+    }
+    Write-Host ""
+    $confirm = Read-Host "Press Enter to create the note, or 'C' to cancel"
+    if ($confirm -eq 'C') {
+        Write-Host "Note creation cancelled." -ForegroundColor Yellow
+        return
+    }
+    # --- Create note ---
+    try {
+        if ($kind -eq 'Snippet') {
+            New-PSNote -Note $noteName -Snippet $snippet -Catalog $catalogName -Alias $alias -Tags $tags | Out-Null
+        }
+        else {
+            New-PSNote -Note $noteName -ScriptPath $scriptPath -Catalog $catalogName -Alias $alias -Tags $tags | Out-Null
+        }
+    }
+    catch {
+        Write-Host ""
+        Write-Host ("Failed to create note: {0}" -f $_.Exception.Message) -ForegroundColor Red
+        Write-Host ""
+        Read-Host "Press Enter to return to PSNotes"
+    }
+}
