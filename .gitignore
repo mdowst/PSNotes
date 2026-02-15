@@ -3,3 +3,4 @@ Publish/PSNotes/
 *.code-workspace
 bin/
 Documentation/demos/*
+.vscode/*

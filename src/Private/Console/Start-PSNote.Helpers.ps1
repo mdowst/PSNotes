@@ -9,7 +9,7 @@ function Set-PSNotesCatalogScope {
     $State.Catalog = $Catalog
     $State.ScopeNotes = @($Catalog.Notes)
     $State.LastList = @($State.ScopeNotes | Sort-Object Alias)
-    $State.Mode = 'NoteList'
+    $State.Mode = [PSNoteMenuItems]::NoteList
 }
 
 function Set-PSNotesTagScope {
@@ -19,7 +19,7 @@ function Set-PSNotesTagScope {
     $State.Tag = $Tag
     $State.ScopeNotes = @($AllNotes | Where-Object { $_.Tags -contains $Tag })
     $State.LastList = @($State.ScopeNotes | Sort-Object Catalog, Alias)
-    $State.Mode = 'NoteList'
+    $State.Mode = [PSNoteMenuItems]::NoteList
 }
 
 function Invoke-PSNotesSearch {
@@ -41,7 +41,7 @@ function Invoke-PSNotesSearch {
     )
 
     $State.LastList = $results
-    $State.Mode = 'NoteList'
+    $State.Mode = [PSNoteMenuItems]::NoteList
 }
 
 # -----------------------------
@@ -107,7 +107,9 @@ function Get-PSNotesScopeText {
     }
 
 
-    return "Catalog: $c | Tag: $t"
+    $r = "Catalog: $c | Tag: $t"
+    $r = "$($State.Mode.ToString())"
+    return $r
 }
 
 

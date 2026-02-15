@@ -146,8 +146,8 @@ function Update-PSNoteSetting {
     }
 
     $dirty = $false
-
-    while ($true) {
+    $run = $true
+    while ($run) {
         Write-SettingsHeader -Cfg $Config
 
         if ($dirty) {
@@ -214,7 +214,7 @@ function Update-PSNoteSetting {
                         $dirty = $false
                     }
                 }
-                break
+                $run = $false
             }
             default {
                 # If user typed something like "welcome" for Main, accept it as a convenience

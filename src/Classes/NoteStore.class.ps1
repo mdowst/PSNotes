@@ -12,10 +12,11 @@ enum PSNoteMenuItems{
     NoteActions
     Settings
     Help
-    Exit
+    Quit
     Welcome
     AllCatalogs
     Preview
+    Search
 }
 
 # Create the PSNote class
@@ -679,6 +680,47 @@ class NoteConfigStore {
     }
 }
 
+class NoteConsoleState {
+    static [int] $CurrentVersion = 1
+
+    [PSNoteMenuItems] $Mode
+    [PSNoteMenuItems[]] $ReturnMode
+    [string] $ScopeLabel
+    [System.Collections.Generic.List[PSNote]] $ScopeNotes
+    [System.Collections.Generic.List[PSNote]] $LastList
+    [NoteCatalog]$Catalog
+    [string] $Tag
+    [PSNote] $Note
+    [PSNote] $ExecuteOnExit
+    [NoteConfigStore] $Settings
+
+    NoteConsoleState() {
+        $this.SetDefaults()
+    }
+
+    NoteConsoleState([NoteStore] $Store) {
+        $this.SetDefaults()
+        $this.ScopeNotes = @($Store.Notes)
+        $this.Settings = $Store.Config
+        $tryMode = [PSNoteMenuItems]::Welcome
+        if ([Enum]::TryParse([string]$Store.Config.Main, [ref]$tryMode)) {
+            $this.Mode = $tryMode
+        }
+    }
+
+    [void] SetDefaults() {
+        $this.Mode = [PSNoteMenuItems]::Welcome
+        $this.ReturnMode = @()
+        $this.ScopeLabel = 'All'
+        $this.ScopeNotes = @()
+        $this.LastList = @()
+        $this.Catalog = $null
+        $this.Tag = $null
+        $this.Note = $null
+        $this.ExecuteOnExit = $null
+        $this.Settings = [NoteConfigStore]::new()
+    }
+}
 class NoteStore {
     static [int] $CurrentStoreVersion = 1
 
@@ -720,7 +762,7 @@ class NoteStore {
     [void] LoadCatalog([NoteCatalog] $catalog) {
         $catalog.Notes | ForEach-Object { 
             $newNote = $_
-            $dup = if(-not [string]::IsNullOrWhiteSpace($newNote.Alias)){
+            $dup = if (-not [string]::IsNullOrWhiteSpace($newNote.Alias)) {
                 $this.Notes | Where-Object { $_.Alias -eq $newNote.Alias }
             }
             else {
@@ -744,7 +786,7 @@ class NoteStore {
             if ([string]::IsNullOrWhiteSpace($_.Alias)) { 
                 Write-Verbose "Note '$( $_.Note )' has an empty Alias. Skipping alias creation." 
             }
-            else{
+            else {
                 Set-Alias -Name $_.Alias -Value Get-PSNoteAlias -Scope Global -Force
             }
         }

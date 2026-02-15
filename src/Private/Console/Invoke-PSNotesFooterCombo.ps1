@@ -19,8 +19,8 @@ function Invoke-PSNotesFooterCombo {
         '^H' { $State.Mode = [PSNoteMenuItems]::Help;             return $true }
         '^F' { $State.Mode = [PSNoteMenuItems]::Favorites;        return $true }
         '^O' { $State.Mode = [PSNoteMenuItems]::Settings;         return $true }
-        '^Q' { $State.Mode = [PSNoteMenuItems]::Exit;             return $true }
-        '^C' { $State.Mode = [PSNoteMenuItems]::Exit;             return $true }
+        '^Q' { $State.Mode = [PSNoteMenuItems]::Quit;             return $true }
+        '^C' { $State.Mode = [PSNoteMenuItems]::Quit;             return $true }
         '^N' {
             Invoke-PSNotesNewNoteWizard -Store $Store
 
