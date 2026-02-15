@@ -2,6 +2,22 @@ enum PSNoteKind {
     Snippet
     Script
 }
+
+enum PSNoteMenuItems{
+    Main
+    Catalogs
+    Tags
+    Favorites
+    NoteList
+    NoteActions
+    Settings
+    Help
+    Exit
+    Welcome
+    AllCatalogs
+    Preview
+}
+
 # Create the PSNote class
 class PSNote {
     [string]$Note
@@ -585,7 +601,7 @@ class NoteConfigStore {
 
     [string] $Path
     [int] $Version
-    [string] $Main
+    [PSNoteMenuItems] $Main
     [bool] $ExitOnCopy
     [ConsoleColor] $ForegroundColor
     [ConsoleColor] $BackgroundColor
@@ -608,7 +624,7 @@ class NoteConfigStore {
 
     [void] SetDefaults() {
         $this.Version = [NoteConfigStore]::CurrentVersion
-        $this.Main = 'Favorites'
+        $this.Main = [PSNoteMenuItems]::Welcome
         $this.ExitOnCopy = $true
         $this.ForegroundColor = [ConsoleColor]::Black
         $this.BackgroundColor = [ConsoleColor]::Gray
@@ -623,7 +639,10 @@ class NoteConfigStore {
 
             $data = $json | ConvertFrom-Json -ErrorAction Stop
             if (-not [string]::IsNullOrWhiteSpace([string]$data.Main)) {
-                $this.Main = [string]$data.Main
+                $tryFg = [PSNoteMenuItems]::Welcome
+                if ([Enum]::TryParse([string]$data.Main, [ref]$tryFg)) {
+                    $this.Main = $tryFg
+                }
             }
             if ($null -ne $data.ExitOnCopy) {
                 $tryExitOnCopy = $false

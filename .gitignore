@@ -2,3 +2,4 @@ Publish/APIKey.json
 Publish/PSNotes/
 *.code-workspace
 bin/
+Documentation/demos/*

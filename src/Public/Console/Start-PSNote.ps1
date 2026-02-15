@@ -38,7 +38,7 @@
 
     # ---------- State ----------
     $state = [pscustomobject]@{
-        Mode          = 'Main'       # Main | Catalogs | Tags | Favorites | NoteList | NoteActions
+        Mode          = [PSNoteMenuItems]::Main      # Main | Catalogs | Tags | Favorites | NoteList | NoteActions
         ReturnMode    = @()
         ScopeLabel    = 'All'
         ScopeNotes    = @($Store.Notes)
@@ -52,7 +52,7 @@
     
     # Default view: Favorites if any exist; otherwise Catalogs
     $favorites = @($Store.GetFavorites())
-    $state.Mode = if ($favorites.Count -gt 0) { 'Favorites' } else { 'Catalogs' }
+    $state.Mode = if ($Store.Config.Main) { $Store.Config.Main } else { [PSNoteMenuItems]::Welcome }
     <#
     $footerItems = @(
         @{ Key = '[M]'; Label = 'Main' },
@@ -68,16 +68,16 @@
     )
         #>
     $footerItems = @(
-        @{ Key = '[M]'; Label = 'Main' },
-        @{ Key = '[F]'; Label = 'Favorites' },
-        @{ Key = '[G]'; Label = 'Catalogs' },
-        @{ Key = '[S]'; Label = 'Search' },
-        @{ Key = '[H]'; Label = 'Help' },
-        @{ Key = '[B]'; Label = 'Back' },
-        @{ Key = '[N]'; Label = 'New' },
-        @{ Key = '[A]'; Label = 'All' },
-        @{ Key = '[O]'; Label = 'Options' },
-        @{ Key = '[Q]'; Label = 'Quit' }
+        @{ Key = ' ^M'; Label = 'Main' },
+        @{ Key = ' ^F'; Label = 'Favorites' },
+        @{ Key = ' ^G'; Label = 'Catalogs' },
+        @{ Key = ' ^S'; Label = 'Search' },
+        @{ Key = ' ^H'; Label = 'Help' },
+        @{ Key = ' ^B'; Label = 'Back' },
+        @{ Key = ' ^N'; Label = 'New' },
+        @{ Key = ' ^A'; Label = 'All' },
+        @{ Key = ' ^O'; Label = 'Options' },
+        @{ Key = ' ^Q'; Label = 'Quit' }
     )
 
     $exitUI = $false
@@ -87,7 +87,7 @@
         Write-PSNotesHeaderBar -State $state
 
         switch ($state.Mode) {
-            'AllCatalogs' {
+            [PSNoteMenuItems]::AllCatalogs {
                 $state.Catalog = $null
                 $state.Tag = $null
                 $state.ScopeNotes = @($Store.Notes)
@@ -96,32 +96,41 @@
                 $menu = "[#] Open  [P] Preview  [S] Search  [B] Back"
             }
 
-            'Search' {
+            [PSNoteMenuItems]::Search {
                 Invoke-PSNotesSearch -State $state -Prefill $null
             }
 
-            'Catalogs' {
+            [PSNoteMenuItems]::Welcome {
+                Write-PSNoteWelcome
+            }
+
+            [PSNoteMenuItems]::Catalogs {
                 Write-PSNotesCatalogList -Store $Store
                 $menu = "[#] Open  [S] Search  [B] Back"
             }
 
-            'Tags' {
+            [PSNoteMenuItems]::Help {
+                Write-Host "This is a temp holder for the Help screen until we build that out more fully." -ForegroundColor Yellow
+                $menu = "[#] Open  [S] Search  [B] Back"
+            }
+
+            [PSNoteMenuItems]::Tags {
                 Write-PSNotesTagList -Notes @($Store.Notes)
                 $menu = "[#] Open  [S] Search  [B] Back"
             }
 
-            'NoteList' {
+            [PSNoteMenuItems]::NoteList {
                 Write-PSNotesNoteList -Notes $state.LastList -Title $state.ScopeLabel -Store $Store
                 $menu = "[#] Open  [P] Preview  [S] Search  [B] Back"
             }
 
-            'NoteActions' {
+            [PSNoteMenuItems]::NoteActions {
                 Write-PSNotePreview -Note $state.Note
-                $f = if ($Store.IsFavorite($state.Note)) { '[U] UnFav' } else { '[U] Fav' }
+                $f = if ($Store.IsFavorite($state.Note)) { '[U] UnFav' } else { '[F] Fav' }
                 $menu = "[C] Copy  [X] Execute  $f  [B] Back"
             }
 
-            'Favorites' {
+            [PSNoteMenuItems]::Favorites {
                 $favorites = @($Store.GetFavorites() | Sort-Object Catalog, Alias)
 
                 if (-not $favorites -or $favorites.Count -eq 0) {
@@ -145,43 +154,61 @@
                 $menu = "[#] Open  [P] Preview  [B] Back"
             }
 
-            'Preview' {
+            [PSNoteMenuItems]::Preview {
                 $note = $Notes[$i]
                 $f = if ($Store.IsFavorite($note)) { '[U] UnFav' } else { '[U] Fav' }
                 Write-PSNotePreview -Note $note
                 $menu = "[C] Copy  [X] Execute  $f  [N] Next  [B] Back"
             }
 
-            'Exit' { 
+            [PSNoteMenuItems]::Settings {
+                $state.Settings = Update-PSNoteSetting -Config $state.Settings
+            }
+
+            [PSNoteMenuItems]::Exit { 
                 $exitUI = $true
             }
         }
 
         if (-not $exitUI) {
-            if ( $state.Mode -notin 'NoteActions' -and $state.Note ) {
+            if ( $state.Mode -notin [PSNoteMenuItems]::NoteActions -and $state.Note ) {
                 # Clear selected note when not in NoteActions
                 $state.Note = $null
             }
 
-            Write-Host "`n$menu`n" -ForegroundColor Yellow
-            Write-PSNotesFooter -Items $footerItems -State $state
-            $sel = (Read-Host "PSNotes").Trim()
+            Write-PSNotesFooter -Items $footerItems -State $state -Menu $menu
+
+            $sel = Read-PSNotesCommand -Prompt 'PSNotes' -Echo
+
+            # Ctrl combos fire immediately
+            if ($sel -like '^*') {
+                if (Invoke-PSNotesFooterCombo -State $state -Store $Store -Combo $sel) {
+                    continue
+                }
+            }
+
+            # Optional: ESC behaves like Back
+            if ($sel -eq 'ESC') {
+                $sel = 'Q'
+            }
+
+            # Keep your existing Preview default-next behavior
+            if ([string]::IsNullOrWhiteSpace($sel) -and $state.Mode -eq 'Preview') {
+                $sel = 'N'
+            }
 
             if ($state.ReturnMode[-1] -ne $state.Mode) {
                 $state.ReturnMode += $state.Mode
             }
-            if ([string]::IsNullOrWhiteSpace($sel) -and $state.Mode -eq 'Preview') {
-                $sel = 'N'
-            }
+
             switch ($sel.ToUpperInvariant()) {
                 'M' { $state.Mode = $state.Settings.Main }
-                'A' { $state.Mode = 'AllCatalogs' }
-                'S' { $state.Mode = 'Search' }
-                'G' { $state.Mode = 'Catalogs' }
-                'T' { $state.Mode = 'Tags' }
-                'F' { $state.Mode = 'Favorites' }
-                'O' { $state.Mode = 'Settings' }
-                'Q' { $state.Mode = 'Exit' }
+                'A' { $state.Mode = [PSNoteMenuItems]::AllCatalogs }
+                'S' { $state.Mode = [PSNoteMenuItems]::Search }
+                'G' { $state.Mode = [PSNoteMenuItems]::Catalogs }
+                'T' { $state.Mode = [PSNoteMenuItems]::Tags }
+                'O' { $state.Mode = [PSNoteMenuItems]::Settings }
+                'Q' { $state.Mode = [PSNoteMenuItems]::Exit }
                 'P' { 
                     $i = 0
                     if ($state.LastList -and $state.LastList.Count -gt 0) {
@@ -197,7 +224,7 @@
                     }
                 }
                 'N' {
-                    if ($state.Mode -eq 'Preview') {
+                    if ($state.Mode -eq [PSNoteMenuItems]::Preview) {
                         if ($i -ge $Notes.Count - 1 ) {
                             $state.Mode = $state.ReturnMode[-2]
                             $state.ReturnMode = $state.ReturnMode[0..($state.ReturnMode.Count - 2)]
@@ -230,14 +257,19 @@
                         $state.ReturnMode = $state.ReturnMode[0..($state.ReturnMode.Count - 2)]
                         if ($state.Settings.ExitOnCopy) {
                             $state.ExecuteOnExit = $null
-                            $state.Mode = 'Exit'
+                            $state.Mode = [PSNoteMenuItems]::Exit
                         }
                     }
                 }
                 'X' {
                     if ($state.Note) {
                         $state.ExecuteOnExit = $state.Note
-                        $state.Mode = 'Exit'
+                        $state.Mode = [PSNoteMenuItems]::Exit
+                    }
+                }
+                'F' {
+                    if ($state.Note) {
+                        $Store.ToggleFavorite($state.Note)
                     }
                 }
                 'U' {
@@ -245,45 +277,42 @@
                         $Store.ToggleFavorite($state.Note)
                     }
                 }
-                'B' {
-                    $state.Mode = $state.ReturnMode[-2]
-                    $state.ReturnMode = $state.ReturnMode[0..($state.ReturnMode.Count - 2)]
-                }
+                'B' { Pop-PSNotesMode -State $state }
                 default {
                     if ($sel -match '^\s*O?\s*(\d+)\s*$') {
                         $idx = [int]$Matches[1] - 1
                         switch ($state.Mode) {
-                            'Catalogs' {
+                            [PSNoteMenuItems]::Catalogs {
                                 $cats = @($Store.Catalogs | Sort-Object Catalog)
                                 if ($idx -ge 0 -and $idx -lt $cats.Count) {
                                     Set-PSNotesCatalogScope -State $state -Catalog $cats[$idx]
                                 }
                             }
-                            'Tags' {
+                            [PSNoteMenuItems]::Tags {
                                 $tags = Get-PSNotesTag -Notes @($Store.Notes)
                                 if ($idx -ge 0 -and $idx -lt $tags.Count) {
                                     Set-PSNotesTagScope -State $state -Tag $tags[$idx] -AllNotes @($Store.Notes)
                                 }
                             }
-                            'Favorites' {
+                            [PSNoteMenuItems]::Favorites {
                                 $notes = $state.LastList
                                 if ($idx -ge 0 -and $idx -lt $max) {
                                     $state.Note = $favorites[$idx]
-                                    $state.Mode = 'NoteActions'
+                                    $state.Mode = [PSNoteMenuItems]::NoteActions
                                 }
                             }
-                            'NoteList' {
+                            [PSNoteMenuItems]::NoteList {
                                 $notes = $state.LastList
                                 if ($idx -ge 0 -and $idx -lt $notes.Count) {
                                     $state.Note = $notes[$idx]
-                                    $state.Mode = 'NoteActions'
+                                    $state.Mode = [PSNoteMenuItems]::NoteActions
                                 }
                             }
-                            'AllCatalogs' {
+                            [PSNoteMenuItems]::AllCatalogs {
                                 $notes = $state.LastList
                                 if ($idx -ge 0 -and $idx -lt $notes.Count) {
                                     $state.Note = $notes[$idx]
-                                    $state.Mode = 'NoteActions'
+                                    $state.Mode = [PSNoteMenuItems]::NoteActions
                                 }
                             }
                         }

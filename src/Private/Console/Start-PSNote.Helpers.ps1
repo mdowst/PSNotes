@@ -110,6 +110,7 @@ function Get-PSNotesScopeText {
     return "Catalog: $c | Tag: $t"
 }
 
+
 function Write-PSNotesFooter {
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
@@ -117,12 +118,27 @@ function Write-PSNotesFooter {
         [Parameter(Mandatory)]
         [hashtable[]] $Items,
         [Parameter(Mandatory)]
-        $State
+        $State,
+        [Parameter(Mandatory = $false)]
+        $Menu = $null
     )
     [int] $Rows = 2
     $width = $Host.UI.RawUI.WindowSize.Width
     if ( $width -lt 78) { $width = 78 }
     $perRow = [Math]::Ceiling($Items.Count / $Rows)
+
+    $footerTop = (Get-PSNotesViewportRow -FromBottom ($Rows)) - 1 # top row of footer block
+
+    if($Menu) {
+        [Console]::SetCursorPosition(0, $footerTop - 2)
+        Write-Host $Menu -ForegroundColor Yellow
+    }
+
+    # (optional) clear footer area first
+    for ($i = 0; $i -lt $Rows-1; $i++) {
+        [Console]::SetCursorPosition(0, $footerTop + $i)
+        Write-Host (' ' * $width) -NoNewline
+    }
 
     for ($r = 0; $r -lt $Rows; $r++) {
         $rowItems = $Items | Select-Object -Skip ($r * $perRow) -First $perRow
@@ -131,6 +147,7 @@ function Write-PSNotesFooter {
         $colWidth = [Math]::Floor($width / $rowItems.Count)
         if ($colWidth -lt 12) { $colWidth = 12 }
 
+        [Console]::SetCursorPosition(0, $footerTop + $r)
         foreach ($it in $rowItems) {
             $key = [string]$it.Key
             $label = [string]$it.Label
@@ -166,7 +183,6 @@ function Write-PSNotesFooter {
     # Reset colors after footer
     Write-Host "" -NoNewline
 }
-
 function Write-PSNotesCatalogList {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param([NoteStore]$Store)
@@ -442,4 +458,9 @@ function Invoke-PSNotesNewNoteWizard {
         Write-Host ""
         Read-Host "Press Enter to return to PSNotes"
     }
+}
+
+function Get-PSNotesViewportRow {
+    param([int]$FromBottom = 0) # 0 = very bottom visible row
+    return [Console]::WindowTop + [Console]::WindowHeight - 1 - $FromBottom
 }
