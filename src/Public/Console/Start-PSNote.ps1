@@ -41,33 +41,7 @@
     
     # Default view: Favorites if any exist; otherwise Catalogs
     $favorites = @($Store.GetFavorites())
-    
-    <#
-    $footerItems = @(
-        @{ Key = '[M]'; Label = 'Main' },
-        @{ Key = '[F]'; Label = 'Favorites' },
-        @{ Key = '[G]'; Label = 'Catalogs' },
-        @{ Key = '[S]'; Label = 'Search' },
-        @{ Key = '[H]'; Label = 'Help' },
-        @{ Key = '[B]'; Label = 'Back' },
-        @{ Key = '[A]'; Label = 'All' },
-        @{ Key = '[T]'; Label = 'Tags' },
-        @{ Key = '[O]'; Label = 'Options' },
-        @{ Key = '[Q]'; Label = 'Quit' }
-    )
-        #>
-    $footerItems = @(
-        @{ Key = ' ^M'; Label = 'Main' },
-        @{ Key = ' ^F'; Label = 'Favorites' },
-        @{ Key = ' ^G'; Label = 'Catalogs' },
-        @{ Key = ' ^S'; Label = 'Search' },
-        @{ Key = ' ^H'; Label = 'Help' },
-        @{ Key = ' ^B'; Label = 'Back' },
-        @{ Key = ' ^N'; Label = 'New' },
-        @{ Key = ' ^A'; Label = 'All' },
-        @{ Key = ' ^O'; Label = 'Options' },
-        @{ Key = ' ^Q'; Label = 'Quit' }
-    )
+       
 
     $exitUI = $false
 
@@ -76,242 +50,136 @@
         Write-PSNotesHeaderBar -State $state
         $menu = ""
         $skipRead = ""
-        
+        $skipUI = $false
         switch -Exact ($state.Mode) {
-            ([PSNoteMenuItems]::AllCatalogs) {
-                $state.Catalog = $null
-                $state.Tag = $null
-                $state.ScopeNotes = @($Store.Notes)
-                $state.LastList = @($state.ScopeNotes | Sort-Object Catalog, Alias)
-                Write-PSNotesNoteList -Notes $state.LastList -Title $state.ScopeLabel -Store $Store
-                $menu = "[#] Open  [P] Preview  [S] Search  [B] Back"
+            ([PSNoteMenuItem]::Main) { Write-Host "Main Menu" -ForegroundColor Cyan }
+            ([PSNoteMenuItem]::Catalogs) { Write-Host "Catalog Menu" -ForegroundColor Cyan }
+            ([PSNoteMenuItem]::Tags) { Write-Host "Tags Menu" -ForegroundColor Cyan }
+            ([PSNoteMenuItem]::Favorites) {
+                Write-Host "Favorites Menu" -ForegroundColor Cyan 
+                $pageIndex = 0
+                $state.LastList = Write-PSNotesFavoriteList -Store $Store
             }
-
-            ([PSNoteMenuItems]::Search) {
-                Invoke-PSNotesSearch -State $state -Prefill $null
+            ([PSNoteMenuItem]::Settings) { Write-Host "Settings Menu" -ForegroundColor Cyan }
+            ([PSNoteMenuItem]::Search) { Write-Host "Search Menu" -ForegroundColor Cyan }
+            ([PSNoteMenuItem]::Help) { Write-Host "Help Menu" -ForegroundColor Cyan }
+            ([PSNoteMenuItem]::Back) { 
+                Pop-PSNotesMode -State $state
+                $skipUI = $true
             }
-
-            ([PSNoteMenuItems]::Welcome) {
-                Write-PSNoteWelcome
+            ([PSNoteMenuItem]::Quit) { Write-Host "Quit Menu" -ForegroundColor Cyan }
+            ([PSNoteMenuItem]::Welcome) { Write-Host "Welcome Menu" -ForegroundColor Cyan }
+            ([PSNoteMenuItem]::AllCatalogs) {
+                Write-Host "All Catalogs Menu" -ForegroundColor Cyan 
+                $pageIndex = 0
+                $state.LastList = Write-PSNotesAllCatalogsList -Store $Store
             }
-
-            ([PSNoteMenuItems]::Catalogs) {
-                Write-PSNotesCatalogList -Store $Store
-                $menu = "[#] Open  [S] Search  [B] Back"
-            }
-
-            ([PSNoteMenuItems]::Help) {
-                Write-Host "This is a temp holder for the Help screen until we build that out more fully." -ForegroundColor Yellow
-                $menu = "[#] Open  [S] Search  [B] Back"
-            }
-
-            ([PSNoteMenuItems]::Tags) {
-                Write-PSNotesTagList -Notes @($Store.Notes)
-                $menu = "[#] Open  [S] Search  [B] Back"
-            }
-
-            ([PSNoteMenuItems]::NoteList) {
-                Write-PSNotesNoteList -Notes $state.LastList -Title $state.ScopeLabel -Store $Store
-                $menu = "[#] Open  [P] Preview  [S] Search  [B] Back"
-            }
-
-            ([PSNoteMenuItems]::NoteActions) {
-                Write-PSNotePreview -Note $state.Note
-                $f = if ($Store.IsFavorite($state.Note)) { '[U] UnFav' } else { '[F] Fav' }
-                $menu = "[C] Copy  [X] Execute  $f  [B] Back"
-            }
-
-            ([PSNoteMenuItems]::Favorites) {
-                $favorites = @($Store.GetFavorites() | Sort-Object Catalog, Alias)
-
-                if (-not $favorites -or $favorites.Count -eq 0) {
-                    Write-Host "No favorites yet." -ForegroundColor DarkYellow
-                    Write-Host ""
-                }
-                else {
-                    # show list
-                    $max = [Math]::Min(30, $favorites.Count)
-                    for ($i = 0; $i -lt $max; $i++) {
-                        $n = $favorites[$i]
-                        $label = "[$($n.Note)] $($n.Alias)"
-                        "{0,2}) {1}" -f ($i + 1), $label | Write-Host
-                    }
-
-                    if ($favorites.Count -gt $max) {
-                        Write-Host ""
-                        Write-Host ("Showing first {0} of {1}. (Favorites)" -f $max, $favorites.Count) -ForegroundColor DarkGray
-                    }
-                }
-                $menu = "[#] Open  [P] Preview  [B] Back"
-            }
-
-            ([PSNoteMenuItems]::Preview) {
-                $note = $Notes[$i]
+            ([PSNoteMenuItem]::Preview) {
+                Write-Host "Preview Menu" -ForegroundColor Cyan 
+                $note = $state.LastList[$pageIndex]
                 $f = if ($Store.IsFavorite($note)) { '[U] UnFav' } else { '[U] Fav' }
                 Write-PSNotePreview -Note $note
-                $menu = "[C] Copy  [X] Execute  $f  [N] Next  [B] Back"
+                $menu = "[C] Copy  [X] Execute  $f  [N] Next  [P] Previous"
             }
-
-            ([PSNoteMenuItems]::Settings) {
-                $state.Settings = Update-PSNoteSetting -Config $state.Settings
-                $skipRead = 'B'
+            ([PSNoteMenuItem]::NewNote) { Write-Host "New Note Menu" -ForegroundColor Cyan }
+            ([PSNoteMenuItem]::NoteActions) {
+                Write-Host "Note Actions Menu" -ForegroundColor Cyan 
+                Write-PSNotePreview -Note $state.Note
+                $f = if ($Store.IsFavorite($state.Note)) { '[U] UnFav' } else { '[F] Fav' }
+                $menu = "[C] Copy  [X] Execute  $f "
             }
-
-            ([PSNoteMenuItems]::Quit) { 
+            ([PSNoteMenuItem]::Quit) { 
                 $exitUI = $true
             }
         }
 
-        if (-not $exitUI) {
-            if ( $state.Mode -notin [PSNoteMenuItems]::NoteActions -and $state.Note ) {
+        if (-not $exitUI -and -not $skipUI) {
+            if ( $state.Mode -notin [PSNoteMenuItem]::NoteActions -and $state.Note ) {
                 # Clear selected note when not in NoteActions
                 $state.Note = $null
             }
 
-            Write-PSNotesFooter -Items $footerItems -State $state -Menu $menu
+            Write-PSNotesFooter -State $state -Menu $menu
 
-            if([string]::IsNullOrWhiteSpace($skipRead)){
+            if ([string]::IsNullOrWhiteSpace($skipRead)) {
                 $sel = Read-PSNotesCommand -Prompt 'PSNotes' -Echo
             }
-            else{
+            else {
                 $sel = $skipRead
-            }
-
-            # Ctrl combos fire immediately
-            if ($sel -like '^*') {
-                if (Invoke-PSNotesFooterCombo -State $state -Store $Store -Combo $sel) {
-                    continue
-                }
-            }
-
-            # Optional: ESC behaves like Back
-            if ($sel -eq 'ESC') {
-                $sel = 'Q'
-            }
-
-            # Keep your existing Preview default-next behavior
-            if ([string]::IsNullOrWhiteSpace($sel) -and $state.Mode -eq 'Preview') {
-                $sel = 'N'
             }
 
             if ($state.ReturnMode[-1] -ne $state.Mode) {
                 $state.ReturnMode += $state.Mode
             }
 
-            switch ($sel.ToUpperInvariant()) {
-                'P' { 
-                    $i = 0
-                    if ($state.LastList -and $state.LastList.Count -gt 0) {
-                        $Notes = $state.LastList
-                        $state.Mode = 'Preview'
-                    }
-                    elseif ($favorites -and $favorites.Count -gt 0) {
-                        $Notes = $favorites
-                        $state.Mode = 'Preview'
-                    }
-                    else {
-                        $Notes = @()
-                    }
-                }
-                'N' {
-                    if ($state.Mode -eq [PSNoteMenuItems]::Preview) {
-                        if ($i -ge $Notes.Count - 1 ) {
-                            $state.Mode = $state.ReturnMode[-2]
-                            $state.ReturnMode = $state.ReturnMode[0..($state.ReturnMode.Count - 2)]
-                        }
-                        else {
-                            $i++
-                        }
-                    }
-                    else {
-                        Invoke-PSNotesNewNoteWizard -Store $Store
+            # Keep your existing Preview default-next behavior
+            if ([string]::IsNullOrWhiteSpace($sel) -and $state.Mode -eq [PSNoteMenuItem]::Preview) {
+                $sel = 'N'
+            }
+            if($state.Mode -eq [PSNoteMenuItem]::Preview -and $sel -match '^\s*([Nn])\s*$') {
+                $pageIndex++
+                continue
+            }
 
-                        # Keep the UI consistent by refreshing scope notes after creation
-                        if (-not $state.Catalog -and -not $state.Tag) {
-                            $state.ScopeNotes = @($Store.Notes)
-                        }
-                        elseif ($state.Catalog) {
-                            # If they’re scoped to a catalog, re-scope so the new note appears
-                            Set-PSNotesCatalogScope -State $state -Catalog $state.Catalog
-                        }
-                        elseif ($state.Tag) {
-                            # If they’re scoped to a tag, just re-run tag scope
-                            Set-PSNotesTagScope -State $state -Tag $state.Tag -AllNotes @($Store.Notes)
-                        }
-                    }
-                }
-                'C' {
-                    if ($state.Note) {
-                        Set-Clipboard -Value $state.Note.Snippet
-                        $state.Mode = $state.ReturnMode[-2]
-                        $state.ReturnMode = $state.ReturnMode[0..($state.ReturnMode.Count - 2)]
-                        if ($state.Settings.ExitOnCopy) {
-                            $state.ExecuteOnExit = $null
-                            $state.Mode = [PSNoteMenuItems]::Quit
-                        }
-                    }
-                }
-                'X' {
-                    if ($state.Note) {
-                        $state.ExecuteOnExit = $state.Note
-                        $state.Mode = [PSNoteMenuItems]::Quit
-                    }
-                }
-                'F' {
-                    if ($state.Note) {
-                        $Store.ToggleFavorite($state.Note)
-                    }
-                }
-                'U' {
-                    if ($state.Note) {
-                        $Store.ToggleFavorite($state.Note)
-                    }
-                }
-                'B' { Pop-PSNotesMode -State $state }
-                default {
-                    if ($sel -match '^\s*O?\s*(\d+)\s*$') {
-                        $idx = [int]$Matches[1] - 1
-                        switch -Exact ($state.Mode) {
-                            ([PSNoteMenuItems]::Catalogs) {
-                                $cats = @($Store.Catalogs | Sort-Object Catalog)
-                                if ($idx -ge 0 -and $idx -lt $cats.Count) {
-                                    Set-PSNotesCatalogScope -State $state -Catalog $cats[$idx]
-                                }
-                            }
-                            ([PSNoteMenuItems]::Tags) {
-                                $tags = Get-PSNotesTag -Notes @($Store.Notes)
-                                if ($idx -ge 0 -and $idx -lt $tags.Count) {
-                                    Set-PSNotesTagScope -State $state -Tag $tags[$idx] -AllNotes @($Store.Notes)
-                                }
-                            }
-                            ([PSNoteMenuItems]::Favorites) {
-                                $notes = $state.LastList
-                                if ($idx -ge 0 -and $idx -lt $max) {
-                                    $state.Note = $favorites[$idx]
-                                    $state.Mode = [PSNoteMenuItems]::NoteActions
-                                }
-                            }
-                            ([PSNoteMenuItems]::NoteList) {
-                                $notes = $state.LastList
-                                if ($idx -ge 0 -and $idx -lt $notes.Count) {
-                                    $state.Note = $notes[$idx]
-                                    $state.Mode = [PSNoteMenuItems]::NoteActions
-                                }
-                            }
-                            ([PSNoteMenuItems]::AllCatalogs) {
-                                $notes = $state.LastList
-                                if ($idx -ge 0 -and $idx -lt $notes.Count) {
-                                    $state.Note = $notes[$idx]
-                                    $state.Mode = [PSNoteMenuItems]::NoteActions
-                                }
-                            }
+            # Ctrl combos fire immediately
+            $fromKey = [PSNoteMenuItem]::FromKey($sel)
+            if ($fromKey) {
+                $state.Mode = $fromKey
+                continue
+            }
+ 
+            # Optional: ESC behaves like Back
+            if ($sel -eq 'ESC') {
+                $state.Mode = [PSNoteMenuItem]::Quit
+                continue
+            }
+
+    
+
+            if ($sel -match '^\s*O?\s*(\d+)\s*$') {
+                $idx = [int]$Matches[1] - 1
+                switch -Exact ($state.Mode) {
+                    ([PSNoteMenuItem]::Catalogs) {
+                        $cats = @($Store.Catalogs | Sort-Object Catalog)
+                        if ($idx -ge 0 -and $idx -lt $cats.Count) {
+                            Set-PSNotesCatalogScope -State $state -Catalog $cats[$idx]
                         }
                     }
-                    # Free-text search from main menu
-                    elseif (-not [string]::IsNullOrWhiteSpace($sel)) {
-                        Invoke-PSNotesSearch -State $state -Prefill $sel
+                    ([PSNoteMenuItem]::Tags) {
+                        $tags = Get-PSNotesTag -Notes @($Store.Notes)
+                        if ($idx -ge 0 -and $idx -lt $tags.Count) {
+                            Set-PSNotesTagScope -State $state -Tag $tags[$idx] -AllNotes @($Store.Notes)
+                        }
+                    }
+                    ([PSNoteMenuItem]::Favorites) {
+                        $pageIndex = 0
+                        $notes = $state.LastList
+                        if ($idx -ge 0 -and $idx -lt $max) {
+                            $state.Note = $favorites[$idx]
+                            $state.Mode = [PSNoteMenuItem]::NoteActions
+                        }
+                    }
+                    ([PSNoteMenuItem]::NoteList) {
+                        $pageIndex = 0
+                        $notes = $state.LastList
+                        if ($idx -ge 0 -and $idx -lt $notes.Count) {
+                            $state.Note = $notes[$idx]
+                            $state.Mode = [PSNoteMenuItem]::NoteActions
+                        }
+                    }
+                    ([PSNoteMenuItem]::AllCatalogs) {
+                        $pageIndex = 0
+                        $notes = $state.LastList
+                        if ($idx -ge 0 -and $idx -lt $notes.Count) {
+                            $state.Note = $notes[$idx]
+                            $state.Mode = [PSNoteMenuItem]::NoteActions
+                        }
                     }
                 }
+            }
+            # Free-text search from main menu
+            elseif (-not [string]::IsNullOrWhiteSpace($sel)) {
+                Invoke-PSNotesSearch -State $state -Prefill $sel
             }
         }
     }

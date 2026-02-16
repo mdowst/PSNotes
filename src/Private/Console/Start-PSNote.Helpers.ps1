@@ -9,7 +9,7 @@ function Set-PSNotesCatalogScope {
     $State.Catalog = $Catalog
     $State.ScopeNotes = @($Catalog.Notes)
     $State.LastList = @($State.ScopeNotes | Sort-Object Alias)
-    $State.Mode = [PSNoteMenuItems]::NoteList
+    $State.Mode = [PSNoteMenuItem]::NoteList
 }
 
 function Set-PSNotesTagScope {
@@ -19,7 +19,7 @@ function Set-PSNotesTagScope {
     $State.Tag = $Tag
     $State.ScopeNotes = @($AllNotes | Where-Object { $_.Tags -contains $Tag })
     $State.LastList = @($State.ScopeNotes | Sort-Object Catalog, Alias)
-    $State.Mode = [PSNoteMenuItems]::NoteList
+    $State.Mode = [PSNoteMenuItem]::NoteList
 }
 
 function Invoke-PSNotesSearch {
@@ -41,7 +41,7 @@ function Invoke-PSNotesSearch {
     )
 
     $State.LastList = $results
-    $State.Mode = [PSNoteMenuItems]::NoteList
+    $State.Mode = [PSNoteMenuItem]::NoteList
 }
 
 # -----------------------------
@@ -112,78 +112,64 @@ function Get-PSNotesScopeText {
     return $r
 }
 
-
-function Write-PSNotesFooter {
-    [CmdletBinding()]
+function Write-PSNotesFavoriteList {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(
-        [Parameter(Mandatory)]
-        [hashtable[]] $Items,
-        [Parameter(Mandatory)]
-        $State,
-        [Parameter(Mandatory = $false)]
-        $Menu = $null
+        [Parameter(Mandatory)][NoteStore] $Store
     )
-    [int] $Rows = 2
-    $width = $Host.UI.RawUI.WindowSize.Width
-    if ( $width -lt 78) { $width = 78 }
-    $perRow = [Math]::Ceiling($Items.Count / $Rows)
 
-    $footerTop = (Get-PSNotesViewportRow -FromBottom ($Rows)) - 1 # top row of footer block
+    $favorites = @($Store.GetFavorites() | Sort-Object Catalog, Alias)
 
-    if($Menu) {
-        [Console]::SetCursorPosition(0, $footerTop - 2)
-        Write-Host $Menu -ForegroundColor Yellow
+    if (-not $favorites -or $favorites.Count -eq 0) {
+        Write-Host "No favorites yet." -ForegroundColor DarkYellow
+        Write-Host ""
     }
-
-    # (optional) clear footer area first
-    for ($i = 0; $i -lt $Rows-1; $i++) {
-        [Console]::SetCursorPosition(0, $footerTop + $i)
-        Write-Host (' ' * $width) -NoNewline
-    }
-
-    for ($r = 0; $r -lt $Rows; $r++) {
-        $rowItems = $Items | Select-Object -Skip ($r * $perRow) -First $perRow
-        if (-not $rowItems -or $rowItems.Count -eq 0) { continue }
-
-        $colWidth = [Math]::Floor($width / $rowItems.Count)
-        if ($colWidth -lt 12) { $colWidth = 12 }
-
-        [Console]::SetCursorPosition(0, $footerTop + $r)
-        foreach ($it in $rowItems) {
-            $key = [string]$it.Key
-            $label = [string]$it.Label
-
-            # Build column, but render in two parts:
-            # [ key ] label.... (all on footer bg, except key block)
-            $colInnerMax = $colWidth
-
-            # Key chunk (ensure it fits)
-            $keyChunk = $key
-            if ($keyChunk.Length -gt 4) { $keyChunk = $keyChunk.Substring(0, 4) }
-            $keyChunk = $keyChunk.PadRight(4)
-
-            # Remaining space for " label"
-            $remaining = $colInnerMax - 4
-            if ($remaining -lt 1) { $remaining = 1 }
-
-            $labelChunk = (" " + $label)
-            if ($labelChunk.Length -gt $remaining) {
-                $labelChunk = $labelChunk.Substring(0, $remaining)
-            }
-            $labelChunk = $labelChunk.PadRight($remaining)
-
-            # Render
-            Write-Host $keyChunk   -NoNewline -ForegroundColor $state.Settings.BackgroundColor -BackgroundColor $state.Settings.ForegroundColor
-            Write-Host $labelChunk -NoNewline -ForegroundColor $state.Settings.ForegroundColor -BackgroundColor $state.Settings.BackgroundColor
+    else {
+        # show list
+        $max = [Math]::Min(30, $favorites.Count)
+        $notes = for ($i = 0; $i -lt $max; $i++) {
+            $n = $favorites[$i]
+            $label = "[$($n.Note)] $($n.Alias)"
+            "{0,2}) {1}" -f ($i + 1), $label | Write-Host
+            $n
         }
 
-        # Finish line, and make sure the whole line is footer background
-        Write-Host "" -ForegroundColor $state.Settings.ForegroundColor -BackgroundColor $state.Settings.BackgroundColor
+        if ($favorites.Count -gt $max) {
+            Write-Host ""
+            Write-Host ("Showing first {0} of {1}. (Favorites)" -f $max, $favorites.Count) -ForegroundColor DarkGray
+        }
     }
+    return $notes
+}
 
-    # Reset colors after footer
-    Write-Host "" -NoNewline
+function Write-PSNotesAllCatalogsList {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
+    param(
+        [Parameter(Mandatory)][NoteStore] $Store
+    )
+
+    $allNotes = @($Store.Notes | Sort-Object Catalog, Alias)
+
+    if (-not $allNotes -or $allNotes.Count -eq 0) {
+        Write-Host "No notes available." -ForegroundColor DarkYellow
+        Write-Host ""
+    }
+    else {
+        # show list
+        $max = [Math]::Min(30, $allNotes.Count)
+        $notes = for ($i = 0; $i -lt $max; $i++) {
+            $n = $allNotes[$i]
+            $label = "[$($n.Note)] $($n.Alias)"
+            "{0,2}) {1}" -f ($i + 1), $label | Write-Host
+            $n
+        }
+
+        if ($allNotes.Count -gt $max) {
+            Write-Host ""
+            Write-Host ("Showing first {0} of {1}. (All Notes)" -f $max, $allNotes.Count) -ForegroundColor DarkGray
+        }
+    }
+    return $notes
 }
 function Write-PSNotesCatalogList {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]

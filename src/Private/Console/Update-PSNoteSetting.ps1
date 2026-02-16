@@ -107,12 +107,12 @@ function Update-PSNoteSetting {
     function Select-PSNoteMenuItem {
         param(
             [string] $Title,
-            [PSNoteMenuItems] $Current
+            [PSNoteMenuItem] $Current
         )
-        $picked = Select-EnumValue -EnumType ([PSNoteMenuItems]) -Title $Title -CurrentValue $Current.ToString()
+        $picked = Select-EnumValue -EnumType ([PSNoteMenuItem]) -Title $Title -CurrentValue $Current.ToString()
         if ($null -eq $picked) { return $null }
 
-        $try = [PSNoteMenuItems]::Welcome
+        $try = [PSNoteMenuItem]::Welcome
         if ([Enum]::TryParse([string]$picked, [ref]$try)) {
             return $try
         }
@@ -219,7 +219,7 @@ function Update-PSNoteSetting {
             default {
                 # If user typed something like "welcome" for Main, accept it as a convenience
                 if (-not [string]::IsNullOrWhiteSpace($choice)) {
-                    $tryMain = [PSNoteMenuItems]::Welcome
+                    $tryMain = [PSNoteMenuItem]::Welcome
                     if ([Enum]::TryParse($choice, [ref]$tryMain)) {
                         if ($tryMain -ne $Config.Main) {
                             $Config.Main = $tryMain

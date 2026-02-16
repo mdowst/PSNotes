@@ -3,21 +3,125 @@ enum PSNoteKind {
     Script
 }
 
-enum PSNoteMenuItems{
-    Main
-    Catalogs
-    Tags
-    Favorites
-    NoteList
-    NoteActions
-    Settings
-    Help
-    Quit
-    Welcome
-    AllCatalogs
-    Preview
-    Search
+class PSNoteMenuItem {
+
+    [string] $Name
+    [string] $Key
+    [char] $Alt
+    [string] $Label
+
+    hidden PSNoteMenuItem(
+        [string] $name,
+        [string] $key,
+        [char] $alt,
+        [string] $label
+    ) {
+        $this.Name = $name
+        $this.Key = $key
+        $this.Alt = $alt
+        $this.Label = $label
+    }
+
+    hidden PSNoteMenuItem(
+        [string] $name,
+        [string] $label
+    ) {
+        $this.Name = $name
+        $this.Key = $null
+        $this.Alt = $null
+        $this.Label = $label
+    }
+
+    # --- Static "enum-like" instances ---
+    static [PSNoteMenuItem] $Main = [PSNoteMenuItem]::new('Main', '^M', 'M', 'Main')
+    static [PSNoteMenuItem] $Catalogs = [PSNoteMenuItem]::new('Catalogs', '^G', 'G', 'Catalogs')
+    static [PSNoteMenuItem] $Tags = [PSNoteMenuItem]::new('Tags', '^T', 'T', 'Tags')
+    static [PSNoteMenuItem] $Favorites = [PSNoteMenuItem]::new('Favorites', '^F', 'F', 'Favorites')
+    static [PSNoteMenuItem] $Settings = [PSNoteMenuItem]::new('Settings', '^O', 'O', 'Settings')
+    static [PSNoteMenuItem] $Search = [PSNoteMenuItem]::new('Search', '^W', 'W', 'Search')
+    static [PSNoteMenuItem] $Help = [PSNoteMenuItem]::new('Help', '^H', 'H', 'Help')
+    static [PSNoteMenuItem] $Back = [PSNoteMenuItem]::new('Back', '^B', 'B', 'Back')
+    static [PSNoteMenuItem] $Quit = [PSNoteMenuItem]::new('Quit', '^Q', 'Q', 'Quit')
+    static [PSNoteMenuItem] $Welcome = [PSNoteMenuItem]::new('Welcome', '^W', 'W', 'Welcome')
+    static [PSNoteMenuItem] $AllCatalogs = [PSNoteMenuItem]::new('AllCatalogs', '^A', 'A', 'All')
+    static [PSNoteMenuItem] $Preview = [PSNoteMenuItem]::new('Preview', '^P', 'P', 'Preview')
+    static [PSNoteMenuItem] $NewNote = [PSNoteMenuItem]::new('NewNote', '^N', 'N', 'New')
+    static [PSNoteMenuItem] $NoteList = [PSNoteMenuItem]::new('NoteList', 'NoteList')
+    static [PSNoteMenuItem] $NoteActions = [PSNoteMenuItem]::new('NoteActions', 'NoteActions')
+    static [PSNoteMenuItem] $Previous = [PSNoteMenuItem]::new('Previous', '^Y', 'Y', 'Previous')
+    static [PSNoteMenuItem] $Next = [PSNoteMenuItem]::new('Next', '^U', 'U', 'Next')
+    static [PSNoteMenuItem] $Copy = [PSNoteMenuItem]::new('Copy', '^C', 'C', 'Copy')
+    static [PSNoteMenuItem] $Execute = [PSNoteMenuItem]::new('Execute', '^E', 'E', 'Execute')
+    static [PSNoteMenuItem] $ToggleFav = [PSNoteMenuItem]::new('ToggleFav', '^T', 'T', 'Toggle Favorite')
+
+    static [PSNoteMenuItem[]] GetAll() {
+        return @(
+            [PSNoteMenuItem]::Main
+            [PSNoteMenuItem]::Catalogs
+            [PSNoteMenuItem]::Tags
+            [PSNoteMenuItem]::Favorites
+            [PSNoteMenuItem]::Settings
+            [PSNoteMenuItem]::Search
+            [PSNoteMenuItem]::Help
+            [PSNoteMenuItem]::Back
+            [PSNoteMenuItem]::Quit
+            [PSNoteMenuItem]::Welcome
+            [PSNoteMenuItem]::AllCatalogs
+            [PSNoteMenuItem]::Preview
+            [PSNoteMenuItem]::NewNote
+            [PSNoteMenuItem]::Copy
+            [PSNoteMenuItem]::Execute
+            [PSNoteMenuItem]::ToggleFav
+        )
+    }
+
+    static [PSNoteMenuItem[]] GetMain() {
+        return @(
+            # Top Row
+            [PSNoteMenuItem]::Main
+            [PSNoteMenuItem]::NewNote
+            [PSNoteMenuItem]::AllCatalogs
+            [PSNoteMenuItem]::Search
+            [PSNoteMenuItem]::Help
+            # Bottom Row
+            [PSNoteMenuItem]::Quit
+            [PSNoteMenuItem]::Favorites
+            [PSNoteMenuItem]::Catalogs
+            [PSNoteMenuItem]::Back
+            [PSNoteMenuItem]::Settings
+        )
+    }
+
+    static [PSNoteMenuItem[]] GetNoteActions() {
+        return @(
+            # Top Row
+            [PSNoteMenuItem]::Copy
+            [PSNoteMenuItem]::Execute
+            [PSNoteMenuItem]::ToggleFav
+            [PSNoteMenuItem]::Back
+        )
+    }
+
+    static [PSNoteMenuItem] FromKey([string]$key) {
+        $from = [PSNoteMenuItem]::GetAll() |
+            Where-Object { $_.Key -eq $key -and -not [string]::IsNullOrEmpty($_.Key) } | Select-Object -First 1
+        if (-not $from) { 
+            $from = [PSNoteMenuItem]::GetAll() |
+            Where-Object { $_.Alt -eq $key.TrimStart('^') -and -not [string]::IsNullOrEmpty($_.Alt) } | Select-Object -First 1
+        }
+        return $from
+    }
+
+    static [PSNoteMenuItem] FromString([string]$name) {
+        return [PSNoteMenuItem]::GetAll() |
+        Where-Object { $_.Name -eq $name } | Select-Object -First 1
+    }
+
+    [string] ToString() {
+        return $this.Name
+    }
 }
+
 
 # Create the PSNote class
 class PSNote {
@@ -602,7 +706,7 @@ class NoteConfigStore {
 
     [string] $Path
     [int] $Version
-    [PSNoteMenuItems] $Main
+    [PSNoteMenuItem] $Main
     [bool] $ExitOnCopy
     [ConsoleColor] $ForegroundColor
     [ConsoleColor] $BackgroundColor
@@ -625,7 +729,7 @@ class NoteConfigStore {
 
     [void] SetDefaults() {
         $this.Version = [NoteConfigStore]::CurrentVersion
-        $this.Main = [PSNoteMenuItems]::Welcome
+        $this.Main = [PSNoteMenuItem]::Welcome
         $this.ExitOnCopy = $true
         $this.ForegroundColor = [ConsoleColor]::Black
         $this.BackgroundColor = [ConsoleColor]::Gray
@@ -640,7 +744,7 @@ class NoteConfigStore {
 
             $data = $json | ConvertFrom-Json -ErrorAction Stop
             if (-not [string]::IsNullOrWhiteSpace([string]$data.Main)) {
-                $tryFg = [PSNoteMenuItems]::Welcome
+                $tryFg = [PSNoteMenuItem]::Welcome
                 if ([Enum]::TryParse([string]$data.Main, [ref]$tryFg)) {
                     $this.Main = $tryFg
                 }
@@ -683,8 +787,8 @@ class NoteConfigStore {
 class NoteConsoleState {
     static [int] $CurrentVersion = 1
 
-    [PSNoteMenuItems] $Mode
-    [PSNoteMenuItems[]] $ReturnMode
+    [PSNoteMenuItem] $Mode
+    [PSNoteMenuItem[]] $ReturnMode
     [string] $ScopeLabel
     [System.Collections.Generic.List[PSNote]] $ScopeNotes
     [System.Collections.Generic.List[PSNote]] $LastList
@@ -702,14 +806,14 @@ class NoteConsoleState {
         $this.SetDefaults()
         $this.ScopeNotes = @($Store.Notes)
         $this.Settings = $Store.Config
-        $tryMode = [PSNoteMenuItems]::Welcome
-        if ([Enum]::TryParse([string]$Store.Config.Main, [ref]$tryMode)) {
+        $tryMode = [PSNoteMenuItem]::FromString($Store.Config.Main)
+        if ($tryMode) {
             $this.Mode = $tryMode
         }
     }
 
     [void] SetDefaults() {
-        $this.Mode = [PSNoteMenuItems]::Welcome
+        $this.Mode = [PSNoteMenuItem]::Welcome
         $this.ReturnMode = @()
         $this.ScopeLabel = 'All'
         $this.ScopeNotes = @()
