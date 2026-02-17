@@ -1053,11 +1053,8 @@ class NoteStore {
         }
     }
 
-    hidden [RemoteCatalogSource] RemoveRemoteCatalog([string] $Url, [bool] $RemoveCache) {
-
-        if (-not $this.Config) {
-            $this.Config = [NoteConfigStore]::new()
-        }
+    hidden [RemoteCatalogSource] RemoveRemoteCatalog([string] $Url, [bool] $ConvertToLocal, [bool] $Force) {
+        if (-not $this.Config) { $this.Config = [NoteConfigStore]::new() }
 
         if (-not $this.Config.RemoteCatalogs -or $this.Config.RemoteCatalogs.Count -eq 0) {
             throw "No remote catalogs are registered."
@@ -1071,51 +1068,117 @@ class NoteStore {
             throw "Remote catalog not found: $Url"
         }
 
+        $cachePath = $null
+        if (-not [string]::IsNullOrWhiteSpace($match.CacheFile)) {
+            $cachePath = Join-Path $env:PSNOTES_HOME $match.CacheFile
+        }
+
+        if ($ConvertToLocal) {
+
+            if (-not $cachePath -or -not (Test-Path $cachePath)) {
+                throw "Cannot convert to local because no cached catalog exists for '$Url'."
+            }
+
+            # Open cached remote catalog
+            $remoteCatalog = [NoteCatalog]::Open($cachePath)
+
+            # Determine local destination path using your static resolver
+            $localPath = [NoteCatalog]::ResolvePath($remoteCatalog.Catalog)
+
+            if ((Test-Path $localPath) -and -not $Force) {
+                throw "Local catalog already exists: '$($remoteCatalog.Catalog)'. Use -Force to overwrite."
+            }
+
+            # Create a new local catalog object
+            $localCatalog = [NoteCatalog]::new($remoteCatalog.Catalog)
+            $localCatalog.IsRemote = $false
+            $localCatalog.Notes = [System.Collections.Generic.List[PSNote]]::new()
+
+            foreach ($n in @($remoteCatalog.Notes)) {
+                $n.Catalog = $localCatalog.Catalog
+                $localCatalog.Notes.Add($n) | Out-Null
+            }
+
+            $localCatalog.Save()
+
+            # Load local version into store
+            $this.LoadCatalog($localCatalog)
+        }
+
         # Remove from config
         $null = $this.Config.RemoteCatalogs.Remove($match)
         $this.Config.Save()
 
-        # Optionally remove cache file
-        if ($RemoveCache -and -not [string]::IsNullOrWhiteSpace($match.CacheFile)) {
-            try {
-                $cachePath = Join-Path $env:PSNOTES_HOME $match.CacheFile
-                if (Test-Path $cachePath) {
-                    Remove-Item -Path $cachePath -Force -ErrorAction Stop
+        # Remove remote catalog object from in-memory store
+        if ($cachePath) {
+            $loadedRemote = $this.Catalogs |
+            Where-Object { $_.Path -eq $cachePath } |
+            Select-Object -First 1
+
+            if ($loadedRemote) {
+                $null = $this.Catalogs.Remove($loadedRemote)
+
+                # Rebuild Notes collection cleanly
+                $this.Notes = [System.Collections.Generic.List[PSNote]]::new()
+                foreach ($c in $this.Catalogs) {
+                    foreach ($n in @($c.Notes)) {
+                        $this.Notes.Add($n) | Out-Null
+                    }
                 }
+
+                $this.InitializeAliases()
             }
-            catch {
-                Write-Warning "Removed remote catalog registration, but failed to delete cached file for '$Url': $($_.Exception.Message)"
-            }
-        }
-
-        # If this remote catalog is currently loaded as a NoteCatalog in memory, remove it too
-        # (Only if your Catalog objects for remote caches keep their Path equal to the cachePath.)
-        try {
-            if (-not [string]::IsNullOrWhiteSpace($match.CacheFile)) {
-                $cachePath = Join-Path $env:PSNOTES_HOME $match.CacheFile
-                $loadedCatalog = $this.Catalogs | Where-Object { $_.Path -eq $cachePath } | Select-Object -First 1
-
-                if ($loadedCatalog) {
-                    # Remove notes from store that came from that catalog
-                    $notesToRemove = @($this.Notes | Where-Object { $_.Catalog -eq $loadedCatalog.Catalog })
-                    foreach ($n in $notesToRemove) { $null = $this.Notes.Remove($n) }
-
-                    # Remove the catalog object
-                    $null = $this.Catalogs.Remove($loadedCatalog)
-
-                    # Rebuild aliases / views
-                    $this.InitializeAliases()
-                }
-            }
-        }
-        catch {
-            # Don’t fail the operation if in-memory cleanup has issues
-            Write-Warning "Remote catalog registration removed, but failed to clean up loaded state: $($_.Exception.Message)"
         }
 
         return $match
     }
 
+    hidden [NoteCatalog] ImportRemoteCatalogAsLocal([string] $Name, [string] $Url, [bool] $Force) {
+        if ([string]::IsNullOrWhiteSpace($Name)) { throw "Name is required." }
+        if ([string]::IsNullOrWhiteSpace($Url)) { throw "Url is required." }
+
+        # Download the remote JSON
+        $resp = Invoke-WebRequest -Uri $Url -UseBasicParsing -ErrorAction Stop
+        $json = [string]$resp.Content
+        if ([string]::IsNullOrWhiteSpace($json)) {
+            throw "Remote catalog returned empty content: $Url"
+        }
+
+        # Save to a temp file so we can reuse existing NoteCatalog.Open() parsing/validation
+        $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("psnotes_remote_{0}.json" -f ([guid]::NewGuid().ToString('N')))
+        try {
+            $json | Set-Content -Path $tmp -Encoding UTF8 -ErrorAction Stop
+
+            $remoteCatalog = [NoteCatalog]::Open($tmp)
+
+            # Use the provided Name as the local catalog name (canonical)
+            $localName = $Name
+            $localPath = [NoteCatalog]::ResolvePath($localName)
+
+            if ((Test-Path $localPath) -and -not $Force) {
+                throw "Local catalog '$localName' already exists. Use -Force to overwrite."
+            }
+
+            $localCatalog = [NoteCatalog]::new($localName)
+            $localCatalog.IsRemote = $false
+            $localCatalog.Notes = [System.Collections.Generic.List[PSNote]]::new()
+
+            foreach ($n in @($remoteCatalog.Notes)) {
+                # Normalize to the local catalog name
+                $n.Catalog = $localName
+                $localCatalog.Notes.Add($n) | Out-Null
+            }
+
+            $localCatalog.Save()
+            $this.LoadCatalog($localCatalog)
+            $this.InitializeAliases()
+
+            return $localCatalog
+        }
+        finally {
+            if (Test-Path $tmp) { Remove-Item -Path $tmp -Force -ErrorAction SilentlyContinue }
+        }
+    }
 
     [string] GetNoteKey([PSNote] $note) {
         return "$($note.Catalog)::$($note.Note)::$($note.Alias)"

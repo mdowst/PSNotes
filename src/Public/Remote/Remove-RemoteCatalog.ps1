@@ -1,17 +1,28 @@
 function Remove-RemoteCatalog {
-    [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact='High')]
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
-        [RemoteCatalogSource] $InputObject,
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string] $Url,
 
-        # Return the removed config entry
+        [switch] $ConvertToLocal,
+
+        [switch] $Force,
+
         [switch] $PassThru
     )
 
-    process {
-        if ($PSCmdlet.ShouldProcess($InputObject.Url, "Remove remote catalog registration and delete cache")) {
-            $removed = $script:_noteStore.RemoveRemoteCatalog($InputObject.Url, [bool]$true)
-            if ($PassThru) { $removed }
-        }
+    $store = [NoteStore]::new()
+
+    $action = if ($ConvertToLocal) {
+        "Convert cached remote catalog to local and remove registration"
+    }
+    else {
+        "Remove remote catalog registration"
+    }
+
+    if ($PSCmdlet.ShouldProcess($Url, $action)) {
+        $removed = $store.RemoveRemoteCatalog($Url, [bool]$ConvertToLocal, [bool]$Force)
+        if ($PassThru) { $removed }
     }
 }
