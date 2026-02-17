@@ -9,28 +9,31 @@ schema: 2.0.0
 
 ## SYNOPSIS
 
-Use to add or update a PSNote object
+Updates an existing PSNote or creates a new one if it doesn't exist.
 
 ## SYNTAX
 
-### Snippet (Default)
+### __AllParameterSets
 
 ```
-Set-PSNote -Note <String> [-Alias <String>] [-Catalog <String>] [-Confirm] [-Details <String>] [-ProgressAction <ActionPreference>] [-Snippet <String>] [-Tags <String[]>] [-WhatIf] [<CommonParameters>]
-```
-
-### ScriptBlock
-
-```
-Set-PSNote -Note <String> [-Alias <String>] [-Catalog <String>] [-Confirm] [-Details <String>] [-ProgressAction <ActionPreference>] [-ScriptBlock <ScriptBlock>] [-Tags <String[]>] [-WhatIf] [<CommonParameters>]
+Set-PSNote [-Note] <String> [[-Catalog <String>]] [[-Snippet <String>]] [[-ScriptBlock <ScriptBlock>]] [[-ScriptPath <String>]] [[-Details <String>]] [[-Alias <String>]] [[-Tags <String[]>]] [[-Run <Boolean>]] [-Confirm] [-ProgressAction <ActionPreference>] [-WhatIf] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
 
-Allows you to add or update a PSNote object.
-If note already
-exists you must supply the Force switch to overwrite it.
-Only values supplied with be updated.
+Modifies the properties of an existing PSNote.
+If the note does not exist in the 
+specified catalog, a warning is displayed and the note will be created.
+
+This function updates only the properties you specify, leaving other properties unchanged.
+It internally calls New-PSNote with the -Force parameter to update the note.
+
+The note Kind is automatically set based on the parameter used:
+- Snippet or ScriptBlock: Updates to Kind 'Snippet' (inline code)
+- ScriptPath: Updates to Kind 'Script' (file reference)
+
+Supports pipeline input by property name, allowing you to pipe objects with Note, Catalog, 
+Snippet, Details, Alias, Tags, or Run properties.
 
 
 ## EXAMPLES
@@ -38,10 +41,10 @@ Only values supplied with be updated.
 ### Example 1: EXAMPLE 1
 
 ```
-Set-PSNote -Note 'ADUser' -Tags 'AD','Users'
+Set-PSNote -Note 'ADUser' -Tags 'AD','Users','Updated'
 ```
 
-Set the tags AD and User for the note ADUser
+Updates the tags for the note 'ADUser' in the Default catalog, replacing any existing tags.
 
 
 
@@ -50,11 +53,184 @@ Set the tags AD and User for the note ADUser
 ### Example 2: EXAMPLE 2
 
 ```
-$Snippet = '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)'
-Set-PSNote -Note 'DayOfWeek' -Snippet $Snippet
+$NewSnippet = '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)'
+Set-PSNote -Note 'DayOfWeek' -Snippet $NewSnippet
 ```
 
-Updates the snippet for the note DayOfWeek
+Updates the snippet content for the note 'DayOfWeek' while preserving other properties.
+
+
+
+
+
+### Example 3: EXAMPLE 3
+
+```
+Set-PSNote -Note 'CpuUsage' -ScriptBlock {
+    Get-CimInstance Win32_Processor | 
+        Measure-Object -Property LoadPercentage -Average |
+        Select-Object -ExpandProperty Average
+}
+```
+
+Updates the note 'CpuUsage' with a new multi-line script block using modern cmdlets.
+
+
+
+
+
+### Example 4: EXAMPLE 4
+
+```
+Set-PSNote -Note 'CpuUsage' -Details "Returns average CPU usage percentage" -Alias 'cpu'
+```
+
+Updates only the Details and Alias properties for the note 'CpuUsage', leaving the snippet unchanged.
+
+
+
+
+
+### Example 5: EXAMPLE 5
+
+```
+Set-PSNote -Note 'ADUser' -Catalog 'Work' -Tags 'AD','Users','Production'
+```
+
+Updates the tags for the note 'ADUser' that exists in the 'Work' catalog.
+
+
+
+
+
+### Example 6: EXAMPLE 6
+
+```
+Set-PSNote -Note 'GetDate' -Snippet 'Get-Date -Format "yyyy-MM-dd"' -Details "Returns current date in ISO format" -Tags 'date','formatting'
+```
+
+Updates multiple properties (snippet, details, and tags) of the note 'GetDate' in a single command.
+
+
+
+
+
+### Example 7: EXAMPLE 7
+
+```
+Set-PSNote -Note 'TestConnection' -Run $true -Details "Auto-run connectivity test"
+```
+
+Enables auto-execution for the note 'TestConnection'.
+When retrieved, it will run automatically.
+
+
+
+
+
+### Example 8: EXAMPLE 8
+
+```
+Set-PSNote -Note 'BackupScript' -ScriptPath 'D:\Scripts\Backup-Database.ps1' -Details "Updated backup script location"
+```
+
+Updates an existing note to reference a different script file, changing its Kind to 'Script'.
+
+
+
+
+
+### Example 9: EXAMPLE 9
+
+```
+Set-PSNote -Note 'NewFeature' -Snippet 'Get-Service -Name "MyService"' -Details "Check service status"
+```
+
+Creates a new note named 'NewFeature' because it doesn't exist yet.
+A warning will be displayed.
+
+
+
+
+
+### Example 10: EXAMPLE 10
+
+```
+Get-PSNote -Note 'ADUser' | Set-PSNote -Tags 'AD','Users','Updated'
+```
+
+Retrieves the note 'ADUser' and updates its tags via pipeline by property name.
+
+
+
+
+
+### Example 11: EXAMPLE 11
+
+```
+Get-PSNote -Tag 'deprecated' | Set-PSNote -Tags 'archived','old'
+```
+
+Updates all notes tagged 'deprecated' to have tags 'archived' and 'old' instead.
+Uses pipeline to process multiple notes at once.
+
+
+
+
+
+### Example 12: EXAMPLE 12
+
+```
+Get-PSNote -Catalog 'Work' | Where-Object { $_.Tags -contains 'legacy' } | 
+    Set-PSNote -Tags 'archived','legacy','review'
+```
+
+Finds all notes in the Work catalog with the 'legacy' tag and updates their tags.
+Demonstrates filtering and bulk updating via pipeline.
+
+
+
+
+
+### Example 13: EXAMPLE 13
+
+```
+[PSCustomObject]@{
+    Note = 'MyNote'
+    Snippet = 'Get-Process | Select-Object -First 10'
+    Details = 'Top 10 processes'
+    Tags = @('process','monitoring')
+} | Set-PSNote
+```
+
+Creates or updates a note using a custom object via pipeline by property name.
+
+
+
+
+
+### Example 14: EXAMPLE 14
+
+```
+Import-Csv .\notes.csv | Set-PSNote
+```
+
+Bulk creates or updates notes from a CSV file with columns matching parameter names
+(Note, Snippet, Details, Tags, Catalog, etc.).
+Processes each row via pipeline.
+
+
+
+
+
+### Example 15: EXAMPLE 15
+
+```
+Get-PSNote | Where-Object { $_.Catalog -eq 'Default' } | 
+    Set-PSNote -Catalog 'Personal'
+```
+
+Moves all notes from the Default catalog to the Personal catalog via pipeline.
 
 
 
@@ -65,9 +241,11 @@ Updates the snippet for the note DayOfWeek
 
 ### -Alias
 
-The Alias to create to copy this snippet to your clipboard.
-If not
-supplied it will use the Note value
+The new alias for this note.
+The alias can only contain letters, numbers, dashes (-), 
+and underscores (_).
+The alias is set as a global alias that invokes Get-PSNoteAlias.
+Accepts input from pipeline by property name.
 
 ```yaml
 Type: String
@@ -76,7 +254,7 @@ Aliases:
 Accepted values: 
 
 Required: True (None) False (All)
-Position: Named
+Position: 6
 Default value: 
 Accept pipeline input: True
 Accept wildcard characters: False
@@ -85,7 +263,11 @@ DontShow: False
 
 ### -Catalog
 
-{{ Fill Catalog Description }}
+The catalog where the note is located.
+Defaults to 'Default'.
+If the note doesn't exist
+in the specified catalog, it will be created there.
+Accepts input from pipeline by property name.
 
 ```yaml
 Type: String
@@ -94,8 +276,8 @@ Aliases:
 Accepted values: 
 
 Required: True (None) False (All)
-Position: Named
-Default value: 
+Position: 1
+Default value: Default
 Accept pipeline input: True
 Accept wildcard characters: False
 DontShow: False
@@ -121,7 +303,9 @@ DontShow: False
 
 ### -Details
 
-The Details of the snippet to add/update.
+New description or additional information about the note.
+Replaces the existing details.
+Accepts input from pipeline by property name.
 
 ```yaml
 Type: String
@@ -130,7 +314,7 @@ Aliases:
 Accepted values: 
 
 Required: True (None) False (All)
-Position: Named
+Position: 5
 Default value: 
 Accept pipeline input: True
 Accept wildcard characters: False
@@ -139,7 +323,9 @@ DontShow: False
 
 ### -Note
 
-The note you want to add/update.
+The name of the note to update.
+Must match an existing note name in the specified catalog.
+Accepts input from pipeline by property name.
 
 ```yaml
 Type: String
@@ -148,7 +334,7 @@ Aliases:
 Accepted values: 
 
 Required: True (All) False (None)
-Position: Named
+Position: 0
 Default value: 
 Accept pipeline input: True
 Accept wildcard characters: False
@@ -173,19 +359,63 @@ Accept wildcard characters: False
 DontShow: False
 ```
 
-### -ScriptBlock
+### -Run
 
-Specifies the snippet to save.
-Enclose the commands in braces { } to create a script block
+Updates whether the note should be executed automatically when retrieved.
+Set to $true to enable auto-execution, $false to disable it.
+Accepts input from pipeline by property name.
 
 ```yaml
-Type: ScriptBlock
-Parameter Sets: ScriptBlock
+Type: Boolean
+Parameter Sets: (All)
 Aliases: 
 Accepted values: 
 
-Required: True (None) False (ScriptBlock)
-Position: Named
+Required: True (None) False (All)
+Position: 8
+Default value: False
+Accept pipeline input: True
+Accept wildcard characters: False
+DontShow: False
+```
+
+### -ScriptBlock
+
+A PowerShell script block containing the new code to save.
+Enclose commands in braces { }.
+This is useful for multi-line code with proper syntax highlighting.
+Accepts input from pipeline by property name.
+
+```yaml
+Type: ScriptBlock
+Parameter Sets: (All)
+Aliases: 
+Accepted values: 
+
+Required: True (None) False (All)
+Position: 3
+Default value: 
+Accept pipeline input: True
+Accept wildcard characters: False
+DontShow: False
+```
+
+### -ScriptPath
+
+The file path to a PowerShell script (.ps1) file.
+When specified, the note will be 
+updated to reference this external script file and the note Kind will be set to 'Script'.
+The script file must exist at the specified path.
+Accepts input from pipeline by property name.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases: 
+Accepted values: 
+
+Required: True (None) False (All)
+Position: 4
 Default value: 
 Accept pipeline input: True
 Accept wildcard characters: False
@@ -194,16 +424,19 @@ DontShow: False
 
 ### -Snippet
 
-The text of the snippet to add/update.
+The new snippet text to store in the note.
+This replaces the existing snippet content.
+Use this for simple one-line or small code snippets.
+Accepts input from pipeline by property name.
 
 ```yaml
 Type: String
-Parameter Sets: Snippet
+Parameter Sets: (All)
 Aliases: 
 Accepted values: 
 
-Required: True (None) False (Snippet)
-Position: Named
+Required: True (None) False (All)
+Position: 2
 Default value: 
 Accept pipeline input: True
 Accept wildcard characters: False
@@ -212,7 +445,9 @@ DontShow: False
 
 ### -Tags
 
-A string array of tags to add/update for the Note
+A new string array of tags to associate with the note.
+This replaces all existing tags.
+Accepts input from pipeline by property name.
 
 ```yaml
 Type: String[]
@@ -221,7 +456,7 @@ Aliases:
 Accepted values: 
 
 Required: True (None) False (All)
-Position: Named
+Position: 7
 Default value: 
 Accept pipeline input: True
 Accept wildcard characters: False
@@ -253,9 +488,27 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## NOTES
 
+This function is a convenience wrapper around New-PSNote with the -Force parameter.
+All property updates replace the existing values rather than merging with them.
+
+The function supports pipeline input by property name, making it easy to:
+- Update multiple notes from Get-PSNote results
+- Bulk import/update notes from CSV or other structured data
+- Chain with Where-Object for conditional updates
+
+If you need to append tags rather than replace them, retrieve the note first:
+$note = Get-PSNote -Note 'MyNote'
+$newTags = $note.Tags + 'NewTag'
+Set-PSNote -Note 'MyNote' -Tags $newTags
 
 
 ## RELATED LINKS
 
 [] (https://github.com/mdowst/PSNotes)
+
+[New-PSNote] ()
+
+[Get-PSNote] ()
+
+[Remove-PSNote] ()
 

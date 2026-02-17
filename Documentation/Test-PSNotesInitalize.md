@@ -5,7 +5,7 @@ online version:
 schema: 2.0.0
 ---
 
-# Start-PSNote
+# Test-PSNotesInitalize
 
 ## SYNOPSIS
 
@@ -16,7 +16,7 @@ schema: 2.0.0
 ### __AllParameterSets
 
 ```
-Start-PSNote [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Test-PSNotesInitalize [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION

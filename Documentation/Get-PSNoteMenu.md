@@ -5,26 +5,31 @@ online version:
 schema: 2.0.0
 ---
 
-# Initialize-PSNoteStore
+# Get-PSNoteMenu
 
 ## SYNOPSIS
 
-Initialize the PSNotes store
+Displays an interactive, paged menu of PSNotes and lets the user pick one by number.
 
 ## SYNTAX
 
 ### __AllParameterSets
 
 ```
-Initialize-PSNoteStore [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-PSNoteMenu [[-InputObject <Object>]] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
 
-Loads all PSNotes catalogs from $env:PSNOTES_HOME into the in-memory note store
-and verifies clipboard support.
-This is typically called internally by other
-commands, but can be invoked to refresh the store after external changes.
+Renders notes in a numbered, multi-column list sized to the current console window.
+Prompts for a number to select a note, or Enter to advance to the next page.
+
+Output:
+  - Returns the selected PSNote object (or $null if quit / nothing selected).
+
+Assumptions:
+  - Get-PSNote returns objects with (at least) Catalog, Alias, and Note properties.
+    (If Catalog is missing/empty, it displays "Default".)
 
 
 ## EXAMPLES
@@ -32,23 +37,10 @@ commands, but can be invoked to refresh the store after external changes.
 ### Example 1: EXAMPLE 1
 
 ```
-Initialize-PSNoteStore
+$note = Get-PSNoteMenu
 ```
 
-Initializes the PSNotes store by loading catalogs from $env:PSNOTES_HOME.
 
-
-
-
-
-### Example 2: EXAMPLE 2
-
-```
-$env:PSNOTES_HOME = 'C:\Users\Me\AppData\Roaming\PSNotes'
-Initialize-PSNoteStore
-```
-
-Initializes the store using a custom PSNotes home path.
 
 
 
@@ -56,6 +48,24 @@ Initializes the store using a custom PSNotes home path.
 
 
 ## PARAMETERS
+
+### -InputObject
+
+{{ Fill InputObject Description }}
+
+```yaml
+Type: Object
+Parameter Sets: (All)
+Aliases: 
+Accepted values: 
+
+Required: True (None) False (All)
+Position: 0
+Default value: 
+Accept pipeline input: True
+Accept wildcard characters: False
+DontShow: False
+```
 
 ### -ProgressAction
 
@@ -86,5 +96,5 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## RELATED LINKS
 
-[] (https://github.com/mdowst/PSNotes)
+Fill Related Links Here
 

@@ -5,26 +5,25 @@ online version:
 schema: 2.0.0
 ---
 
-# Update-PSNoteStore
+# Get-RemoteCatalog
 
 ## SYNOPSIS
 
-Update PSNotes catalogs to the latest format
+Gets configured remote catalogs.
 
 ## SYNTAX
 
 ### __AllParameterSets
 
 ```
-Update-PSNoteStore [[-DefaultBehavior <String>]] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-RemoteCatalog [[-Catalog <String>]] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
 
-Scans the PSNotes home directory for JSON catalogs and migrates any
-catalogs that are not in the current format.
-Migration results are
-imported back into the store using the specified conflict behavior.
+Retrieves one or more remote catalogs from the note store configuration.
+
+Remote catalogs are external sources used to import notes from other locations.
 
 
 ## EXAMPLES
@@ -32,10 +31,11 @@ imported back into the store using the specified conflict behavior.
 ### Example 1: EXAMPLE 1
 
 ```
-Update-PSNoteStore
+Get-RemoteCatalog
+Returns all configured remote catalogs.
 ```
 
-Migrates any outdated catalogs and prompts when conflicts occur.
+
 
 
 
@@ -44,10 +44,11 @@ Migrates any outdated catalogs and prompts when conflicts occur.
 ### Example 2: EXAMPLE 2
 
 ```
-Update-PSNoteStore -DefaultBehavior SkipMigratedNotes
+Get-RemoteCatalog -Catalog 'github'
+Returns the remote catalog named 'github'.
 ```
 
-Migrates catalogs and skips notes that already exist.
+
 
 
 
@@ -56,10 +57,11 @@ Migrates catalogs and skips notes that already exist.
 ### Example 3: EXAMPLE 3
 
 ```
-Update-PSNoteStore -DefaultBehavior OverwriteExistingNotes
+Get-RemoteCatalog -Catalog 'git*'
+Returns all remote catalogs matching the pattern 'git*'.
 ```
 
-Migrates catalogs and overwrites existing notes when conflicts occur.
+
 
 
 
@@ -68,10 +70,12 @@ Migrates catalogs and overwrites existing notes when conflicts occur.
 
 ## PARAMETERS
 
-### -DefaultBehavior
+### -Catalog
 
-Determines how to handle existing notes when conflicts are detected.
-Valid values: Prompt, SkipMigratedNotes, OverwriteExistingNotes.
+The name or wildcard pattern of the catalog to retrieve.
+
+Supports wildcards (e.g., 'git*' to match 'github', 'gitlab', etc.).
+Default value is '*' which returns all configured remote catalogs.
 
 ```yaml
 Type: String
@@ -81,7 +85,7 @@ Accepted values:
 
 Required: True (None) False (All)
 Position: 0
-Default value: Prompt
+Default value: *
 Accept pipeline input: False
 Accept wildcard characters: False
 DontShow: False
@@ -110,11 +114,19 @@ DontShow: False
 
 This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
 
-## NOTES
+## OUTPUTS
 
+### System.Object
+Returns remote catalog configuration objects or an empty array if no catalogs are configured.
+
+
+## NOTES
+
+This cmdlet requires the PSNotes module to be initialized with remote catalogs configured.
 
 
 ## RELATED LINKS
 
-[] (https://github.com/mdowst/PSNotes)
+[Import-RemoteCatalog
+Remove-RemoteCatalog] ()
 

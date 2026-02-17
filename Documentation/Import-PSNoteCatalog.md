@@ -5,25 +5,25 @@ online version:
 schema: 2.0.0
 ---
 
-# Import-PSNote
+# Import-PSNoteCatalog
 
 ## SYNOPSIS
 
-Import a PSNotes JSON file
+Use to import a PSNotes JSON fiile
 
 ## SYNTAX
 
-### Note (Default)
+### __AllParameterSets
 
 ```
-Import-PSNote [-Path] <String> [[-Catalog <String>]] [[-DefaultBehavior <String>]] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Import-PSNoteCatalog [-ImportedCatalog] <NoteCatalog> [-DestinationCatalog] <String> [[-DefaultBehavior <String>]] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
 
-Imports PSNotes from a JSON catalog file into your local note store.
-You can import into the default
-catalog or a named catalog, and control how existing notes are handled.
+Allows you to import shared PSNotes JSON files to your local notes.
+They can be imported to your personal
+store, or they can be imported to a seperate file.
 
 
 ## EXAMPLES
@@ -34,7 +34,7 @@ catalog or a named catalog, and control how existing notes are handled.
 Import-PSNote -Path C:\Import\MyPSNotes.json
 ```
 
-Imports the contents of MyPSNotes.json into the Default catalog.
+Imports the contents of the file MyPSNotes.json and saves it to your personal PSNotes.json file
 
 
 
@@ -46,19 +46,7 @@ Imports the contents of MyPSNotes.json into the Default catalog.
 Import-PSNote -Path C:\Export\MyPSNotes.json -Catalog 'ADNotes'
 ```
 
-Imports the contents of MyPSNotes.json into the ADNotes catalog.
-
-
-
-
-
-### Example 3: EXAMPLE 3
-
-```
-Import-PSNote -Path C:\Export\MyPSNotes.json -Catalog 'Work' -DefaultBehavior OverwriteExistingNotes
-```
-
-Imports into the Work catalog and overwrites existing notes when conflicts occur.
+Imports the contents of the file MyPSNotes.json and saves it to the file ADNotes.json in the folder %APPDATA%\PSNotes
 
 
 
@@ -67,29 +55,9 @@ Imports into the Work catalog and overwrites existing notes when conflicts occur
 
 ## PARAMETERS
 
-### -Catalog
-
-The destination catalog name to import into.
-Defaults to 'Default'.
-
-```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (All)
-Position: 1
-Default value: Default
-Accept pipeline input: False
-Accept wildcard characters: False
-DontShow: False
-```
-
 ### -DefaultBehavior
 
-Determines how to handle existing notes when conflicts are detected.
-Valid values: Prompt, SkipMigratedNotes, OverwriteExistingNotes.
+{{ Fill DefaultBehavior Description }}
 
 ```yaml
 Type: String
@@ -105,12 +73,30 @@ Accept wildcard characters: False
 DontShow: False
 ```
 
-### -Path
+### -DestinationCatalog
 
-The path to the PSNotes JSON catalog file to import.
+{{ Fill DestinationCatalog Description }}
 
 ```yaml
 Type: String
+Parameter Sets: (All)
+Aliases: 
+Accepted values: 
+
+Required: True (All) False (None)
+Position: 1
+Default value: 
+Accept pipeline input: False
+Accept wildcard characters: False
+DontShow: False
+```
+
+### -ImportedCatalog
+
+{{ Fill ImportedCatalog Description }}
+
+```yaml
+Type: NoteCatalog
 Parameter Sets: (All)
 Aliases: 
 Accepted values: 

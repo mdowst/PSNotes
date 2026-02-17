@@ -45,7 +45,7 @@ discovery parameters (Note/Tag/Catalog/SearchString) to select notes to remove.
 Get-PSNote -SearchString 'cred' -Catalog 'Work*' | Remove-PSNote
 ```
 
-
+Removes notes matched by search string from catalogs that start with 'Work'.
 
 
 
@@ -57,7 +57,7 @@ Get-PSNote -SearchString 'cred' -Catalog 'Work*' | Remove-PSNote
 Remove-PSNote -Note 'cred*' -Catalog 'Default'
 ```
 
-
+Removes notes with names starting with 'cred' from the Default catalog.
 
 
 
@@ -69,7 +69,19 @@ Remove-PSNote -Note 'cred*' -Catalog 'Default'
 Remove-PSNote -SearchString 'token' -Catalog 'Work*','Personal*' -Force
 ```
 
+Removes notes matching 'token' in the Work and Personal catalogs without confirmation.
 
+
+
+
+
+### Example 4: EXAMPLE 4
+
+```
+Get-PSNote -Tag 'deprecated' | Remove-PSNote -Force
+```
+
+Removes all notes tagged 'deprecated' via pipeline without confirmation.
 
 
 

@@ -48,17 +48,26 @@ Install-Module PSNotes
 | Cmdlet | Synopsis |
 | ------ | -------- |
 | [ConvertTo-Splatting](Documentation/ConvertTo-Splatting.md) | Use to convert an existing PowerShell command to splatting |
-| [Export-PSNote](Documentation/Export-PSNote.md) | Use to export your PSNotes to copy to another machine or share with others |
+| [Export-PSNote](Documentation/Export-PSNote.md) | Export PSNotes to a JSON file |
 | [Get-CommandSplatting](Documentation/Get-CommandSplatting.md) | Use to output the parameters for a command in splatting format |
-| [Get-PSNote](Documentation/Get-PSNote.md) | Use to search for or list the different PSNotes |
+| [Get-PSNote](Documentation/Get-PSNote.md) | Search for or list PSNotes |
 | [Get-PSNoteAlias](Documentation/Get-PSNoteAlias.md) | Use display snippet and copy to clipboard using an Alias |
-| [Import-PSNote](Documentation/Import-PSNote.md) | Use to import a PSNotes JSON fiile |
-| [Initialize-PSNoteStore](Documentation/Initialize-PSNoteStore.md) | {{ Fill in the Synopsis }} |
-| [New-PSNote](Documentation/New-PSNote.md) | Use to add or update a PSNote object |
+| [Get-PSNoteMenu](Documentation/Get-PSNoteMenu.md) | Displays an interactive, paged menu of PSNotes and lets the user pick one by number. |
+| [Get-RemoteCatalog](Documentation/Get-RemoteCatalog.md) | Gets configured remote catalogs. |
+| [Import-PSNote](Documentation/Import-PSNote.md) | Import a PSNotes JSON file |
+| [Import-PSNoteCatalog](Documentation/Import-PSNoteCatalog.md) | Use to import a PSNotes JSON fiile |
+| [Import-RemoteCatalog](Documentation/Import-RemoteCatalog.md) | Registers or imports a remote catalog. |
+| [Initialize-PSNoteStore](Documentation/Initialize-PSNoteStore.md) | Initialize the PSNotes store |
+| [Initialize-PSNoteStoreRemoteJsonFile](Documentation/Initialize-PSNoteStoreRemoteJsonFile.md) | {{ Fill in the Synopsis }} |
+| [Invoke-PSNote](Documentation/Invoke-PSNote.md) | Use to display a list of notes in a selectable menu so you can choose which to run |
+| [Move-PSNote](Documentation/Move-PSNote.md) | Moves a note to a different catalog. |
+| [New-PSNote](Documentation/New-PSNote.md) | Creates a new PSNote for storing and reusing code snippets or script references. |
 | [Remove-PSNote](Documentation/Remove-PSNote.md) | Remove one or more PSNotes from the note store. |
-| [Set-PSNote](Documentation/Set-PSNote.md) | Use to add or update a PSNote object |
-| [Start-PSNote](Documentation/Start-PSNote.md) | {{ Fill in the Synopsis }} |
-| [Update-PSNoteStore](Documentation/Update-PSNoteStore.md) | {{ Fill in the Synopsis }} |
+| [Remove-RemoteCatalog](Documentation/Remove-RemoteCatalog.md) | Removes a remote catalog registration. |
+| [Set-PSNote](Documentation/Set-PSNote.md) | Updates an existing PSNote or creates a new one if it doesn't exist. |
+| [Test-PSNotesInitalize](Documentation/Test-PSNotesInitalize.md) | {{ Fill in the Synopsis }} |
+| [Update-PSNoteStore](Documentation/Update-PSNoteStore.md) | Update PSNotes catalogs to the latest format |
+| [Write-NoteSnippet](Documentation/Write-NoteSnippet.md) | {{ Fill in the Synopsis }} |
 
 [top](#psnotes)
 ## Output and Run Notes

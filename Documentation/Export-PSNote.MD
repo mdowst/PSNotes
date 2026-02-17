@@ -9,7 +9,7 @@ schema: 2.0.0
 
 ## SYNOPSIS
 
-Use to export your PSNotes to copy to another machine or share with others
+Export PSNotes to a JSON file
 
 ## SYNTAX
 
@@ -27,8 +27,8 @@ Export-PSNote -Catalog <String> -Path <String> [-Force] [-ProgressAction <Action
 
 ## DESCRIPTION
 
-Allows you to export your PSNotes to a JSON file, that can then be imported
-to another machine or by other users.
+Exports PSNotes to a JSON file for sharing or importing on another machine.
+You can export notes by catalog or by piping PSNote objects into this command.
 
 
 ## EXAMPLES
@@ -36,10 +36,10 @@ to another machine or by other users.
 ### Example 1: EXAMPLE 1
 
 ```
-Export-PSNote -All -Path C:\Export\MyPSNotes.json
+Export-PSNote -Catalog 'Default' -Path C:\Export\MyPSNotes.json
 ```
 
-Exportall notes to a JSON file.
+Exports all notes from the 'Default' catalog to a JSON file.
 
 
 
@@ -48,10 +48,46 @@ Exportall notes to a JSON file.
 ### Example 2: EXAMPLE 2
 
 ```
-Get-PSNote -tag 'AD' | Export-PSNote -Path C:\Export\SharedADNotes.json
+Get-PSNote -Tag 'AD' | Export-PSNote -Path C:\Export\SharedADNotes.json
 ```
 
-Exports all notes with the tag 'AD' to the file SharedADNotes.json
+Exports all notes with the tag 'AD' to the file SharedADNotes.json.
+
+
+
+
+
+### Example 3: EXAMPLE 3
+
+```
+Get-PSNote -Note 'Cred*' -Catalog 'Work' | Export-PSNote -Path C:\Export\WorkCreds.json
+```
+
+Exports notes that match the name pattern from the 'Work' catalog.
+
+
+
+
+
+### Example 4: EXAMPLE 4
+
+```
+Get-PSNote -SearchString 'token' | Export-PSNote -Path C:\Export\TokenNotes.json
+```
+
+Exports notes that match a search string.
+
+
+
+
+
+### Example 5: EXAMPLE 5
+
+```
+Export-PSNote -Catalog 'Personal' -Path C:\Export\PersonalNotes.json -Force
+```
+
+Exports the 'Personal' catalog and overwrites the file if it exists.
 
 
 
@@ -62,7 +98,8 @@ Exports all notes with the tag 'AD' to the file SharedADNotes.json
 
 ### -Catalog
 
-{{ Fill Catalog Description }}
+The catalog name to export.
+When specified, all notes from that catalog are exported.
 
 ```yaml
 Type: String
@@ -80,7 +117,7 @@ DontShow: False
 
 ### -Force
 
-{{ Fill Force Description }}
+Overwrite the output file if it already exists.
 
 ```yaml
 Type: SwitchParameter
@@ -100,7 +137,7 @@ DontShow: False
 
 The PSNote objects you want to export.
 Use Get-PSNote to build the object and pass it to the parameter
-or use a pipeline to pass it.
+or use the pipeline to pass them in.
 
 ```yaml
 Type: PSNote[]

@@ -5,57 +5,53 @@ online version:
 schema: 2.0.0
 ---
 
-# Initialize-PSNoteStore
+# Write-NoteSnippet
 
 ## SYNOPSIS
 
-Initialize the PSNotes store
+{{ Fill in the Synopsis }}
 
 ## SYNTAX
 
 ### __AllParameterSets
 
 ```
-Initialize-PSNoteStore [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Write-NoteSnippet [[-NoteSelection <PSNote[]>]] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
 
-Loads all PSNotes catalogs from $env:PSNOTES_HOME into the in-memory note store
-and verifies clipboard support.
-This is typically called internally by other
-commands, but can be invoked to refresh the store after external changes.
-
+{{ Fill in the Description }}
 
 ## EXAMPLES
 
-### Example 1: EXAMPLE 1
+### Example 1: Example 1
 
 ```
-Initialize-PSNoteStore
+PS C:\> {{ Add example code here }}
 ```
 
-Initializes the PSNotes store by loading catalogs from $env:PSNOTES_HOME.
-
-
-
-
-
-### Example 2: EXAMPLE 2
-
-```
-$env:PSNOTES_HOME = 'C:\Users\Me\AppData\Roaming\PSNotes'
-Initialize-PSNoteStore
-```
-
-Initializes the store using a custom PSNotes home path.
-
-
-
-
-
+{{ Add example description here }}
 
 ## PARAMETERS
+
+### -NoteSelection
+
+An array of PSNote objects to create a menu with
+
+```yaml
+Type: PSNote[]
+Parameter Sets: (All)
+Aliases: 
+Accepted values: 
+
+Required: True (None) False (All)
+Position: 0
+Default value: 
+Accept pipeline input: False
+Accept wildcard characters: False
+DontShow: False
+```
 
 ### -ProgressAction
 
@@ -82,9 +78,9 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## NOTES
 
-
+{{ Fill in the Notes }}
 
 ## RELATED LINKS
 
-[] (https://github.com/mdowst/PSNotes)
+Fill Related Links Here
 

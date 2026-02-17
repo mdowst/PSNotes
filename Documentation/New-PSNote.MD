@@ -9,7 +9,7 @@ schema: 2.0.0
 
 ## SYNOPSIS
 
-Use to add or update a PSNote object
+Creates a new PSNote for storing and reusing code snippets or script references.
 
 ## SYNTAX
 
@@ -31,12 +31,25 @@ New-PSNote -Note <String> [-Alias <String>] [-Catalog <String>] [-Confirm] [-Det
 New-PSNote -Note <String> [-Alias <String>] [-Catalog <String>] [-Confirm] [-Details <String>] [-Force] [-ProgressAction <ActionPreference>] [-Run <Boolean>] [-ScriptBlock <ScriptBlock>] [-Tags <String[]>] [-WhatIf] [<CommonParameters>]
 ```
 
+### ScriptPath
+
+```
+New-PSNote -Note <String> [-Alias <String>] [-Catalog <String>] [-Confirm] [-Details <String>] [-Force] [-ProgressAction <ActionPreference>] [-Run <Boolean>] [-ScriptPath <String>] [-Tags <String[]>] [-WhatIf] [<CommonParameters>]
+```
+
 ## DESCRIPTION
 
-Allows you to add or update a PSNote object.
-If note already
-exists you must supply the Force switch to overwrite it.
-Only values supplied with be updated.
+Creates a new PSNote to store code snippets, script blocks, or references to script files.
+PSNotes can be stored in different catalogs and tagged for easy retrieval.
+Each note
+has an alias that can be used to quickly access it.
+
+If a note with the same name already exists in the specified catalog, you must supply 
+the Force switch to overwrite its properties.
+
+The note Kind is automatically set based on the parameter used:
+- Snippet or ScriptBlock: Creates a note of Kind 'Snippet' (inline code)
+- ScriptPath: Creates a note of Kind 'Script' (file reference)
 
 
 ## EXAMPLES
@@ -44,10 +57,11 @@ Only values supplied with be updated.
 ### Example 1: EXAMPLE 1
 
 ```
-New-PSNote -Note 'ADUser' -Snippet 'Get-AdUser -Filter *' -Details "Use to return all AD users" -Tags 'AD','Users'
+New-PSNote -Note 'GetServices' -Snippet 'Get-Service | Where-Object Status -eq Running' -Alias 'running'
 ```
 
-Creates a new Note for the Get-ADUser cmdlet
+Creates a simple note with a one-line snippet.
+The snippet can be retrieved or executed using the alias 'running'.
 
 
 
@@ -56,12 +70,10 @@ Creates a new Note for the Get-ADUser cmdlet
 ### Example 2: EXAMPLE 2
 
 ```
-New-PSNote -Note 'CpuUsage' -Tags 'perf' -Alias 'cpu' -ScriptBlock {
-    Get-WmiObject win32_processor | Measure-Object -property LoadPercentage -Average
-}
+New-PSNote -Note 'DayOfWeek' -Alias 'today' -Snippet '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)' -Details "Returns the abbreviated name of the current day" -Tags 'date','time'
 ```
 
-Creates a new Note using a script block instead of a snippet string
+Creates a note with a snippet, description, and multiple tags for easy searching.
 
 
 
@@ -70,11 +82,14 @@ Creates a new Note using a script block instead of a snippet string
 ### Example 3: EXAMPLE 3
 
 ```
-$Snippet = '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)'
-New-PSNote -Note 'DayOfWeek' -Snippet $Snippet -Details "Use to name of the day of the week" -Tags 'date' -Alias 'today'
+New-PSNote -Note 'CpuUsage' -Tags 'perf','monitoring' -Alias 'cpu' -ScriptBlock {
+    Get-CimInstance Win32_Processor | 
+        Measure-Object -Property LoadPercentage -Average | 
+        Select-Object -ExpandProperty Average
+}
 ```
 
-Creates a new Note for the to get the current day's abbrevation with the custom Alias of today
+Creates a note using a script block with multi-line code and a custom alias 'cpu'.
 
 
 
@@ -83,17 +98,93 @@ Creates a new Note for the to get the current day's abbrevation with the custom 
 ### Example 4: EXAMPLE 4
 
 ```
-$Snippet = @'
-$stringBuilder = New-Object System.Text.StringBuilder
-for ($i = 0; $i -lt 10; $i++){
-    $stringBuilder.Append("Line $i`r`n") | Out-Null
+$MultiLineSnippet = @'
+$sb = [System.Text.StringBuilder]::new()
+for ($i = 1; $i -le 10; $i++) {
+    [void]$sb.AppendLine("Item $i")
 }
-$stringBuilder.ToString()
+$sb.ToString()
 '@
-New-PSNote -Note 'StringBuilder' -Snippet $Snippet -Details "Use StringBuilder to combine multiple strings" -Tags 'string'
+New-PSNote -Note 'StringBuilder' -Snippet $MultiLineSnippet -Details "Demonstrates StringBuilder usage" -Tags 'string','performance'
 ```
 
-Creates a new Note with a new mulitple line snippet using a here-string
+Creates a note with a multi-line snippet stored in a here-string variable.
+
+
+
+
+
+### Example 5: EXAMPLE 5
+
+```
+New-PSNote -Note 'GetDateIso' -Snippet 'Get-Date -Format "yyyy-MM-dd"' -Catalog 'Work' -Tags 'date','formatting'
+```
+
+Creates a new note in the 'Work' catalog instead of the default catalog.
+
+
+
+
+
+### Example 6: EXAMPLE 6
+
+```
+New-PSNote -Note 'TestConnection' -Alias 'test-conn' -Snippet 'Test-Connection -ComputerName 8.8.8.8 -Count 2 -Quiet' -Run $true -Details "Quick connectivity test"
+```
+
+Creates a note that will automatically execute when retrieved (Run = $true).
+
+
+
+
+
+### Example 7: EXAMPLE 7
+
+```
+New-PSNote -Note 'DeploymentScript' -ScriptPath 'C:\Scripts\Deploy-Application.ps1' -Details "Main deployment script for production" -Tags 'deployment','production','automation' -Catalog 'Work'
+```
+
+Creates a note that references an external script file.
+The note Kind will be 'Script'.
+The script file must exist at the specified path.
+
+
+
+
+
+### Example 8: EXAMPLE 8
+
+```
+New-PSNote -Note 'BackupScript' -ScriptPath '\\FileServer\Scripts\Backup.ps1' -Alias 'backup' -Details "Automated backup script" -Tags 'backup','maintenance'
+```
+
+Creates a note referencing a script on a network share with a custom alias.
+
+
+
+
+
+### Example 9: EXAMPLE 9
+
+```
+New-PSNote -Note 'GetServices' -Snippet 'Get-Service | Sort-Object Status' -Force
+```
+
+Updates an existing note named 'GetServices' with new snippet content using the -Force switch.
+Without -Force, this would throw an error if the note already exists.
+
+
+
+
+
+### Example 10: EXAMPLE 10
+
+```
+New-PSNote -Note 'QuickTest' -Snippet 'Write-Host "Test"' -Details "Original"
+New-PSNote -Note 'QuickTest' -Snippet 'Write-Host "Updated"' -Details "Modified version" -Force
+```
+
+Demonstrates creating a note and then updating it with the -Force parameter.
 
 
 
@@ -104,9 +195,10 @@ Creates a new Note with a new mulitple line snippet using a here-string
 
 ### -Alias
 
-The Alias to create to copy this snippet to your clipboard.
-If not
-supplied it will use the Note value
+The alias to create for this note.
+If not supplied, it will use the Note name as the alias.
+The alias can only contain letters, numbers, dashes (-), and underscores (_).
+The alias is set as a global alias that invokes Get-PSNoteAlias.
 
 ```yaml
 Type: String
@@ -124,7 +216,10 @@ DontShow: False
 
 ### -Catalog
 
-{{ Fill Catalog Description }}
+The catalog to add the note to.
+Catalogs are used to organize notes into different 
+collections (e.g., 'Personal', 'Work', 'Team').
+Defaults to 'Default'.
 
 ```yaml
 Type: String
@@ -160,7 +255,9 @@ DontShow: False
 
 ### -Details
 
-The Details of the snippet to add/update.
+A description or additional information about the note.
+This helps document what the 
+note does and when to use it.
 
 ```yaml
 Type: String
@@ -178,7 +275,9 @@ DontShow: False
 
 ### -Force
 
-If Note already exists the Force switch is required to overwrite it
+Forces the creation of the note even if a note with the same name already exists in 
+the catalog.
+Without this switch, an error will be thrown if the note already exists.
 
 ```yaml
 Type: SwitchParameter
@@ -196,7 +295,7 @@ DontShow: False
 
 ### -Note
 
-The note you want to add/update.
+The unique name of the note to create within the specified catalog.
 
 ```yaml
 Type: String
@@ -232,7 +331,11 @@ DontShow: False
 
 ### -Run
 
-{{ Fill Run Description }}
+Indicates whether the note should be executed automatically when retrieved.
+
+When set to $true, the note will run when accessed.
+When set to $false (default), 
+the note content will be returned without execution.
 
 ```yaml
 Type: Boolean
@@ -250,8 +353,10 @@ DontShow: False
 
 ### -ScriptBlock
 
-Specifies the snippet to save.
-Enclose the commands in braces { } to create a script block.
+A PowerShell script block containing the code to save.
+Enclose the commands in braces { } 
+to create a script block.
+This is useful for multi-line code with proper syntax highlighting.
 
 ```yaml
 Type: ScriptBlock
@@ -267,9 +372,34 @@ Accept wildcard characters: False
 DontShow: False
 ```
 
+### -ScriptPath
+
+The file path to a PowerShell script (.ps1) file.
+When specified, the note will reference 
+this external script file and the note Kind will be set to 'Script'.
+The script file must 
+exist at the specified path.
+
+```yaml
+Type: String
+Parameter Sets: ScriptPath
+Aliases: 
+Accepted values: 
+
+Required: True (None) False (ScriptPath)
+Position: Named
+Default value: 
+Accept pipeline input: False
+Accept wildcard characters: False
+DontShow: False
+```
+
 ### -Snippet
 
-The text of the snippet to add/update.
+The text of the code snippet to store.
+This is typically a single line or small block 
+of PowerShell code.
+Use this parameter for simple snippets.
 
 ```yaml
 Type: String
@@ -287,7 +417,10 @@ DontShow: False
 
 ### -Tags
 
-A string array of tags to add/update for the Note
+A string array of tags to associate with the note.
+Tags help categorize and search for 
+notes.
+Multiple tags can be specified.
 
 ```yaml
 Type: String[]
@@ -328,9 +461,17 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## NOTES
 
+The note alias is created as a global alias pointing to Get-PSNoteAlias.
+This allows you to simply type the alias to retrieve or run the note.
 
 
 ## RELATED LINKS
 
 [] (https://github.com/mdowst/PSNotes)
+
+[Get-PSNote] ()
+
+[Set-PSNote] ()
+
+[Remove-PSNote] ()
 

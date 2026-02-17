@@ -9,7 +9,7 @@ schema: 2.0.0
 
 ## SYNOPSIS
 
-Use to search for or list the different PSNotes
+Search for or list PSNotes
 
 ## SYNTAX
 
@@ -22,14 +22,14 @@ Get-PSNote [-Catalog <String[]>] [-Copy] [-Note <String>] [-ProgressAction <Acti
 ### Search
 
 ```
-Get-PSNote [-Catalog <String[]>] [-ProgressAction <ActionPreference>] [-SearchString <String>] [<CommonParameters>]
+Get-PSNote [-Catalog <String[]>] [-ProgressAction <ActionPreference>] [-Run] [-SearchString <String>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
 
-Allows you to search for snippets by name or by tag.
-You can also search all 
-properties by using the SearchString parameter
+Searches notes by name, tag, or text across all note properties.
+You can also
+filter by catalog and optionally copy or run the returned snippet.
 
 
 ## EXAMPLES
@@ -40,7 +40,7 @@ properties by using the SearchString parameter
 Get-PSNote
 ```
 
-Returns all notes
+Returns all notes.
 
 
 
@@ -49,10 +49,10 @@ Returns all notes
 ### Example 2: EXAMPLE 2
 
 ```
-Get-PSNote -Note 'creds'
+Get-PSNote -Note 'Creds'
 ```
 
-Returns the note creds
+Returns the note named 'Creds'.
 
 
 
@@ -61,10 +61,10 @@ Returns the note creds
 ### Example 3: EXAMPLE 3
 
 ```
-Get-PSNote -Note 'cred*'
+Get-PSNote -Note 'Cred*'
 ```
 
-Returns all notes that start with cred
+Returns all notes with names that start with 'Cred'.
 
 
 
@@ -73,10 +73,10 @@ Returns all notes that start with cred
 ### Example 4: EXAMPLE 4
 
 ```
-Get-PSNote -tag 'AD'
+Get-PSNote -Tag 'AD'
 ```
 
-Returns all notes with the tag 'AD'
+Returns all notes with the tag 'AD'.
 
 
 
@@ -85,10 +85,10 @@ Returns all notes with the tag 'AD'
 ### Example 5: EXAMPLE 5
 
 ```
-Get-PSNote -Note '*user*' -tag 'AD'
+Get-PSNote -Note '*User*' -Tag 'AD'
 ```
 
-Returns all notes with user in the name and the tag 'AD'
+Returns notes with 'User' in the name and the tag 'AD'.
 
 
 
@@ -100,7 +100,7 @@ Returns all notes with user in the name and the tag 'AD'
 Get-PSNote -SearchString 'day'
 ```
 
-Returns all notes with the word day in the name, details, snippet text, alias, or tags
+Returns notes where 'day' appears in the name, details, snippet, alias, or tags.
 
 
 
@@ -112,7 +112,7 @@ Returns all notes with the word day in the name, details, snippet text, alias, o
 Get-PSNote -Catalog 'Default'
 ```
 
-Returns all notes in the Default catalog
+Returns all notes in the Default catalog.
 
 
 
@@ -124,7 +124,31 @@ Returns all notes in the Default catalog
 Get-PSNote -SearchString 'day' -Catalog 'Work*','Personal*'
 ```
 
-Searches only within the matching catalogs
+Searches only within the matching catalogs.
+
+
+
+
+
+### Example 9: EXAMPLE 9
+
+```
+Get-PSNote -Note 'CpuUsage' -Copy
+```
+
+Copies the snippet for the selected note to the clipboard.
+
+
+
+
+
+### Example 10: EXAMPLE 10
+
+```
+Get-PSNote -SearchString 'token' -Run
+```
+
+Runs the selected note; prompts to choose if multiple notes match.
 
 
 
@@ -154,7 +178,7 @@ DontShow: False
 
 ### -Copy
 
-If specfied the the Snippet will be copied to your clipboard
+Copy the selected snippet to the clipboard.
 
 ```yaml
 Type: SwitchParameter
@@ -172,8 +196,8 @@ DontShow: False
 
 ### -Note
 
-The note you want to return.
-Accepts wildcards
+The note name to return.
+Accepts wildcards.
 
 ```yaml
 Type: String
@@ -209,15 +233,15 @@ DontShow: False
 
 ### -Run
 
-{{ Fill Run Description }}
+Run the selected snippet via Invoke-PSNote.
 
 ```yaml
 Type: SwitchParameter
-Parameter Sets: Note
+Parameter Sets: Search, Note
 Aliases: 
 Accepted values: 
 
-Required: True (None) False (Note)
+Required: True (None) False (Search, Note)
 Position: Named
 Default value: False
 Accept pipeline input: False
@@ -227,7 +251,7 @@ DontShow: False
 
 ### -SearchString
 
-Use to search for text in the note's name, details, snippet, alias, and tags
+Search for text in the note's name, details, snippet, alias, or tags.
 
 ```yaml
 Type: String
@@ -245,7 +269,7 @@ DontShow: False
 
 ### -Tag
 
-The tag of the note(s) you want to return.
+Return notes that contain the specified tag.
 
 ```yaml
 Type: String
