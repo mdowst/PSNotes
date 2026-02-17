@@ -93,7 +93,8 @@
         [parameter(Mandatory=$false, ParameterSetName="Search")]
         [string[]]$Catalog,
         [parameter(Mandatory=$false, ParameterSetName="Search")]
-        [string]$SearchString
+        [Alias("SearchString")]
+        [string]$Search
     )
     Test-PSNotesInitalize
 
@@ -109,13 +110,13 @@
         }
     }
 
-    if($SearchString){
+    if($Search){
         $returned = $notes | Where-Object {
-            $_.Note    -like "*$SearchString*" -or
-            $_.Alias   -like "*$SearchString*" -or
-            $_.Details -like "*$SearchString*" -or
-            $_.Snippet -like "*$SearchString*" -or
-            ($_.Tags | Where-Object { $_ -like "*$SearchString*" } | Select-Object -First 1)
+            $_.Note    -like "*$Search*" -or
+            $_.Alias   -like "*$Search*" -or
+            $_.Details -like "*$Search*" -or
+            $_.Snippet -like "*$Search*" -or
+            ($_.Tags | Where-Object { $_ -like "*$Search*" } | Select-Object -First 1)
         }
     } elseif($Tag){
         $returned = $notes | Where-Object{$_.Note -like $note -and $_.Tags -contains $Tag}
