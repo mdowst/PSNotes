@@ -31,18 +31,22 @@ Describe 'Build Script Validation' {
 
     It 'contains expected exported functions' {
         $expectedFunctions = @(
-            'ConvertTo-Splatting',
             'Export-PSNote',
-            'Get-CommandSplatting',
             'Get-PSNote',
             'Get-PSNoteAlias',
+            'Get-PSNoteMenu',
             'Import-PSNote',
             'Initialize-PSNoteStore',
+            'Move-PSNote',
             'New-PSNote',
             'Remove-PSNote',
             'Set-PSNote',
-            'Start-PSNote',
-            'Update-PSNoteStore'
+            'Update-PSNoteStore',
+            'Get-RemoteCatalog',
+            'Import-RemoteCatalog',
+            'Remove-RemoteCatalog',
+            'ConvertTo-Splatting',
+            'Get-CommandSplatting'
         )
         $exportedFunctions = (Get-Command -Module PSNotes -CommandType Function).Name
         foreach ($func in $expectedFunctions) {
