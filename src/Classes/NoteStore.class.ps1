@@ -128,6 +128,7 @@ class NoteCatalog {
     [string] $Catalog
     [int]    $StoreVersion
     [System.Collections.Generic.List[PSNote]] $Notes
+    [bool] $IsRemote = $false
 
     NoteCatalog() {
         [NoteStore]::InitializeEnvironment()
@@ -140,8 +141,13 @@ class NoteCatalog {
 
     NoteCatalog([string] $Catalog) {
         [NoteStore]::InitializeEnvironment()
-        $this.Path = [NoteCatalog]::ResolvePath($Catalog, $env:PSNOTES_HOME)
-        $this.Catalog = $Catalog
+        if (Test-Path $Catalog) {
+            $this.Path = $Catalog
+        }
+        else {
+            $this.Path = [NoteCatalog]::ResolvePath($Catalog, $env:PSNOTES_HOME)
+        }
+        $this.Catalog = [System.IO.Path]::GetFileNameWithoutExtension($this.Path)
         $this.StoreVersion = [NoteCatalog]::CurrentStoreVersion
         $this.Notes = [System.Collections.Generic.List[PSNote]]::new()
         $this.Open()
@@ -149,6 +155,7 @@ class NoteCatalog {
 
     NoteCatalog([bool] $blank) {
         $this.Path = [NoteCatalog]::ResolvePath('Default', $env:PSNOTES_HOME)
+        $this.Catalog = [System.IO.Path]::GetFileNameWithoutExtension($this.Path)
         $this.StoreVersion = [NoteCatalog]::CurrentStoreVersion
         $this.Notes = [System.Collections.Generic.List[PSNote]]::new()
     }
@@ -179,7 +186,11 @@ class NoteCatalog {
         if (-not [string]::IsNullOrWhiteSpace($Json)) {
             $data = $Json | ConvertFrom-Json -ErrorAction Stop
             $dataStoreVersion = $data.psobject.Properties | Where-Object { $_.Name -eq 'StoreVersion' } | Select-Object -ExpandProperty Value
-
+            $catalogName = $data.psobject.Properties | Where-Object { $_.Name -eq 'Catalog' } | Select-Object -ExpandProperty Value
+            if ([string]::IsNullOrWhiteSpace($catalogName)) {
+                $catalogName = [System.IO.Path]::GetFileNameWithoutExtension($this.Path)
+            }
+            $this.Catalog = $catalogName
             # Migration / backward-compat:
             # If older store was just an array of notes, wrap it.
             if ($dataStoreVersion -ne $this.StoreVersion) {
@@ -524,6 +535,85 @@ class NoteCatalog {
     }
 }
 
+class RemoteCatalogSource {
+    [string] $Name
+    [string] $Url
+    [string] $CacheFile   # relative to PSNOTES_HOME (recommended)
+    [string] $LastSync    # ISO 8601 string
+    [string] $ETag
+    [string] $LastModified
+    [bool]   $Enabled = $true
+
+    RemoteCatalogSource() {}
+
+    RemoteCatalogSource([string] $name, [string] $url, [string] $cacheFile) {
+        $this.Name = $name
+        $this.Url = $url
+        $this.CacheFile = $cacheFile
+        $this.Enabled = $true
+    }
+}
+
+class NoteConfigStore {
+    static [int] $CurrentVersion = 1
+
+    [string] $Path
+    [int]    $Version
+    [System.Collections.Generic.List[RemoteCatalogSource]] $RemoteCatalogs
+
+    NoteConfigStore() {
+        $configPath = Join-Path $env:PSNOTES_HOME 'config'
+        if (-not (Test-Path $configPath)) { $null = New-Item -Path $configPath -ItemType Directory -Force }
+
+        $this.Path = (Join-Path $configPath 'psnoteconfigstore.json')
+        $this.Version = [NoteConfigStore]::CurrentVersion
+        $this.RemoteCatalogs = [System.Collections.Generic.List[RemoteCatalogSource]]::new()
+        $this.Open()
+    }
+
+    [void] Open() {
+        if (-not (Test-Path $this.Path)) { return }
+
+        try {
+            $json = [NoteCatalog]::ReadUtf8NoBom($this.Path)
+            if ([string]::IsNullOrWhiteSpace($json)) { return }
+
+            $data = $json | ConvertFrom-Json -ErrorAction Stop
+
+            if ($data.RemoteCatalogs) {
+                foreach ($rc in $data.RemoteCatalogs) {
+                    $r = [RemoteCatalogSource]::new()
+                    $r.Name = [string]$rc.Name
+                    $r.Url = [string]$rc.Url
+                    $r.CacheFile = [string]$rc.CacheFile
+                    $r.LastSync = [string]$rc.LastSync
+                    $r.ETag = [string]$rc.ETag
+                    $r.LastModified = [string]$rc.LastModified
+
+                    $enabled = $true
+                    if ($null -ne $rc.PSObject.Properties['Enabled']) {
+                        [void][bool]::TryParse([string]$rc.Enabled, [ref]$enabled)
+                    }
+                    $r.Enabled = $enabled
+
+                    if (-not [string]::IsNullOrWhiteSpace($r.Url)) {
+                        $this.RemoteCatalogs.Add($r) | Out-Null
+                    }
+                }
+            }
+        }
+        catch {
+            # fail safe
+            return
+        }
+    }
+
+    [void] Save() {
+        $json = ($this | ConvertTo-Json -Depth 8)
+        [NoteCatalog]::AtomicSaveWithBackup($this.Path, $json)
+    }
+}
+
 class NoteMetadataStore {
     static [int] $CurrentVersion = 1
 
@@ -587,18 +677,31 @@ class NoteStore {
     [System.Collections.Generic.List[NoteCatalog]] $Catalogs
     [System.Collections.Generic.List[PSNote]] $Notes
     [NoteMetadataStore] $Metadata
+    [NoteConfigStore] $Config
 
     NoteStore() {
         [NoteStore]::InitializeEnvironment()
         $this.Notes = [System.Collections.Generic.List[PSNote]]::new()
         $this.Catalogs = [System.Collections.Generic.List[NoteCatalog]]::new()
-
-        $defaultStore = [NoteCatalog]::new()
-        $this.LoadCatalog($defaultStore)
-
         $this.Metadata = [NoteMetadataStore]::new()
-
+        $this.Config = [NoteConfigStore]::new()
+        $this.LoadLocalCatalogs()
+        $this.LoadRemoteCatalogs()
         $this.InitializeAliases()
+    }
+
+    [void] LoadLocalCatalogs() {
+        $catalogFiles = Get-ChildItem -Path $env:PSNOTES_HOME -Filter '*.json' -File -ErrorAction SilentlyContinue
+        if ($catalogFiles) {
+            foreach ($file in $catalogFiles) {
+                try {
+                    $this.LoadCatalog($file.BaseName)
+                }
+                catch {
+                    Write-Warning "Failed to load note catalog from file '$($file.FullName)': $($_.Exception.Message)"
+                }
+            }
+        }
     }
 
     static [void] InitializeEnvironment() {
@@ -610,6 +713,12 @@ class NoteStore {
                 $env:PSNOTES_HOME = Join-Path $env:APPDATA 'PSNotes'
             }
         }
+    }
+
+    hidden [NoteCatalog] GetCatalogObject([string] $catalogName) {
+        return $this.Catalogs |
+        Where-Object { $_.Catalog -eq $catalogName } |
+        Select-Object -First 1
     }
 
     [void] LoadCatalog([string] $catalogName) {
@@ -657,6 +766,13 @@ class NoteStore {
     }
 
     [void] AddNote([PSNote] $note) {
+        # Block adding notes into remote catalogs
+        $cat = $this.GetCatalogObject($note.Catalog)
+        if ($cat -and $cat.IsRemote) {
+            Write-Warning "Cannot add notes to remote catalog '$($note.Catalog)'. Remote catalogs are read-only."
+            return
+        }
+
         $this.Notes.Add($note) | Out-Null
 
         if (-not ($this.Catalogs | Where-Object { $_.Catalog -eq $note.Catalog })) {
@@ -679,6 +795,13 @@ class NoteStore {
     }
 
     [void] RemoveNote([string] $note, [string] $catalog, [bool] $reload) {
+        # Block removing notes from remote catalogs
+        $cat = $this.GetCatalogObject($catalog)
+        if ($cat -and $cat.IsRemote) {
+            Write-Warning "Cannot remove notes from remote catalog '$catalog'. Remote catalogs are read-only."
+            return
+        }
+
         $remove = $this.Notes | Where-Object { $_.Note -eq $note -and $_.Catalog -eq $catalog }
         if ($remove) {
             $this.Notes.Remove($remove) | Out-Null
@@ -700,19 +823,38 @@ class NoteStore {
     }
 
     [void] UpdateNote([PSNote] $note) {
+
         $noteNote = if ($null -ne $note.PSObject.Properties['Note']) {
             [string]$note.Note
         }
-        $noteCatalog = if ($null -ne $note.PSObject.Properties['Kind']) {
+
+        # BUGFIX: this was checking 'Kind' when you meant 'Catalog'
+        $noteCatalog = if ($null -ne $note.PSObject.Properties['Catalog']) {
             [string]$note.Catalog
         }
-        $update = $this.Notes | Where-Object { $_.Note -eq $noteNote }
+
+        $update = $this.Notes | Where-Object { $_.Note -eq $noteNote } | Select-Object -First 1
         
         if (-not $update) {
             Write-Warning "Note '$($noteNote)' not found in catalog '$($noteCatalog)'. No action taken."
             return
         }
-        elseif ($update.Catalog -eq $noteCatalog) {
+
+        # Block updating remote notes (based on where the existing note lives)
+        $existingCatalog = $this.GetCatalogObject($update.Catalog)
+        if ($existingCatalog -and $existingCatalog.IsRemote) {
+            Write-Warning "Cannot update note '$($update.Note)' because it belongs to remote catalog '$($update.Catalog)'. Remote notes are read-only."
+            return
+        }
+
+        # Also block moving/updating into a remote catalog
+        $targetCatalog = $this.GetCatalogObject($note.Catalog)
+        if ($targetCatalog -and $targetCatalog.IsRemote) {
+            Write-Warning "Cannot move note into remote catalog '$($note.Catalog)'. Remote catalogs are read-only."
+            return
+        }
+
+        if ($update.Catalog -eq $noteCatalog) {
             $this.RemoveNote($noteNote, $noteCatalog, $false)
             $this.AddNote($note)
         }
@@ -720,6 +862,260 @@ class NoteStore {
             Write-Warning "Note '$($noteNote)' exists in catalog '$($update.Catalog)'. Cannot update note in different catalog at this time '$($noteCatalog)'. No action taken."
         }
     }
+
+    [void] MoveNote([PSNote] $Note, [string] $DestinationCatalog, [bool] $Force) {
+
+        if (-not $Note) { throw "Note is required." }
+        if ([string]::IsNullOrWhiteSpace($Note.Catalog)) { throw "Input note must have a Catalog." }
+        if ([string]::IsNullOrWhiteSpace($DestinationCatalog)) { throw "DestinationCatalog is required." }
+
+        $sourceCatalogName = [string]$Note.Catalog
+
+        if ($DestinationCatalog -eq $sourceCatalogName) {
+            throw "DestinationCatalog is the same as SourceCatalog ('$sourceCatalogName'). Nothing to do."
+        }
+
+        $srcCatalog = $this.GetCatalogObject($sourceCatalogName)
+        if (-not $srcCatalog) { throw "Source catalog '$sourceCatalogName' not found." }
+        if ($srcCatalog.IsRemote) { throw "Cannot move notes from remote catalog '$sourceCatalogName'. Remote catalogs are read-only." }
+
+        $dstCatalog = $this.GetCatalogObject($DestinationCatalog)
+        if ($dstCatalog -and $dstCatalog.IsRemote) {
+            throw "Cannot move notes into remote catalog '$DestinationCatalog'. Remote catalogs are read-only."
+        }
+
+        # Create destination catalog if missing (local)
+        if (-not $dstCatalog) {
+            $dstCatalog = [NoteCatalog]::new($DestinationCatalog)
+            $dstCatalog.IsRemote = $false
+            $this.Catalogs.Add($dstCatalog) | Out-Null
+        }
+
+        # Minimal identity: prefer Alias, else Note
+        $keyAlias = [string]$Note.Alias
+        $keyNote = [string]$Note.Note
+
+        $sourceMatch = if (-not [string]::IsNullOrWhiteSpace($keyAlias)) {
+            $srcCatalog.Notes | Where-Object { $_.Alias -eq $keyAlias } | Select-Object -First 1
+        }
+        else {
+            $srcCatalog.Notes | Where-Object { $_.Note -eq $keyNote } | Select-Object -First 1
+        }
+
+        if (-not $sourceMatch) {
+            throw "The provided note does not exist in source catalog '$sourceCatalogName' (by Alias/Note)."
+        }
+
+        # Destination conflict (Alias wins, else Note)
+        $destConflict = $null
+        if (-not [string]::IsNullOrWhiteSpace($keyAlias)) {
+            $destConflict = $dstCatalog.Notes | Where-Object { $_.Alias -eq $keyAlias } | Select-Object -First 1
+        }
+        if (-not $destConflict -and -not [string]::IsNullOrWhiteSpace($keyNote)) {
+            $destConflict = $dstCatalog.Notes | Where-Object { $_.Note -eq $keyNote } | Select-Object -First 1
+        }
+
+        if ($destConflict -and -not $Force) {
+            throw "A note already exists in '$DestinationCatalog' with the same Alias/Note. Use -Force to overwrite."
+        }
+
+        # Preserve favorite status across the move (key includes Catalog)
+        $wasFavorite = $this.IsFavorite($sourceMatch)
+        if ($wasFavorite) { $this.RemoveFavorite($sourceMatch) }
+
+        # Remove from source
+        $null = $srcCatalog.Notes.Remove($sourceMatch)
+
+        # Overwrite destination if forced
+        if ($destConflict -and $Force) {
+            $null = $dstCatalog.Notes.Remove($destConflict)
+        }
+
+        # Move (mutate the same object)
+        $sourceMatch.Catalog = $DestinationCatalog
+        $dstCatalog.Notes.Add($sourceMatch) | Out-Null
+
+        # Persist both catalogs
+        $srcCatalog.Save()
+        $dstCatalog.Save()
+
+        if ($wasFavorite) { $this.AddFavorite($sourceMatch) }
+
+        # Refresh in-memory views (mirrors your Add/Remove patterns)
+        $this.LoadCatalog($srcCatalog)
+        $this.LoadCatalog($dstCatalog)
+        $this.InitializeAliases()
+    }
+
+    hidden static [string] GetRemoteCacheRoot() {
+        $root = Join-Path $env:PSNOTES_HOME 'remote'
+        if (-not (Test-Path $root)) { $null = New-Item -Path $root -ItemType Directory -Force }
+        return $root
+    }
+
+    hidden static [string] GetRemoteCacheFileName([string] $url) {
+        $sha = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $bytes = [System.Text.Encoding]::UTF8.GetBytes($url)
+            $hash = ($sha.ComputeHash($bytes) | ForEach-Object { $_.ToString('x2') }) -join ''
+            return "$hash.json"
+        }
+        finally { $sha.Dispose() }
+    }
+
+    [RemoteCatalogSource] RegisterRemoteCatalog([string] $name, [string] $Url) {
+        if (-not $this.Config) { $this.Config = [NoteConfigStore]::new() }
+        if (-not $this.Config.RemoteCatalogs) {
+            $this.Config.RemoteCatalogs = [System.Collections.Generic.List[RemoteCatalogSource]]::new()
+        }
+
+        $existing = $this.Config.RemoteCatalogs | Where-Object { $_.Url -eq $Url } | Select-Object -First 1
+        if ($existing) { return $existing }
+
+        $cacheRoot = [NoteStore]::GetRemoteCacheRoot()
+        $cacheFile = Join-Path $cacheRoot ([NoteStore]::GetRemoteCacheFileName($Url))
+        $rel = [System.IO.Path]::GetRelativePath($env:PSNOTES_HOME, $cacheFile)
+
+        $entry = [RemoteCatalogSource]::new($name, $Url, $rel)
+        $this.Config.RemoteCatalogs.Add($entry) | Out-Null
+        $this.Config.Save()
+        $this.LoadRemoteCatalogs() # Optional: load immediately after registering
+        return $entry
+    }
+
+    [void] SyncRemoteCatalogs() {
+        if (-not $this.Config -or -not $this.Config.RemoteCatalogs) { return }
+
+        foreach ($rc in $this.Config.RemoteCatalogs) {
+            if (-not $rc.Enabled) { continue }
+            if ([string]::IsNullOrWhiteSpace($rc.Url)) { continue }
+            if ([string]::IsNullOrWhiteSpace($rc.CacheFile)) { continue }
+
+            $cachePath = Join-Path $env:PSNOTES_HOME $rc.CacheFile
+            $cacheDir = Split-Path $cachePath -Parent
+            if (-not (Test-Path $cacheDir)) { $null = New-Item -Path $cacheDir -ItemType Directory -Force }
+
+            try {
+                $headers = @{}
+                if (-not [string]::IsNullOrWhiteSpace($rc.ETag)) { $headers['If-None-Match'] = $rc.ETag }
+                if (-not [string]::IsNullOrWhiteSpace($rc.LastModified)) { $headers['If-Modified-Since'] = $rc.LastModified }
+                Write-Debug "Syncing remote catalog from $($rc.Url) with headers: $($headers | Out-String)"
+                # Note: If the remote server supports ETag or Last-Modified, this will save bandwidth and be faster. If not, it will just download every time.
+                # This is disabled for now because GIST was not playing nice with conditional requests, but you can enable it if your server supports it well.
+                $resp = Invoke-WebRequest -Uri $rc.Url -UseBasicParsing -ErrorAction Stop
+
+                $resp.Content | Set-Content -Path $cachePath -Encoding UTF8
+
+                $rc.LastSync = (Get-Date).ToUniversalTime().ToString('o')
+                if ($resp.Headers.ETag) { $rc.ETag = $resp.Headers.ETag }
+                if ($resp.Headers.'Last-Modified') { $rc.LastModified = $resp.Headers.'Last-Modified' }
+            }
+            catch {
+                if (Test-Path $cachePath) {
+                    Write-Warning "Remote catalog unreachable ($($rc.Url)). Using cached version: $cachePath"
+                }
+                else {
+                    Write-Warning "Remote catalog unreachable ($($rc.Url)) and no cached copy exists. Skipping."
+                }
+            }
+        }
+
+        $this.Config.Save()
+    }
+
+    [void] LoadRemoteCatalogs() {
+        if (-not $this.Config -or -not $this.Config.RemoteCatalogs) { return }
+
+        # Ensure cache is fresh first
+        $this.SyncRemoteCatalogs()
+
+        foreach ($rc in $this.Config.RemoteCatalogs) {
+            if (-not $rc.Enabled) { continue }
+
+            $cachePath = Join-Path $env:PSNOTES_HOME $rc.CacheFile
+            if (-not (Test-Path $cachePath)) { continue }
+
+            try {
+                # NOTE: This assumes the remote JSON is in NoteCatalog format (or legacy array that ValidateNotes already tolerates)
+                # If you want to support "bundle of catalogs", we can extend this to detect .Catalogs and split.
+                if (-not [NoteCatalog]::VersionCheck($cachePath)) {
+                    # version mismatch will warn later when opened; you can decide whether to block
+                }
+
+                $remoteCatalog = [NoteCatalog]::new($cachePath)
+                $remoteCatalog.IsRemote = $true
+                # Important: Load AFTER locals. Your existing duplicate behavior makes locals win.
+                $this.LoadCatalog($remoteCatalog)
+            }
+            catch {
+                Write-Warning "Failed to load remote catalog cache '$cachePath': $($_.Exception.Message)"
+            }
+        }
+    }
+
+    hidden [RemoteCatalogSource] RemoveRemoteCatalog([string] $Url, [bool] $RemoveCache) {
+
+        if (-not $this.Config) {
+            $this.Config = [NoteConfigStore]::new()
+        }
+
+        if (-not $this.Config.RemoteCatalogs -or $this.Config.RemoteCatalogs.Count -eq 0) {
+            throw "No remote catalogs are registered."
+        }
+
+        $match = $this.Config.RemoteCatalogs |
+        Where-Object { $_.Url -eq $Url } |
+        Select-Object -First 1
+
+        if (-not $match) {
+            throw "Remote catalog not found: $Url"
+        }
+
+        # Remove from config
+        $null = $this.Config.RemoteCatalogs.Remove($match)
+        $this.Config.Save()
+
+        # Optionally remove cache file
+        if ($RemoveCache -and -not [string]::IsNullOrWhiteSpace($match.CacheFile)) {
+            try {
+                $cachePath = Join-Path $env:PSNOTES_HOME $match.CacheFile
+                if (Test-Path $cachePath) {
+                    Remove-Item -Path $cachePath -Force -ErrorAction Stop
+                }
+            }
+            catch {
+                Write-Warning "Removed remote catalog registration, but failed to delete cached file for '$Url': $($_.Exception.Message)"
+            }
+        }
+
+        # If this remote catalog is currently loaded as a NoteCatalog in memory, remove it too
+        # (Only if your Catalog objects for remote caches keep their Path equal to the cachePath.)
+        try {
+            if (-not [string]::IsNullOrWhiteSpace($match.CacheFile)) {
+                $cachePath = Join-Path $env:PSNOTES_HOME $match.CacheFile
+                $loadedCatalog = $this.Catalogs | Where-Object { $_.Path -eq $cachePath } | Select-Object -First 1
+
+                if ($loadedCatalog) {
+                    # Remove notes from store that came from that catalog
+                    $notesToRemove = @($this.Notes | Where-Object { $_.Catalog -eq $loadedCatalog.Catalog })
+                    foreach ($n in $notesToRemove) { $null = $this.Notes.Remove($n) }
+
+                    # Remove the catalog object
+                    $null = $this.Catalogs.Remove($loadedCatalog)
+
+                    # Rebuild aliases / views
+                    $this.InitializeAliases()
+                }
+            }
+        }
+        catch {
+            # Don’t fail the operation if in-memory cleanup has issues
+            Write-Warning "Remote catalog registration removed, but failed to clean up loaded state: $($_.Exception.Message)"
+        }
+
+        return $match
+    }
+
 
     [string] GetNoteKey([PSNote] $note) {
         return "$($note.Catalog)::$($note.Note)::$($note.Alias)"

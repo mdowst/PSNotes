@@ -96,7 +96,7 @@ Get-ChildItem -LiteralPath $destRoot -Filter 'PSNotes.psd1' -Recurse | ForEach-O
 }
 
 Get-ChildItem -LiteralPath $destRoot -Filter 'PSNotes.psm1' -Recurse | ForEach-Object {
-    Out-File -Append -FilePath $_.FullName -Encoding UTF8 -InputObject "`n`nInitialize-PSNoteStore`n"
+    Out-File -Append -FilePath $_.FullName -Encoding UTF8 -InputObject "`n`nInitialize-PSNoteStore`nSet-Alias -Name psnote -Value Get-PSNoteMenu -Force`n"
 }
 
 # Create NuGet Package

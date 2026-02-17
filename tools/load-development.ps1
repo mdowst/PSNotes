@@ -58,6 +58,5 @@ if (Test-Path -Path $root) {
 # This is the same code that is used in the Initialize-PSNoteStore command, but we need to run it here to initialize the note store for the current session
 $script:_noteStore = [NoteStore]::new()
 Write-Verbose "User PSNotes Path: $env:PSNOTES_HOME"
-Get-ChildItem -Path $env:PSNOTES_HOME -Filter '*.json' | Where-Object { $_.BaseName -notin 'Default' } | ForEach-Object {
-    $script:_noteStore.LoadCatalog($_.BaseName)
-}
+
+Set-Alias -Name psnote -Value Get-PSNoteMenu -Force

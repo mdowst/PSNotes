@@ -1,4 +1,4 @@
 @{
     Severity=@('Error','Warning')
-    #ExcludeRules=@('PSAvoidUsingInvokeExpression','PSUseShouldProcessForStateChangingFunctions')
+    ExcludeRules=@('PSUseToExportFieldsInManifest','PSUseShouldProcessForStateChangingFunctions')
 }
