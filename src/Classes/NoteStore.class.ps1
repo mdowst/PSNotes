@@ -1043,7 +1043,9 @@ class NoteStore {
                 }
 
                 $remoteCatalog = [NoteCatalog]::new($cachePath)
+                $remoteCatalog.Catalog = $rc.Name # Override catalog name with the friendly name from config
                 $remoteCatalog.IsRemote = $true
+                $remoteCatalog.Notes | ForEach-Object { $_.Catalog = $remoteCatalog.Catalog } # Ensure notes point to the remote catalog name
                 # Important: Load AFTER locals. Your existing duplicate behavior makes locals win.
                 $this.LoadCatalog($remoteCatalog)
             }
