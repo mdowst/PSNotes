@@ -428,7 +428,7 @@ Describe 'NoteStore.class.ps1 classes' {
 
             $entry.Name | Should -Be 'MyRemote'
             $entry.Url  | Should -Be 'https://example.invalid/catalog.json'
-            $entry.CacheFile | Should -Match '^remote\\.+\.json$'
+            $entry.CacheFile | Should -Match '^remote[\\/].+\.json$'
 
             # Config file should exist
             (Join-Path $env:PSNOTES_HOME 'config\psnoteconfigstore.json') | Should -Exist
