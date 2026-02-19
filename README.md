@@ -65,7 +65,7 @@ PSNotes replaces tribal memory with structured recall.
 > Notes can either be saved as snippets or point directly to a script file.
 
 ```powershell
-New-PSNote -Note "Patch All" -Alias patch -ScriptPath 'C:\Scripts\Patch-All.ps1'
+New-PSNote -Name "Patch All" -Alias patch -ScriptPath 'C:\Scripts\Patch-All.ps1'
 ```
 
 ![Script Demo](Documentation/media/script.gif)
@@ -135,7 +135,7 @@ Get-PSNote -Tag network
 Snippets can be run directly from the `Get-PSNote` search. 
 
 ```powershell
-Get-PSNote -Note vmlist -Run
+Get-PSNote -Name vmlist -Run
 ```
 
 or simply:

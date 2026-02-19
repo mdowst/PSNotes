@@ -21,7 +21,7 @@ Public
 .COMPONENT
 Notes
 
-.PARAMETER Note
+.PARAMETER Name
 Returns notes that match the specified name. Wildcards are supported.
 
 .PARAMETER Tag
@@ -50,7 +50,7 @@ PS> Get-PSNote -Catalog 'Azure'
 Returns all notes in the Azure catalog.
 
 .EXAMPLE
-PS> Get-PSNote -Note 'Get-*'
+PS> Get-PSNote -Name 'Get-*'
 
 Returns notes with names that match the pattern.
 
@@ -81,7 +81,7 @@ Function Get-PSNote{
     [cmdletbinding(DefaultParameterSetName="Note")]
     param(    
         [parameter(Mandatory=$false, ParameterSetName="Note")]
-        [string]$Note = '*',
+        [string]$Name = '*',
         [parameter(Mandatory=$false, ParameterSetName="Note")]
         [string]$Tag,
         [parameter(Mandatory=$false, ParameterSetName="Note")]
@@ -119,9 +119,9 @@ Function Get-PSNote{
             ($_.Tags | Where-Object { $_ -like "*$Search*" } | Select-Object -First 1)
         }
     } elseif($Tag){
-        $returned = $notes | Where-Object{$_.Name -like $note -and $_.Tags -contains $Tag}
+        $returned = $notes | Where-Object{$_.Name -like $Name -and $_.Tags -contains $Tag}
     } else {
-        $returned = $notes | Where-Object{$_.Name -like $note}
+        $returned = $notes | Where-Object{$_.Name -like $Name}
     }
     
     if($copy -or $Run){

@@ -83,7 +83,7 @@ Describe "Import-PSNote" {
             
             Import-PSNote -Path $importPath -DefaultBehavior SkipMigratedNotes
             
-            $imported = Get-PSNote -Note 'test-import'
+            $imported = Get-PSNote -Name 'test-import'
             $imported.Name | Should -Be 'test-import'
             $imported.Snippet | Should -Be 'Get-Date'
             $imported.Details | Should -Be 'Test import note'
@@ -119,7 +119,7 @@ Describe "Import-PSNote" {
             
             Import-PSNote -Path $importPath -DefaultBehavior SkipMigratedNotes
             
-            $imported = Get-PSNote -Note 'legacy-note'
+            $imported = Get-PSNote -Name 'legacy-note'
             $imported | Should -Not -BeNullOrEmpty
             $imported.Name | Should -Be 'legacy-note'
         }
@@ -129,7 +129,7 @@ Describe "Import-PSNote" {
 
         It "skips migrated notes when DefaultBehavior is SkipMigratedNotes" {
             # Create initial note
-            New-PSNote -Note 'duplicate-test' -Snippet 'Write-Output "Original"' -Details 'Original note' -Tags 'Original' -Alias 'duptest'
+            New-PSNote -Name 'duplicate-test' -Snippet 'Write-Output "Original"' -Details 'Original note' -Tags 'Original' -Alias 'duptest'
             
             # Create import file with same alias
             $testNote = @(
@@ -154,7 +154,7 @@ Describe "Import-PSNote" {
 
         It "overwrites existing notes when DefaultBehavior is OverwriteExistingNotes" {
             # Create initial note
-            New-PSNote -Note 'overwrite-test' -Snippet 'Write-Output "Original"' -Details 'Original note' -Tags 'Original' -Alias 'overtest'
+            New-PSNote -Name 'overwrite-test' -Snippet 'Write-Output "Original"' -Details 'Original note' -Tags 'Original' -Alias 'overtest'
             
             # Create import file with same alias
             $testNote = @(
@@ -255,9 +255,9 @@ Describe "Import-PSNote" {
             
             $imported = Get-PSNote
             @($imported).Count | Should -BeGreaterOrEqual 3
-            Get-PSNote -Note 'note-one' | Should -Not -BeNullOrEmpty
-            Get-PSNote -Note 'note-two' | Should -Not -BeNullOrEmpty
-            Get-PSNote -Note 'note-three' | Should -Not -BeNullOrEmpty
+            Get-PSNote -Name 'note-one' | Should -Not -BeNullOrEmpty
+            Get-PSNote -Name 'note-two' | Should -Not -BeNullOrEmpty
+            Get-PSNote -Name 'note-three' | Should -Not -BeNullOrEmpty
         }
 
         It "preserves unique aliases for all imported notes" {
@@ -308,7 +308,7 @@ Describe "Import-PSNote" {
             
             Import-PSNote -Path $importPath -DefaultBehavior SkipMigratedNotes
             
-            $imported = Get-PSNote -Note 'special-chars'
+            $imported = Get-PSNote -Name 'special-chars'
             $imported.Snippet | Should -Match '\$'
             $imported.Details | Should -Match '\$special'
         }
@@ -333,7 +333,7 @@ Get-Process |
             
             Import-PSNote -Path $importPath -DefaultBehavior SkipMigratedNotes
             
-            $imported = Get-PSNote -Note 'multiline'
+            $imported = Get-PSNote -Name 'multiline'
             $imported.Snippet | Should -Match 'Get-Process'
             $imported.Snippet | Should -Match 'Select-Object'
         }

@@ -49,7 +49,7 @@ Describe "Export-PSNote" {
     Context "Exporting notes by object" {
 
         It "exports a single PSNote object to JSON file" {
-            $note = Get-PSNote -Note 'az-login'
+            $note = Get-PSNote -Name 'az-login'
             $exportPath = Join-Path $script:ExportDir 'single.json'
             
             $note | Export-PSNote -Path $exportPath
@@ -59,7 +59,7 @@ Describe "Export-PSNote" {
         }
 
         It "exports multiple PSNote objects to JSON file" {
-            $notes = Get-PSNote -Note 'cred*'
+            $notes = Get-PSNote -Name 'cred*'
             $exportPath = Join-Path $script:ExportDir 'multiple.json'
             
             $notes | Export-PSNote -Path $exportPath
@@ -80,7 +80,7 @@ Describe "Export-PSNote" {
         }
 
         It "includes correct note properties in exported JSON" {
-            $note = Get-PSNote -Note 'az-login'
+            $note = Get-PSNote -Name 'az-login'
             $exportPath = Join-Path $script:ExportDir 'properties.json'
             
             $note | Export-PSNote -Path $exportPath
@@ -93,7 +93,7 @@ Describe "Export-PSNote" {
         }
 
         It "excludes the Path property from exported JSON" {
-            $note = Get-PSNote -Note 'az-login'
+            $note = Get-PSNote -Name 'az-login'
             $exportPath = Join-Path $script:ExportDir 'no-path.json'
             
             $note | Export-PSNote -Path $exportPath
@@ -110,22 +110,22 @@ Describe "Export-PSNote" {
             $exportPath = Join-Path $script:ExportDir 'existing.json'
             
             # Create initial file
-            $note = Get-PSNote -Note 'az-login'
+            $note = Get-PSNote -Name 'az-login'
             $note | Export-PSNote -Path $exportPath
             
             # Attempt to overwrite without -Force
-            { Get-PSNote -Note 'day-one' | Export-PSNote -Path $exportPath -ErrorAction Stop } | Should -Throw
+            { Get-PSNote -Name 'day-one' | Export-PSNote -Path $exportPath -ErrorAction Stop } | Should -Throw
         }
 
         It "overwrites existing file with -Force" {
             $exportPath = Join-Path $script:ExportDir 'force-overwrite.json'
             
             # Create initial file
-            $note1 = Get-PSNote -Note 'az-login'
+            $note1 = Get-PSNote -Name 'az-login'
             $note1 | Export-PSNote -Path $exportPath
             
             # Overwrite with -Force
-            $note2 = Get-PSNote -Note 'day-one'
+            $note2 = Get-PSNote -Name 'day-one'
             $note2 | Export-PSNote -Path $exportPath -Force
             
             $json = Get-Content $exportPath | ConvertFrom-Json
@@ -134,7 +134,7 @@ Describe "Export-PSNote" {
 
         It "creates JSON file with UTF8 encoding without BOM" {
             $exportPath = Join-Path $script:ExportDir 'encoding.json'
-            $note = Get-PSNote -Note 'az-login'
+            $note = Get-PSNote -Name 'az-login'
             
             $note | Export-PSNote -Path $exportPath
             
@@ -149,7 +149,7 @@ Describe "Export-PSNote" {
         It "accepts notes from Get-PSNote pipeline" {
             $exportPath = Join-Path $script:ExportDir 'pipeline.json'
             
-            Get-PSNote -Note 'az-login' | Export-PSNote -Path $exportPath
+            Get-PSNote -Name 'az-login' | Export-PSNote -Path $exportPath
             
             Test-Path $exportPath | Should -Be $true
             $json = Get-Content $exportPath | ConvertFrom-Json
@@ -212,7 +212,7 @@ Describe "Export-PSNote" {
 
         It "creates a valid NoteCatalog structure in JSON" {
             $exportPath = Join-Path $script:ExportDir 'structure.json'
-            $note = Get-PSNote -Note 'az-login'
+            $note = Get-PSNote -Name 'az-login'
             
             $note | Export-PSNote -Path $exportPath
             
@@ -224,7 +224,7 @@ Describe "Export-PSNote" {
 
         It "sets Catalog to 'Export' when exporting from Note parameter set" {
             $exportPath = Join-Path $script:ExportDir 'export-catalog.json'
-            $note = Get-PSNote -Note 'az-login'
+            $note = Get-PSNote -Name 'az-login'
             
             $note | Export-PSNote -Path $exportPath
             
@@ -236,10 +236,10 @@ Describe "Export-PSNote" {
     Context "Complex scenarios" {
 
         It "exports notes with special characters in Details" {
-            New-PSNote -Note 'SpecialChars' -Snippet 'Test' -Details 'Text with "quotes" and special chars: @#$%' -Force
+            New-PSNote -Name 'SpecialChars' -Snippet 'Test' -Details 'Text with "quotes" and special chars: @#$%' -Force
             $exportPath = Join-Path $script:ExportDir 'special-chars.json'
             
-            Get-PSNote -Note 'SpecialChars' | Export-PSNote -Path $exportPath
+            Get-PSNote -Name 'SpecialChars' | Export-PSNote -Path $exportPath
             
             $json = Get-Content $exportPath | ConvertFrom-Json
             $json.Notes[0].Details | Should -Match 'quotes'
@@ -251,20 +251,20 @@ Get-Process |
     Where-Object {$_.Memory -gt 100MB} |
     Select-Object -Property Name, Id, Memory
 '@
-            New-PSNote -Note 'Multiline' -Snippet $multilineSnippet -Force
+            New-PSNote -Name 'Multiline' -Snippet $multilineSnippet -Force
             $exportPath = Join-Path $script:ExportDir 'multiline.json'
             
-            Get-PSNote -Note 'Multiline' | Export-PSNote -Path $exportPath
+            Get-PSNote -Name 'Multiline' | Export-PSNote -Path $exportPath
             
             $json = Get-Content $exportPath | ConvertFrom-Json
             $json.Notes[0].Snippet | Should -Match 'Get-Process'
         }
 
         It "exports notes with multiple tags" {
-            New-PSNote -Note 'MultiTag' -Snippet 'Test' -Tags 'Tag1', 'Tag2', 'Tag3' -Force
+            New-PSNote -Name 'MultiTag' -Snippet 'Test' -Tags 'Tag1', 'Tag2', 'Tag3' -Force
             $exportPath = Join-Path $script:ExportDir 'multi-tag.json'
             
-            Get-PSNote -Note 'MultiTag' | Export-PSNote -Path $exportPath
+            Get-PSNote -Name 'MultiTag' | Export-PSNote -Path $exportPath
             
             $json = Get-Content $exportPath | ConvertFrom-Json
             $json.Notes[0].Tags.Count | Should -BeGreaterThan 2
@@ -276,13 +276,13 @@ Get-Process |
             $null = New-Item -Path $importDir -ItemType Directory -Force
             
             # Export notes
-            Get-PSNote -Note 'az-login' | Export-PSNote -Path $exportPath
+            Get-PSNote -Name 'az-login' | Export-PSNote -Path $exportPath
             
             # Import the exported file
             Import-PSNote -Path $exportPath -Catalog 'Imported' -DefaultBehavior 'OverwriteExistingNotes'
             
             # Verify the imported note exists
-            $imported = Get-PSNote -Note 'az-login'
+            $imported = Get-PSNote -Name 'az-login'
             $imported | Should -Not -BeNullOrEmpty
         }
     }

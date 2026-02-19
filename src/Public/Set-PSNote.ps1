@@ -26,7 +26,7 @@ Public
 .COMPONENT
 Notes
 
-.PARAMETER Note
+.PARAMETER Name
 The name of the note to update or create.
 
 Accepts pipeline input by property name.
@@ -78,18 +78,18 @@ workflow). Set to $true to enable, or $false to disable.
 Accepts pipeline input by property name.
 
 .EXAMPLE
-PS> Set-PSNote -Note 'ADUser' -Tags 'AD','Users','Updated'
+PS> Set-PSNote -Name 'ADUser' -Tags 'AD','Users','Updated'
 
 Updates the Tags for the note 'ADUser' in the Default catalog, replacing any existing tags.
 
 .EXAMPLE
 PS> $NewSnippet = '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__))'
-PS> Set-PSNote -Note 'DayOfWeek' -Snippet $NewSnippet
+PS> Set-PSNote -Name 'DayOfWeek' -Snippet $NewSnippet
 
 Updates only the snippet content for the note 'DayOfWeek' while leaving other properties unchanged.
 
 .EXAMPLE
-PS> Set-PSNote -Note 'CpuUsage' -ScriptBlock {
+PS> Set-PSNote -Name 'CpuUsage' -ScriptBlock {
     Get-CimInstance Win32_Processor |
         Measure-Object -Property LoadPercentage -Average |
         Select-Object -ExpandProperty Average
@@ -98,12 +98,12 @@ PS> Set-PSNote -Note 'CpuUsage' -ScriptBlock {
 Updates the note 'CpuUsage' with a new multi-line script block.
 
 .EXAMPLE
-PS> Set-PSNote -Note 'CpuUsage' -Details "Returns average CPU usage percentage" -Alias 'cpu'
+PS> Set-PSNote -Name 'CpuUsage' -Details "Returns average CPU usage percentage" -Alias 'cpu'
 
 Updates only the Details and Alias properties for the note 'CpuUsage'.
 
 .EXAMPLE
-PS> Set-PSNote -Note 'BackupScript' -ScriptPath 'D:\Scripts\Backup-Database.ps1' -Details "Updated backup script location"
+PS> Set-PSNote -Name 'BackupScript' -ScriptPath 'D:\Scripts\Backup-Database.ps1' -Details "Updated backup script location"
 
 Updates an existing note to reference a different script file, changing Kind to 'Script'.
 
@@ -137,7 +137,7 @@ Function Set-PSNote {
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSShouldProcess', '')]
     param(
         [parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$True)]
-        [string]$Note,
+        [string]$Name,
         [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)]
         [string]$Catalog = 'Default',
         [parameter(Mandatory = $false, ValueFromPipelineByPropertyName=$True)]
@@ -161,9 +161,9 @@ Function Set-PSNote {
     }
     
     process {
-        $check = $script:_noteStore.Notes | Where-Object { $_.Name -eq $Note -and $_.Catalog -eq $Catalog }
+        $check = $script:_noteStore.Notes | Where-Object { $_.Name -eq $Name -and $_.Catalog -eq $Catalog }
         if (-not $check) {
-            Write-Warning "The note '$Note' does not exist in catalog '$Catalog'. An attempt will be made to create it."
+            Write-Warning "The note '$Name' does not exist in catalog '$Catalog'. An attempt will be made to create it."
         } 
 
         New-PSNote @PSBoundParameters -Force

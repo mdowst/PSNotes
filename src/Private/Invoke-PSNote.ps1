@@ -11,8 +11,9 @@
     The PSNote object to invoke. Must be of Kind 'Script' or 'Snippet'.
 
 .EXAMPLE
-    PS> Invoke-PSNote -Note $note
-    Executes the provided note.
+Invoke-PSNote -Note $note
+
+Executes the provided note.
 
 .NOTES
     This is an internal function. Validates that the note store is initialized

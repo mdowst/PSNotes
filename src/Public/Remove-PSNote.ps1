@@ -20,7 +20,7 @@ Public
 .COMPONENT
 Notes
 
-.PARAMETER Note
+.PARAMETER Name
 The name of the note to remove. Wildcards may be supported depending on implementation.
 
 .PARAMETER Catalog
@@ -39,7 +39,7 @@ One or more PSNote objects to remove. Accepts pipeline input from Get-PSNote.
 Suppresses confirmation prompts.
 
 .EXAMPLE
-PS> Remove-PSNote -Note 'OldNote'
+PS> Remove-PSNote -Name 'OldNote'
 
 Removes the note named 'OldNote'.
 
@@ -76,7 +76,7 @@ Function Remove-PSNote {
 
         # Discovery params (match Get-PSNote)
         [Parameter(Mandatory = $false, ParameterSetName = 'Note')]
-        [string]$Note = '*',
+        [string]$Name = '*',
 
         [Parameter(Mandatory = $false, ParameterSetName = 'Note')]
         [string]$Tag,
@@ -117,7 +117,7 @@ Function Remove-PSNote {
         if ($PSCmdlet.ParameterSetName -eq 'Search') {
             $gpParams['SearchString'] = $SearchString
         } else {
-            $gpParams['Note'] = $Note
+            $gpParams['Name'] = $Name
             if ($Tag) { $gpParams['Tag'] = $Tag }
         }
 

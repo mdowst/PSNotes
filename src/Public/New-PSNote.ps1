@@ -23,7 +23,7 @@ Public
 .COMPONENT
 Notes
 
-.PARAMETER Note
+.PARAMETER Name
 The name of the note.
 
 .PARAMETER Catalog
@@ -86,7 +86,7 @@ Function New-PSNote {
     [cmdletbinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', DefaultParameterSetName = "Note")]
     param(
         [parameter(Mandatory = $true)]
-        [string]$Note,
+        [string]$Name,
         [parameter(Mandatory = $false, ParameterSetName = "Snippet")]
         [string]$Snippet,
         [parameter(Mandatory = $false, ParameterSetName = "ScriptBlock")]
@@ -136,13 +136,13 @@ Function New-PSNote {
         $Snippet = $ScriptBlock.ToString()
     }
 
-    $newNote = $script:_noteStore.Notes | Where-Object { $_.Name -eq $Note -and $_.Catalog -eq $Catalog }
+    $newNote = $script:_noteStore.Notes | Where-Object { $_.Name -eq $Name -and $_.Catalog -eq $Catalog }
     if ($newNote -and -not $force) {
-        Write-Error "The note '$Note' already exists. Use -force to overwrite existing properties"
+        Write-Error "The note '$Name' already exists. Use -force to overwrite existing properties"
         break
     }
     elseif ($newNote -and $force) {
-        $toUpdate = $script:_noteStore.Notes | Where-Object { $_.Name -eq $Note -and $_.Catalog -eq $Catalog } | ForEach-Object {
+        $toUpdate = $script:_noteStore.Notes | Where-Object { $_.Name -eq $Name -and $_.Catalog -eq $Catalog } | ForEach-Object {
             $tu = [PSNote]::new($_)
             $PSBoundParameters.GetEnumerator() | ForEach-Object {
                 if ($_.Key -eq 'ScriptBlock') {
@@ -179,7 +179,7 @@ Function New-PSNote {
             Test-NoteAlias $Alias
         }
         
-        $newNote = [PSNote]::New($Note, $Kind, $Snippet, $Details, $Alias, $Tags, $Catalog, $Run)
+        $newNote = [PSNote]::New($Name, $Kind, $Snippet, $Details, $Alias, $Tags, $Catalog, $Run)
         $script:_noteStore.AddNote($newNote)
     }
     

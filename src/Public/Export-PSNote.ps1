@@ -45,7 +45,7 @@ Get-PSNote -Tag 'AD' | Export-PSNote -Path C:\Export\SharedADNotes.json
 Exports all notes with the tag 'AD' to the file SharedADNotes.json.
 
 .EXAMPLE
-Get-PSNote -Note 'Cred*' -Catalog 'Work' | Export-PSNote -Path C:\Export\WorkCreds.json
+Get-PSNote -Name 'Cred*' -Catalog 'Work' | Export-PSNote -Path C:\Export\WorkCreds.json
 
 Exports notes that match the name pattern from the 'Work' catalog.
 

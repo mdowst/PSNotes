@@ -45,8 +45,8 @@ Describe "Get-PSNote" {
             @($r).Count | Should -Be 4
         }
 
-        It "filters notes by -Note wildcard" {
-            $r = Get-PSNote -Note 'cred*'
+        It "filters notes by -Name wildcard" {
+            $r = Get-PSNote -Name 'cred*'
             @($r).Count | Should -Be 2
             $r.Name | Should -Contain 'creds'
             $r.Name | Should -Contain 'creds2'
@@ -58,8 +58,8 @@ Describe "Get-PSNote" {
             $r[0].Name | Should -Be 'az-login'
         }
 
-        It "filters notes by -Note and -Tag together" {
-            $r = Get-PSNote -Note '*cred*' -Tag 'AD'
+        It "filters notes by -Name and -Tag together" {
+            $r = Get-PSNote -Name '*cred*' -Tag 'AD'
             @($r).Count | Should -Be 1
             $r[0].Name | Should -Be 'creds'
         }
@@ -69,7 +69,7 @@ Describe "Get-PSNote" {
             Mock -CommandName Get-Command -MockWith { [pscustomobject]@{ Name = 'Set-Clipboard' } } -ModuleName PSNotes
             Mock -CommandName Read-Host -MockWith { param($Prompt) 1 } -ModuleName PSNotes
 
-            Get-PSNote -Note 'cred*' -Copy | Out-Null
+            Get-PSNote -Name 'cred*' -Copy | Out-Null
 
             Assert-MockCalled -CommandName Set-Clipboard -Times 1 -Exactly -ModuleName PSNotes -ParameterFilter {
                 $Value -eq 'Get-Credential'
@@ -80,7 +80,7 @@ Describe "Get-PSNote" {
             Mock -CommandName Invoke-PSNote -MockWith { param($Note) } -Verifiable -ModuleName PSNotes
             Mock -CommandName Read-Host -MockWith { param($Prompt) 1 } -ModuleName PSNotes
 
-            Get-PSNote -Note 'cred*' -Run | Out-Null
+            Get-PSNote -Name 'cred*' -Run | Out-Null
 
             Assert-MockCalled -CommandName Invoke-PSNote -Times 1 -Exactly -ModuleName PSNotes -ParameterFilter {
                 $Note.Name -eq 'creds'

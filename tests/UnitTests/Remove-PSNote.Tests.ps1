@@ -41,31 +41,31 @@ Describe "Remove-PSNote" {
 
         It "removes each piped note (calls NoteStore.RemoveNote)" {
             $toRemove = @(
-                Get-PSnote -Note 'creds' -Catalog 'Work'
-                Get-PSnote -Note 'az-login' -Catalog 'Personal'
+                Get-PSnote -Name 'creds' -Catalog 'Work'
+                Get-PSnote -Name 'az-login' -Catalog 'Personal'
             )
 
             $r = $toRemove | Remove-PSNote -Confirm:$false
 
             @($r).Count | Should -Be 2
-            Get-PSnote -Note 'creds' -Catalog 'Work' | Should -Be $null
-            Get-PSnote -Note 'az-login' -Catalog 'Personal' | Should -Be $null
+            Get-PSnote -Name 'creds' -Catalog 'Work' | Should -Be $null
+            Get-PSnote -Name 'az-login' -Catalog 'Personal' | Should -Be $null
         }
 
         It "honors -WhatIf (does not call RemoveNote)" {
             $toRemove = @(
-                Get-PSnote -Note 'creds2' -Catalog 'Work'
+                Get-PSnote -Name 'creds2' -Catalog 'Work'
             )
 
             $null = $toRemove | Remove-PSNote -WhatIf
 
-            Get-PSnote -Note 'creds2' -Catalog 'Work' | Should -Not -Be $null
+            Get-PSnote -Name 'creds2' -Catalog 'Work' | Should -Not -Be $null
         }
 
         It "de-dupes piped notes by Catalog+Note" {
             $toRemove = @(
-                Get-PSnote -Note 'creds2' -Catalog 'Work'
-                Get-PSnote -Note 'creds2' -Catalog 'Work'
+                Get-PSnote -Name 'creds2' -Catalog 'Work'
+                Get-PSnote -Name 'creds2' -Catalog 'Work'
             )
 
             $r = $toRemove | Remove-PSNote -Confirm:$false
@@ -76,24 +76,24 @@ Describe "Remove-PSNote" {
 
     Context "Discovery parameter sets (delegates to Get-PSNote)" {
         
-        It "calls Get-PSNote with Note/Tag/Catalog when using Note parameter set" {
-            $r = Remove-PSNote -Note 'cred*' -Tag 'AD' -Catalog 'Work' -Confirm:$false
+        It "calls Get-PSNote with Name/Tag/Catalog when using Note parameter set" {
+            $r = Remove-PSNote -Name 'cred*' -Tag 'AD' -Catalog 'Work' -Confirm:$false
 
             @($r).Count | Should -Be 1
-            Get-PSnote -Note 'creds' -Catalog 'Work' | Should -Be $null
+            Get-PSnote -Name 'creds' -Catalog 'Work' | Should -Be $null
         }
 
         It "calls Get-PSNote with SearchString and Catalog when using Search parameter set" {
             $r = Remove-PSNote -SearchString 'Azure' -Catalog 'Personal' -Confirm:$false
 
             @($r).Count | Should -Be 1
-            Get-PSnote -Note 'az-login' -Catalog 'Personal' | Should -Be $null
+            Get-PSnote -Name 'az-login' -Catalog 'Personal' | Should -Be $null
         }
 
         It "returns no output and does not call RemoveNote when Get-PSNote finds nothing" {
             Mock -CommandName Get-PSNote -MockWith { @() } -ModuleName PSNotes
 
-            $r = Remove-PSNote -Note 'nope*' -Catalog 'Work' -Confirm:$false
+            $r = Remove-PSNote -Name 'nope*' -Catalog 'Work' -Confirm:$false
 
             @($r).Count | Should -Be 0
         }

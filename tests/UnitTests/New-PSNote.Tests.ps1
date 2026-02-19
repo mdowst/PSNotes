@@ -39,9 +39,9 @@ Describe "New-PSNote" {
     Context "Creating new notes" {
 
         It "creates a new note with Snippet parameter" {
-            New-PSNote -Note 'TestSnippet' -Snippet 'Get-Process' -Details 'Test snippet' -Tags 'Test'
+            New-PSNote -Name 'TestSnippet' -Snippet 'Get-Process' -Details 'Test snippet' -Tags 'Test'
             
-            $result = Get-PSNote -Note 'TestSnippet'
+            $result = Get-PSNote -Name 'TestSnippet'
             $result.Name | Should -Be 'TestSnippet'
             $result.Snippet | Should -Be 'Get-Process'
             $result.Details | Should -Be 'Test snippet'
@@ -50,9 +50,9 @@ Describe "New-PSNote" {
 
         It "creates a new note with ScriptBlock parameter" {
             $scriptBlock = { Get-Service | Where-Object Status -eq 'Running' }
-            New-PSNote -Note 'TestScriptBlock' -ScriptBlock $scriptBlock -Details 'Test scriptblock'
+            New-PSNote -Name 'TestScriptBlock' -ScriptBlock $scriptBlock -Details 'Test scriptblock'
             
-            $result = Get-PSNote -Note 'TestScriptBlock'
+            $result = Get-PSNote -Name 'TestScriptBlock'
             $result.Name | Should -Be 'TestScriptBlock'
             $result.Snippet | Should -Be $scriptBlock.ToString()
             $result.Details | Should -Be 'Test scriptblock'
@@ -62,9 +62,9 @@ Describe "New-PSNote" {
             $scriptFile = Join-Path $script:TestDir 'TestScriptPath.ps1'
             Set-Content -Path $scriptFile -Value 'Get-Date' -Force
 
-            New-PSNote -Note 'TestScriptPath' -ScriptPath $scriptFile -Details 'Test script path'
+            New-PSNote -Name 'TestScriptPath' -ScriptPath $scriptFile -Details 'Test script path'
             
-            $result = Get-PSNote -Note 'TestScriptPath'
+            $result = Get-PSNote -Name 'TestScriptPath'
             $result.Name | Should -Be 'TestScriptPath'
             $result.Snippet | Should -Be $scriptFile
             $result.Kind | Should -Be 'Script'
@@ -72,25 +72,25 @@ Describe "New-PSNote" {
         }
 
         It "creates a note with multiple tags" {
-            New-PSNote -Note 'TestMultiTags' -Snippet 'Get-ChildItem' -Tags 'Files', 'Test', 'PowerShell'
+            New-PSNote -Name 'TestMultiTags' -Snippet 'Get-ChildItem' -Tags 'Files', 'Test', 'PowerShell'
             
-            $result = Get-PSNote -Note 'TestMultiTags'
+            $result = Get-PSNote -Name 'TestMultiTags'
             $result.Tags | Should -Contain 'Files'
             $result.Tags | Should -Contain 'Test'
             $result.Tags | Should -Contain 'PowerShell'
         }
 
         It "creates a note with custom Alias" {
-            New-PSNote -Note 'TestAlias' -Snippet 'Test-Connection' -Alias 'ping-test'
+            New-PSNote -Name 'TestAlias' -Snippet 'Test-Connection' -Alias 'ping-test'
             
-            $result = Get-PSNote -Note 'TestAlias'
+            $result = Get-PSNote -Name 'TestAlias'
             $result.Alias | Should -Be 'ping-test'
         }
 
         It "leave Alias blank when Alias is not specified" {
-            New-PSNote -Note 'TestDefaultAlias' -Snippet 'Get-Date'
+            New-PSNote -Name 'TestDefaultAlias' -Snippet 'Get-Date'
             
-            $result = Get-PSNote -Note 'TestDefaultAlias'
+            $result = Get-PSNote -Name 'TestDefaultAlias'
             $result.Alias | Should -Be ''
         }
 
@@ -102,9 +102,9 @@ for ($i = 0; $i -lt 10; $i++){
 }
 $stringBuilder.ToString()
 '@
-            New-PSNote -Note 'TestMultiline' -Snippet $multilineSnippet -Details 'Multiline test'
+            New-PSNote -Name 'TestMultiline' -Snippet $multilineSnippet -Details 'Multiline test'
             
-            $result = Get-PSNote -Note 'TestMultiline'
+            $result = Get-PSNote -Name 'TestMultiline'
             $result.Snippet | Should -Be $multilineSnippet
         }
     }
@@ -112,56 +112,56 @@ $stringBuilder.ToString()
     Context "Run and Alias properties" {
 
         It "creates a note without an Alias and without Run" {
-            New-PSNote -Note 'TestNoAliasNoRun' -Snippet 'Write-Output "Test snippet"' -Details 'Test snippet' -Tags 'Test' -Catalog 'TestCatalog'
+            New-PSNote -Name 'TestNoAliasNoRun' -Snippet 'Write-Output "Test snippet"' -Details 'Test snippet' -Tags 'Test' -Catalog 'TestCatalog'
             
             { TestNoAliasNoRun } | Should -Throw
 
-            $result = Get-PSNote -Note 'TestNoAliasNoRun'
+            $result = Get-PSNote -Name 'TestNoAliasNoRun'
             $result.Run | Should -Be $false
             $result.Alias | Should -Be ''
             
-            Get-PSNote -Note 'TestNoAliasNoRun' -Run | Should -Be "Test snippet"
+            Get-PSNote -Name 'TestNoAliasNoRun' -Run | Should -Be "Test snippet"
         }
 
         It "creates a note with an Alias and without Run" {
-            New-PSNote -Note 'TestAliasNoRun' -Snippet 'Write-Output "Test Alias and without Run"' -Details 'Test Alias and without Run' -Tags 'Test' -Catalog 'TestCatalog' -Alias 'testaliasnorun'
+            New-PSNote -Name 'TestAliasNoRun' -Snippet 'Write-Output "Test Alias and without Run"' -Details 'Test Alias and without Run' -Tags 'Test' -Catalog 'TestCatalog' -Alias 'testaliasnorun'
             
             testaliasnorun | Should -Be 'Write-Output "Test Alias and without Run"'
             testaliasnorun -run | Should -Be 'Test Alias and without Run'
             testaliasnorun -copy | Should -Be 'Write-Output "Test Alias and without Run"'
             
-            $result = Get-PSNote -Note 'TestAliasNoRun'
+            $result = Get-PSNote -Name 'TestAliasNoRun'
             $result.Run | Should -Be $false
             $result.Alias | Should -Be 'testaliasnorun'
 
-            Get-PSNote -Note 'TestAliasNoRun' -Run | Should -Be 'Test Alias and without Run'
+            Get-PSNote -Name 'TestAliasNoRun' -Run | Should -Be 'Test Alias and without Run'
         }
 
         It "creates a note with an Alias and with Run" {
-            New-PSNote -Note 'TestRunAliasRun' -Snippet 'Write-Output "Test Alias and with Run"' -Details 'Test Alias and with Run' -Tags 'Test' -Catalog 'TestCatalog' -Alias 'testrunaliasrun' -Run $true
+            New-PSNote -Name 'TestRunAliasRun' -Snippet 'Write-Output "Test Alias and with Run"' -Details 'Test Alias and with Run' -Tags 'Test' -Catalog 'TestCatalog' -Alias 'testrunaliasrun' -Run $true
             
             testrunaliasrun | Should -Be 'Test Alias and with Run'
             testrunaliasrun -run | Should -Be 'Test Alias and with Run'
             testrunaliasrun -copy | Should -Be 'Write-Output "Test Alias and with Run"'
             
-            $result = Get-PSNote -Note 'TestRunAliasRun'
+            $result = Get-PSNote -Name 'TestRunAliasRun'
             $result.Run | Should -Be $true
             $result.Alias | Should -Be 'testrunaliasrun'
 
-            Get-PSNote -Note 'TestRunAliasRun' -Run | Should -Be 'Test Alias and with Run'
+            Get-PSNote -Name 'TestRunAliasRun' -Run | Should -Be 'Test Alias and with Run'
         }
 
         It "creates a note without an Alias and with Run" {
-            New-PSNote -Note 'TestRunNoAliasRun' -Snippet 'Write-Output "Test no alias and with Run"' -Details 'Test no alias and with Run' -Tags 'Test' -Catalog 'TestCatalog' -Run $true
+            New-PSNote -Name 'TestRunNoAliasRun' -Snippet 'Write-Output "Test no alias and with Run"' -Details 'Test no alias and with Run' -Tags 'Test' -Catalog 'TestCatalog' -Run $true
             
             { TestRunNoAliasRun } | Should -Throw
 
-            Get-PSNote -Note 'TestRunNoAliasRun'
-            $result = Get-PSNote -Note 'TestRunNoAliasRun'
+            Get-PSNote -Name 'TestRunNoAliasRun'
+            $result = Get-PSNote -Name 'TestRunNoAliasRun'
             $result.Run | Should -Be $true
             $result.Alias | Should -Be ''
 
-            Get-PSNote -Note 'TestRunNoAliasRun' -Run | Should -Be 'Test no alias and with Run'
+            Get-PSNote -Name 'TestRunNoAliasRun' -Run | Should -Be 'Test no alias and with Run'
         }
     }
 
@@ -169,42 +169,42 @@ $stringBuilder.ToString()
 
         BeforeEach {
             # Create a note to update in each test
-            New-PSNote -Note 'UpdateTest' -Snippet 'Get-Process' -Details 'Original' -Tags 'Test' -Force
+            New-PSNote -Name 'UpdateTest' -Snippet 'Get-Process' -Details 'Original' -Tags 'Test' -Force
         }
 
         It "throws an error when trying to overwrite without -Force" {
-            New-PSNote -Note 'UpdateTest' -Snippet 'Get-Service' -ErrorVariable err -ErrorAction SilentlyContinue
+            New-PSNote -Name 'UpdateTest' -Snippet 'Get-Service' -ErrorVariable err -ErrorAction SilentlyContinue
             $err.Count | Should -BeGreaterThan 0
             $err[0].Exception.Message | Should -Match "already exists"
         }
 
         It "updates an existing note with -Force" {
-            New-PSNote -Note 'UpdateTest' -Snippet 'Get-Service' -Force
+            New-PSNote -Name 'UpdateTest' -Snippet 'Get-Service' -Force
             
-            $result = Get-PSNote -Note 'UpdateTest'
+            $result = Get-PSNote -Name 'UpdateTest'
             $result.Snippet | Should -Be 'Get-Service'
         }
 
         It "updates only specified properties with -Force" {
-            New-PSNote -Note 'UpdateTest' -Details 'Updated details' -Force
+            New-PSNote -Name 'UpdateTest' -Details 'Updated details' -Force
             
-            $result = Get-PSNote -Note 'UpdateTest'
+            $result = Get-PSNote -Name 'UpdateTest'
             $result.Details | Should -Be 'Updated details'
             $result.Snippet | Should -Be 'Get-Process'  # Original snippet should remain
         }
 
         It "updates Tags with -Force" {
-            New-PSNote -Note 'UpdateTest' -Tags 'Updated', 'NewTag' -Force
+            New-PSNote -Name 'UpdateTest' -Tags 'Updated', 'NewTag' -Force
             
-            $result = Get-PSNote -Note 'UpdateTest'
+            $result = Get-PSNote -Name 'UpdateTest'
             $result.Tags | Should -Contain 'Updated'
             $result.Tags | Should -Contain 'NewTag'
         }
 
         It "updates Alias with -Force" {
-            New-PSNote -Note 'UpdateTest' -Alias 'new-alias' -Force
+            New-PSNote -Name 'UpdateTest' -Alias 'new-alias' -Force
             
-            $result = Get-PSNote -Note 'UpdateTest'
+            $result = Get-PSNote -Name 'UpdateTest'
             $result.Alias | Should -Be 'new-alias'
         }
 
@@ -212,9 +212,9 @@ $stringBuilder.ToString()
             $scriptFile = Join-Path $script:TestDir 'UpdateTestScript.ps1'
             Set-Content -Path $scriptFile -Value 'Get-Process' -Force
 
-            New-PSNote -Note 'UpdateTest' -ScriptPath $scriptFile -Force
+            New-PSNote -Name 'UpdateTest' -ScriptPath $scriptFile -Force
 
-            $result = Get-PSNote -Note 'UpdateTest'
+            $result = Get-PSNote -Name 'UpdateTest'
             $result.Snippet | Should -Be $scriptFile
             $result.Kind | Should -Be 'Script'
         }
@@ -223,56 +223,56 @@ $stringBuilder.ToString()
     Context "Alias validation" {
 
         It "accepts valid alias with letters, numbers, dashes, and underscores" {
-            { New-PSNote -Note 'ValidAlias1' -Snippet 'Test' -Alias 'valid-alias_123' } | Should -Not -Throw
+            { New-PSNote -Name 'ValidAlias1' -Snippet 'Test' -Alias 'valid-alias_123' } | Should -Not -Throw
         }
 
         It "throws an error for alias with spaces" {
-            { New-PSNote -Note 'InvalidAlias1' -Snippet 'Test' -Alias 'invalid alias' } | Should -Throw
+            { New-PSNote -Name 'InvalidAlias1' -Snippet 'Test' -Alias 'invalid alias' } | Should -Throw
         }
 
         It "throws an error for alias with special characters" {
-            { New-PSNote -Note 'InvalidAlias2' -Snippet 'Test' -Alias 'invalid@alias' } | Should -Throw
+            { New-PSNote -Name 'InvalidAlias2' -Snippet 'Test' -Alias 'invalid@alias' } | Should -Throw
         }
 
         It "throws an error for alias with dots" {
-            { New-PSNote -Note 'InvalidAlias3' -Snippet 'Test' -Alias 'invalid.alias' } | Should -Throw
+            { New-PSNote -Name 'InvalidAlias3' -Snippet 'Test' -Alias 'invalid.alias' } | Should -Throw
         }
     }
 
     Context "Parameter sets" {
 
         It "accepts Snippet parameter" {
-            { New-PSNote -Note 'SnippetParam' -Snippet 'Get-Date' } | Should -Not -Throw
+            { New-PSNote -Name 'SnippetParam' -Snippet 'Get-Date' } | Should -Not -Throw
         }
 
         It "accepts ScriptBlock parameter" {
-            { New-PSNote -Note 'ScriptBlockParam' -ScriptBlock { Get-Date } } | Should -Not -Throw
+            { New-PSNote -Name 'ScriptBlockParam' -ScriptBlock { Get-Date } } | Should -Not -Throw
         }
 
         It "accepts ScriptPath parameter" {
             $scriptFile = Join-Path $script:TestDir 'ParamScriptPath.ps1'
             Set-Content -Path $scriptFile -Value 'Get-ChildItem' -Force
-            { New-PSNote -Note 'ScriptPathParam' -ScriptPath $scriptFile } | Should -Not -Throw
+            { New-PSNote -Name 'ScriptPathParam' -ScriptPath $scriptFile } | Should -Not -Throw
         }
 
         It "converts ScriptBlock to string for storage" {
             $sb = { Get-Process | Select-Object -First 5 }
-            New-PSNote -Note 'ScriptBlockConversion' -ScriptBlock $sb
+            New-PSNote -Name 'ScriptBlockConversion' -ScriptBlock $sb
             
-            $result = Get-PSNote -Note 'ScriptBlockConversion'
+            $result = Get-PSNote -Name 'ScriptBlockConversion'
             $result.Snippet | Should -Be $sb.ToString()
         }
 
         It "throws when ScriptPath does not exist" {
             $missingFile = Join-Path $script:TestDir 'MissingScript.ps1'
-            { New-PSNote -Note 'MissingScriptPath' -ScriptPath $missingFile } | Should -Throw
+            { New-PSNote -Name 'MissingScriptPath' -ScriptPath $missingFile } | Should -Throw
         }
     }
 
     Context "Global alias creation" {
 
         It "creates a global alias for the note" {
-            New-PSNote -Note 'AliasCreation' -Snippet 'Get-Date' -Alias 'test-global-alias'
+            New-PSNote -Name 'AliasCreation' -Snippet 'Get-Date' -Alias 'test-global-alias'
             
             # Check if alias exists
             $aliasExists = Test-Path Alias:\test-global-alias
