@@ -90,7 +90,7 @@ Describe "Remote Catalog Commands" {
 
         It "removes a registered remote by pipeline object" {
             $url = 'https://example.invalid/tools.json'
-            Import-RemoteCatalog -Name 'Tools' -Url $url
+            Import-RemoteCatalog -Name 'TestTools' -Url $url
 
             $remotes = @(Get-RemoteCatalog)
             $remotes.Count | Should -Be 1
@@ -118,7 +118,7 @@ Describe "Remote Catalog Commands" {
 
         It "throws if no cached copy exists for the registered remote" {
             $url = 'https://example.invalid/tools.json'
-            Import-RemoteCatalog -Name 'Tools' -Url $url
+            Import-RemoteCatalog -Name 'TestTools' -Url $url
 
             $entry = (Get-RemoteCatalog | Where-Object Url -eq $url | Select-Object -First 1)
             $entry | Should -Not -BeNullOrEmpty
@@ -129,7 +129,7 @@ Describe "Remote Catalog Commands" {
         It "converts cached remote catalog to a local catalog file and unregisters the remote" {
             InModuleScope PSNotes {
                 $url = 'https://example.invalid/tools.json'
-                $name = 'Tools'
+                $name = 'TestTools'
 
                 Import-RemoteCatalog -Name $name -Url $url
 
@@ -191,7 +191,7 @@ Describe "Remote Catalog Commands" {
         It "does not overwrite an existing local catalog unless -Force is provided" {
             InModuleScope PSNotes {
                 $url = 'https://example.invalid/tools.json'
-                $name = 'Tools'
+                $name = 'TestTools'
 
                 Import-RemoteCatalog -Name $name -Url $url
 
