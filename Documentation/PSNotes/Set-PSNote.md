@@ -1,8 +1,12 @@
 ---
-external help file: PSNotes-help.xml
+document type: cmdlet
+external help file: PSNotes-Help.xml
+HelpUri: https://github.com/mdowst/PSNotes
+Locale: en-US
 Module Name: PSNotes
-online version: 
-schema: 2.0.0
+ms.date: 02/19/2026
+PlatyPS schema version: 2024-05-01
+title: Set-PSNote
 ---
 
 # Set-PSNote
@@ -16,8 +20,15 @@ Updates an existing PSNote or creates a new one if it doesn't exist.
 ### __AllParameterSets
 
 ```
-Set-PSNote [-Note] <String> [[-Catalog <String>]] [[-Snippet <String>]] [[-ScriptBlock <ScriptBlock>]] [[-ScriptPath <String>]] [[-Details <String>]] [[-Alias <String>]] [[-Tags <String[]>]] [[-Run <Boolean>]] [-Confirm] [-ProgressAction <ActionPreference>] [-WhatIf] [<CommonParameters>]
+Set-PSNote [-Note] <string> [[-Catalog] <string>] [[-Snippet] <string>]
+ [[-ScriptBlock] <scriptblock>] [[-ScriptPath] <string>] [[-Details] <string>] [[-Alias] <string>]
+ [[-Tags] <string[]>] [[-Run] <bool>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
+
+## ALIASES
+
+This cmdlet has the following aliases,
+  {{Insert list of aliases}}
 
 ## DESCRIPTION
 
@@ -35,207 +46,115 @@ The note Kind is automatically set based on the parameter used:
 Supports pipeline input by property name, allowing you to pipe objects with Note, Catalog, 
 Snippet, Details, Alias, Tags, or Run properties.
 
-
 ## EXAMPLES
 
-### Example 1: EXAMPLE 1
+### EXAMPLE 1
 
-```
 Set-PSNote -Note 'ADUser' -Tags 'AD','Users','Updated'
-```
 
 Updates the tags for the note 'ADUser' in the Default catalog, replacing any existing tags.
 
+### EXAMPLE 2
 
-
-
-
-### Example 2: EXAMPLE 2
-
-```
 $NewSnippet = '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)'
 Set-PSNote -Note 'DayOfWeek' -Snippet $NewSnippet
-```
 
 Updates the snippet content for the note 'DayOfWeek' while preserving other properties.
 
+### EXAMPLE 3
 
-
-
-
-### Example 3: EXAMPLE 3
-
-```
 Set-PSNote -Note 'CpuUsage' -ScriptBlock {
     Get-CimInstance Win32_Processor | 
         Measure-Object -Property LoadPercentage -Average |
         Select-Object -ExpandProperty Average
 }
-```
 
 Updates the note 'CpuUsage' with a new multi-line script block using modern cmdlets.
 
+### EXAMPLE 4
 
-
-
-
-### Example 4: EXAMPLE 4
-
-```
 Set-PSNote -Note 'CpuUsage' -Details "Returns average CPU usage percentage" -Alias 'cpu'
-```
 
 Updates only the Details and Alias properties for the note 'CpuUsage', leaving the snippet unchanged.
 
+### EXAMPLE 5
 
-
-
-
-### Example 5: EXAMPLE 5
-
-```
 Set-PSNote -Note 'ADUser' -Catalog 'Work' -Tags 'AD','Users','Production'
-```
 
 Updates the tags for the note 'ADUser' that exists in the 'Work' catalog.
 
+### EXAMPLE 6
 
-
-
-
-### Example 6: EXAMPLE 6
-
-```
 Set-PSNote -Note 'GetDate' -Snippet 'Get-Date -Format "yyyy-MM-dd"' -Details "Returns current date in ISO format" -Tags 'date','formatting'
-```
 
 Updates multiple properties (snippet, details, and tags) of the note 'GetDate' in a single command.
 
+### EXAMPLE 7
 
-
-
-
-### Example 7: EXAMPLE 7
-
-```
 Set-PSNote -Note 'TestConnection' -Run $true -Details "Auto-run connectivity test"
-```
 
 Enables auto-execution for the note 'TestConnection'.
 When retrieved, it will run automatically.
 
+### EXAMPLE 8
 
-
-
-
-### Example 8: EXAMPLE 8
-
-```
 Set-PSNote -Note 'BackupScript' -ScriptPath 'D:\Scripts\Backup-Database.ps1' -Details "Updated backup script location"
-```
 
 Updates an existing note to reference a different script file, changing its Kind to 'Script'.
 
+### EXAMPLE 9
 
-
-
-
-### Example 9: EXAMPLE 9
-
-```
 Set-PSNote -Note 'NewFeature' -Snippet 'Get-Service -Name "MyService"' -Details "Check service status"
-```
 
 Creates a new note named 'NewFeature' because it doesn't exist yet.
 A warning will be displayed.
 
+### EXAMPLE 10
 
-
-
-
-### Example 10: EXAMPLE 10
-
-```
 Get-PSNote -Note 'ADUser' | Set-PSNote -Tags 'AD','Users','Updated'
-```
 
 Retrieves the note 'ADUser' and updates its tags via pipeline by property name.
 
+### EXAMPLE 11
 
-
-
-
-### Example 11: EXAMPLE 11
-
-```
 Get-PSNote -Tag 'deprecated' | Set-PSNote -Tags 'archived','old'
-```
 
 Updates all notes tagged 'deprecated' to have tags 'archived' and 'old' instead.
 Uses pipeline to process multiple notes at once.
 
+### EXAMPLE 12
 
-
-
-
-### Example 12: EXAMPLE 12
-
-```
 Get-PSNote -Catalog 'Work' | Where-Object { $_.Tags -contains 'legacy' } | 
     Set-PSNote -Tags 'archived','legacy','review'
-```
 
 Finds all notes in the Work catalog with the 'legacy' tag and updates their tags.
 Demonstrates filtering and bulk updating via pipeline.
 
+### EXAMPLE 13
 
-
-
-
-### Example 13: EXAMPLE 13
-
-```
 [PSCustomObject]@{
     Note = 'MyNote'
     Snippet = 'Get-Process | Select-Object -First 10'
     Details = 'Top 10 processes'
     Tags = @('process','monitoring')
 } | Set-PSNote
-```
 
 Creates or updates a note using a custom object via pipeline by property name.
 
+### EXAMPLE 14
 
-
-
-
-### Example 14: EXAMPLE 14
-
-```
 Import-Csv .\notes.csv | Set-PSNote
-```
 
 Bulk creates or updates notes from a CSV file with columns matching parameter names
 (Note, Snippet, Details, Tags, Catalog, etc.).
 Processes each row via pipeline.
 
+### EXAMPLE 15
 
-
-
-
-### Example 15: EXAMPLE 15
-
-```
 Get-PSNote | Where-Object { $_.Catalog -eq 'Default' } | 
     Set-PSNote -Catalog 'Personal'
-```
 
 Moves all notes from the Default catalog to the Personal catalog via pipeline.
-
-
-
-
-
 
 ## PARAMETERS
 
@@ -248,17 +167,20 @@ The alias is set as a global alias that invokes Get-PSNoteAlias.
 Accepts input from pipeline by property name.
 
 ```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (All)
-Position: 6
-Default value: 
-Accept pipeline input: True
-Accept wildcard characters: False
-DontShow: False
+Type: System.String
+DefaultValue: ''
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: (All)
+  Position: 6
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: true
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -Catalog
@@ -270,35 +192,42 @@ in the specified catalog, it will be created there.
 Accepts input from pipeline by property name.
 
 ```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (All)
-Position: 1
-Default value: Default
-Accept pipeline input: True
-Accept wildcard characters: False
-DontShow: False
+Type: System.String
+DefaultValue: Default
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: (All)
+  Position: 1
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: true
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -Confirm
 
-{{ Fill Confirm Description }}
+Prompts you for confirmation before running the cmdlet.
 
 ```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases: cf
-Accepted values: 
-
-Required: True (None) False (All)
-Position: Named
-Default value: 
-Accept pipeline input: False
-Accept wildcard characters: False
-DontShow: False
+Type: System.Management.Automation.SwitchParameter
+DefaultValue: ''
+SupportsWildcards: false
+Aliases:
+- cf
+ParameterSets:
+- Name: (All)
+  Position: Named
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: false
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -Details
@@ -308,17 +237,20 @@ Replaces the existing details.
 Accepts input from pipeline by property name.
 
 ```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (All)
-Position: 5
-Default value: 
-Accept pipeline input: True
-Accept wildcard characters: False
-DontShow: False
+Type: System.String
+DefaultValue: ''
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: (All)
+  Position: 5
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: true
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -Note
@@ -328,35 +260,20 @@ Must match an existing note name in the specified catalog.
 Accepts input from pipeline by property name.
 
 ```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: 
-Accepted values: 
-
-Required: True (All) False (None)
-Position: 0
-Default value: 
-Accept pipeline input: True
-Accept wildcard characters: False
-DontShow: False
-```
-
-### -ProgressAction
-
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-Accepted values: 
-
-Required: True (None) False (All)
-Position: Named
-Default value: 
-Accept pipeline input: False
-Accept wildcard characters: False
-DontShow: False
+Type: System.String
+DefaultValue: ''
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: (All)
+  Position: 0
+  IsRequired: true
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: true
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -Run
@@ -366,17 +283,20 @@ Set to $true to enable auto-execution, $false to disable it.
 Accepts input from pipeline by property name.
 
 ```yaml
-Type: Boolean
-Parameter Sets: (All)
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (All)
-Position: 8
-Default value: False
-Accept pipeline input: True
-Accept wildcard characters: False
-DontShow: False
+Type: System.Boolean
+DefaultValue: False
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: (All)
+  Position: 8
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: true
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -ScriptBlock
@@ -387,17 +307,20 @@ This is useful for multi-line code with proper syntax highlighting.
 Accepts input from pipeline by property name.
 
 ```yaml
-Type: ScriptBlock
-Parameter Sets: (All)
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (All)
-Position: 3
-Default value: 
-Accept pipeline input: True
-Accept wildcard characters: False
-DontShow: False
+Type: System.Management.Automation.ScriptBlock
+DefaultValue: ''
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: (All)
+  Position: 3
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: true
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -ScriptPath
@@ -409,17 +332,20 @@ The script file must exist at the specified path.
 Accepts input from pipeline by property name.
 
 ```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (All)
-Position: 4
-Default value: 
-Accept pipeline input: True
-Accept wildcard characters: False
-DontShow: False
+Type: System.String
+DefaultValue: ''
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: (All)
+  Position: 4
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: true
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -Snippet
@@ -430,17 +356,20 @@ Use this for simple one-line or small code snippets.
 Accepts input from pipeline by property name.
 
 ```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (All)
-Position: 2
-Default value: 
-Accept pipeline input: True
-Accept wildcard characters: False
-DontShow: False
+Type: System.String
+DefaultValue: ''
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: (All)
+  Position: 2
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: true
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -Tags
@@ -450,41 +379,70 @@ This replaces all existing tags.
 Accepts input from pipeline by property name.
 
 ```yaml
-Type: String[]
-Parameter Sets: (All)
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (All)
-Position: 7
-Default value: 
-Accept pipeline input: True
-Accept wildcard characters: False
-DontShow: False
+Type: System.String[]
+DefaultValue: ''
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: (All)
+  Position: 7
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: true
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -WhatIf
 
-{{ Fill WhatIf Description }}
+Runs the command in a mode that only reports what would happen without performing the actions.
 
 ```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases: wi
-Accepted values: 
-
-Required: True (None) False (All)
-Position: Named
-Default value: 
-Accept pipeline input: False
-Accept wildcard characters: False
-DontShow: False
+Type: System.Management.Automation.SwitchParameter
+DefaultValue: ''
+SupportsWildcards: false
+Aliases:
+- wi
+ParameterSets:
+- Name: (All)
+  Position: Named
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: false
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
-
 
 ### CommonParameters
 
-This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
+This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable,
+-InformationAction, -InformationVariable, -OutBuffer, -OutVariable, -PipelineVariable,
+-ProgressAction, -Verbose, -WarningAction, and -WarningVariable. For more information, see
+[about_CommonParameters](https://go.microsoft.com/fwlink/?LinkID=113216).
+
+## INPUTS
+
+### System.String
+
+{{ Fill in the Description }}
+
+### System.Management.Automation.ScriptBlock
+
+{{ Fill in the Description }}
+
+### System.String[]
+
+{{ Fill in the Description }}
+
+### System.Boolean
+
+{{ Fill in the Description }}
+
+## OUTPUTS
 
 ## NOTES
 
@@ -504,11 +462,7 @@ Set-PSNote -Note 'MyNote' -Tags $newTags
 
 ## RELATED LINKS
 
-[] (https://github.com/mdowst/PSNotes)
-
-[New-PSNote] ()
-
-[Get-PSNote] ()
-
-[Remove-PSNote] ()
-
+- [](https://github.com/mdowst/PSNotes)
+- [New-PSNote]()
+- [Get-PSNote]()
+- [Remove-PSNote]()

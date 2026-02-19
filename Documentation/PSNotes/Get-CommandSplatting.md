@@ -1,8 +1,12 @@
 ---
-external help file: PSNotes-help.xml
+document type: cmdlet
+external help file: PSNotes-Help.xml
+HelpUri: ''
+Locale: en-US
 Module Name: PSNotes
-online version: 
-schema: 2.0.0
+ms.date: 02/19/2026
+PlatyPS schema version: 2024-05-01
+title: Get-CommandSplatting
 ---
 
 # Get-CommandSplatting
@@ -16,33 +20,37 @@ Use to output the parameters for a command in splatting format
 ### ParameterSet (Default)
 
 ```
-Get-CommandSplatting [-Command] <String> [[-ParameterSet <String>]] [-IncludeCommon] [-Copy] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-CommandSplatting [-Command] <string> [[-ParameterSet] <string>] [-IncludeCommon] [-Copy]
+ [<CommonParameters>]
 ```
 
 ### ListParameterSets
 
 ```
-Get-CommandSplatting [-Command] <String> [-ListParameterSets] [-IncludeCommon] [-Copy] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-CommandSplatting [-Command] <string> [-ListParameterSets] [-IncludeCommon] [-Copy]
+ [<CommonParameters>]
 ```
 
 ### All
 
 ```
-Get-CommandSplatting [-Command] <String> [-All] [-IncludeCommon] [-Copy] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+Get-CommandSplatting [-Command] <string> [-All] [-IncludeCommon] [-Copy] [<CommonParameters>]
 ```
+
+## ALIASES
+
+This cmdlet has the following aliases,
+  {{Insert list of aliases}}
 
 ## DESCRIPTION
 
 Use to output the parameters for a command in splatting format
 
-
 ## EXAMPLES
 
-### Example 1: EXAMPLE 1
+### EXAMPLE 1
 
-```
 Get-CommandSplatting -Command 'Get-Item'
-```
 
 Get the default parameter set for a command
 
@@ -69,15 +77,9 @@ HashBlock :
         }
         Get-Item @Item
 
+### EXAMPLE 2
 
-
-
-
-### Example 2: EXAMPLE 2
-
-```
 Get-CommandSplatting -Command 'Get-Item' -ListParameterSets
-```
 
 List the available parameter sets for a command
 
@@ -90,15 +92,9 @@ ParameterSet : LiteralPath
 IsDefault    : False
 Parameters   : LiteralPath, Filter, Include, Exclude, Force, Credential, Stream
 
+### EXAMPLE 3
 
-
-
-
-### Example 3: EXAMPLE 3
-
-```
 Get-CommandSplatting -Command 'Get-Item' -ParameterSet LiteralPath
-```
 
 Get specific parameter set for a command
 
@@ -125,15 +121,9 @@ HashBlock  :
         }
         Get-Item @ItemLiteralPath
 
+### EXAMPLE 4
 
-
-
-
-### Example 4: EXAMPLE 4
-
-```
 Get-CommandSplatting -Command 'Get-Item' -All
-```
 
 Get all parameter sets for a command
 
@@ -181,11 +171,6 @@ HashBlock  :
         }
         Get-Item @ItemLiteralPath
 
-
-
-
-
-
 ## PARAMETERS
 
 ### -All
@@ -193,17 +178,20 @@ HashBlock  :
 Use to return full splatting for all parameter sets
 
 ```yaml
-Type: SwitchParameter
-Parameter Sets: All
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (All)
-Position: 1
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-DontShow: False
+Type: System.Management.Automation.SwitchParameter
+DefaultValue: False
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: All
+  Position: 1
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: false
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -Command
@@ -211,17 +199,20 @@ DontShow: False
 The command to get the parameters for
 
 ```yaml
-Type: String
-Parameter Sets: (All)
-Aliases: 
-Accepted values: 
-
-Required: True (All) False (None)
-Position: 0
-Default value: 
-Accept pipeline input: False
-Accept wildcard characters: False
-DontShow: False
+Type: System.String
+DefaultValue: ''
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: (All)
+  Position: 0
+  IsRequired: true
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: false
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -Copy
@@ -229,17 +220,20 @@ DontShow: False
 {{ Fill Copy Description }}
 
 ```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (All)
-Position: 3
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-DontShow: False
+Type: System.Management.Automation.SwitchParameter
+DefaultValue: False
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: (All)
+  Position: 3
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: false
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -IncludeCommon
@@ -249,17 +243,20 @@ Use to include the PowerShell common parameters in the splatting output.
 Verbose, ErrorAction, etc.)
 
 ```yaml
-Type: SwitchParameter
-Parameter Sets: (All)
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (All)
-Position: 2
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-DontShow: False
+Type: System.Management.Automation.SwitchParameter
+DefaultValue: False
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: (All)
+  Position: 2
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: false
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -ListParameterSets
@@ -270,17 +267,20 @@ to only show the names.
 Use -All to return splatting for all parameter sets.
 
 ```yaml
-Type: SwitchParameter
-Parameter Sets: ListParameterSets
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (ListParameterSets)
-Position: 1
-Default value: False
-Accept pipeline input: False
-Accept wildcard characters: False
-DontShow: False
+Type: System.Management.Automation.SwitchParameter
+DefaultValue: False
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: ListParameterSets
+  Position: 1
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: false
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -ParameterSet
@@ -290,41 +290,32 @@ Use the -ListParameterSets to get a quick
 view of all the different Parameter Set names.
 
 ```yaml
-Type: String
-Parameter Sets: ParameterSet
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (ParameterSet)
-Position: 1
-Default value: 
-Accept pipeline input: False
-Accept wildcard characters: False
-DontShow: False
+Type: System.String
+DefaultValue: ''
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: ParameterSet
+  Position: 1
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: false
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
-
-### -ProgressAction
-
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-Accepted values: 
-
-Required: True (None) False (All)
-Position: Named
-Default value: 
-Accept pipeline input: False
-Accept wildcard characters: False
-DontShow: False
-```
-
 
 ### CommonParameters
 
-This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
+This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable,
+-InformationAction, -InformationVariable, -OutBuffer, -OutVariable, -PipelineVariable,
+-ProgressAction, -Verbose, -WarningAction, and -WarningVariable. For more information, see
+[about_CommonParameters](https://go.microsoft.com/fwlink/?LinkID=113216).
+
+## INPUTS
+
+## OUTPUTS
 
 ## NOTES
 
@@ -333,5 +324,5 @@ General notes
 
 ## RELATED LINKS
 
-Fill Related Links Here
+{{ Fill in the related links here }}
 

@@ -40,7 +40,7 @@ PSNotes replaces tribal memory with structured recall.
 
 # Key Features
 
-### 1️⃣ Interactive Console
+### Interactive Console
 
 > Browse, search, and execute from a menu directly in your terminal.
 
@@ -52,7 +52,7 @@ PSNotes replaces tribal memory with structured recall.
 
 ---
 
-### 2️⃣ Run Snippets Instantly
+### Run Snippets Instantly
 
 > When you create a new note, you can define an alias that you can later use to display or run it.
 
@@ -60,7 +60,7 @@ PSNotes replaces tribal memory with structured recall.
 
 ---
 
-### 3️⃣ Execute Script Paths
+### Execute Script Paths
 
 > Notes can either be saved as snippets or point directly to a script file.
 
@@ -72,7 +72,7 @@ New-PSNote -Note "Patch All" -Alias patch -ScriptPath 'C:\Scripts\Patch-All.ps1'
 
 ---
 
-### 4️⃣ Catalogs (Local + Remote)
+### Catalogs (Local + Remote)
 
 > Catalogs can be imported from remote URLs. Letting you access your notes from everywhere.
 
@@ -87,7 +87,7 @@ Get-PSNote -Catalog TeamShared
 
 ---
 
-# ⚡ Installation
+# Installation
 
 ```powershell
 Install-Module PSNotes
@@ -188,19 +188,6 @@ Note: PSNotes stores your notes in your local AppData folder using the path `%ap
 
 ## Updating / Migrating
 
-Absolutely — this is an important section to include. It reassures users that:
-
-* The schema is versioned
-* You’ve thought about forward compatibility
-* They won’t lose data
-* The system is evolving intentionally
-
-Here’s a polished README-ready section you can paste directly:
-
----
-
-## Updating / Migrating
-
 PSNotes catalogs are versioned. As the internal schema evolves, older catalogs may need to be migrated to the latest format.
 
 If PSNotes detects older catalogs it will direct you to run the `Update-PSNoteStore` command ensures your catalogs stay compatible without manual intervention.
@@ -235,8 +222,6 @@ PSNotes is designed as a structured automation memory system, not just a flat sn
 
 At its core, PSNotes is built around a versioned note store, catalog separation, and a consistent execution pipeline.
 
----
-
 ## Core Components
 
 ### Note Store
@@ -257,8 +242,6 @@ This allows:
 * Conflict handling
 * Future metadata expansion
 
----
-
 ### Catalogs
 
 A catalog is a logical collection of notes.
@@ -271,8 +254,6 @@ Catalogs provide:
 * Structured organization at scale
 
 Catalogs are first-class citizens, not just tags.
-
----
 
 ### Notes
 
@@ -297,8 +278,6 @@ This enables:
 * Metadata-driven filtering
 * Execution control
 
----
-
 ### Execution Model
 
 PSNotes turns notes into executable commands.
@@ -314,8 +293,6 @@ When invoked:
 
 This makes notes feel like real PowerShell functions without writing modules.
 
----
-
 ### Remote Catalog Layer
 
 Remote catalogs allow structured sharing.
@@ -329,8 +306,6 @@ You can:
 
 Because catalogs are versioned and schema-driven, remote catalogs can evolve safely.
 
----
-
 ## Versioning & Migration
 
 The store format is versioned.
@@ -342,8 +317,6 @@ When the schema changes:
 * Re-imports them using structured conflict rules
 
 This allows PSNotes to grow without breaking your operational memory.
-
----
 
 ## Search & Filtering Engine
 
@@ -363,8 +336,6 @@ Because notes are stored as structured objects, future enhancements can include:
 * Fuzzy matching
 
 The architecture supports this evolution.
-
----
 
 ## Design Principles
 

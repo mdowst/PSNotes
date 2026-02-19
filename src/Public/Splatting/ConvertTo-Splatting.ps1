@@ -1,79 +1,79 @@
+<#
+.SYNOPSIS
+Converts a PowerShell command into a splatted hashtable form.
+
+.DESCRIPTION
+Takes an existing PowerShell command line and rewrites it into a hashtable suitable for splatting (@params). 
+This makes commands easier to read, maintain, and modify—especially when many parameters are involved. 
+The output can be copied directly into a script and adjusted as needed.
+
+.PARAMETER Command
+The command string you want to convert to using splatting
+
+.PARAMETER ScriptBlock
+The command scriptblock you want to convert to using splatting
+
+.EXAMPLE     
+$splatme = @'
+Set-AzVMExtension -ExtensionName "MicrosoftMonitoringAgent" -ResourceGroupName "rg-xxxx" -VMName "vm-xxxx" -Publisher "Microsoft.EnterpriseCloud.Monitoring" -ExtensionType "MicrosoftMonitoringAgent" -TypeHandlerVersion "1.0" -Settings @{"workspaceId" = "xxxx" } -ProtectedSettings @{"workspaceKey" = "xxxx"} -Location "uksouth"
+'@
+ConvertTo-Splatting $splatme
+
+Converts the string splatme to splatting
+
+--- Output ----
+$SetAzVMExtensionParam = @{
+        ExtensionName      = "MicrosoftMonitoringAgent"
+        ResourceGroupName  = "rg-xxxx"
+        VMName             = "vm-xxxx"
+        Publisher          = "Microsoft.EnterpriseCloud.Monitoring"
+        ExtensionType      = "MicrosoftMonitoringAgent"
+        TypeHandlerVersion = "1.0"
+        Settings           = @{ "workspaceId" = "xxxx" }
+        ProtectedSettings  = @{ "workspaceKey" = "xxxx" }
+        Location           = "uksouth"
+}
+Set-AzVMExtension @SetAzVMExtensionParam
+
+.EXAMPLE
+$splatme = {
+    Copy-Item -Path "test.txt" -Destination "test2.txt" -WhatIf
+}
+ConvertTo-Splatting $splatme
+
+Converts the scriptblock splatme to splatting
+
+--- Output ----
+$CopyItemParam = @{
+        Path        = "test.txt"
+        Destination = "test2.txt"
+        WhatIf      = $true
+}
+Copy-Item @CopyItemParam
+
+.EXAMPLE
+$splatme = {
+    Get-AzVM `
+        -ResourceGroupName "ResourceGroup11" `
+        -Name "VirtualMachine07" `
+        -Status
+}
+ConvertTo-Splatting $splatme
+
+Removed backticks and converts the scriptblock splatme to splatting
+
+--- Output ----
+$GetAzVMParam = @{
+    ResourceGroupName = "ResourceGroup11"
+    Name              = "VirtualMachine07"
+    Status            = $true
+}
+Get-AzVM @GetAzVMParam
+
+.NOTES
+about_Splatting - https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_splatting
+#>
 Function ConvertTo-Splatting {
-    <#
-    .SYNOPSIS
-    Use to convert an existing PowerShell command to splatting
-
-    .DESCRIPTION
-    Splatting is a much cleaner and safer way to shorten command lines without needing to use backtick.
-    This function excepts any command as a string or a scriptblock and will convert the existing parameters
-    to a hashtable and output the fully splatted command for you.
-
-    .PARAMETER Command
-    The command string you want to convert to using splatting
-
-    .PARAMETER ScriptBlock
-    The command scriptblock you want to convert to using splatting
-
-    .EXAMPLE     
-    $splatme = @'
-    Set-AzVMExtension -ExtensionName "MicrosoftMonitoringAgent" -ResourceGroupName "rg-xxxx" -VMName "vm-xxxx" -Publisher "Microsoft.EnterpriseCloud.Monitoring" -ExtensionType "MicrosoftMonitoringAgent" -TypeHandlerVersion "1.0" -Settings @{"workspaceId" = "xxxx" } -ProtectedSettings @{"workspaceKey" = "xxxx"} -Location "uksouth"
-    '@
-    ConvertTo-Splatting $splatme
-
-    Converts the string splatme to splatting
-
-    --- Output ----
-    $SetAzVMExtensionParam = @{
-            ExtensionName      = "MicrosoftMonitoringAgent"
-            ResourceGroupName  = "rg-xxxx"
-            VMName             = "vm-xxxx"
-            Publisher          = "Microsoft.EnterpriseCloud.Monitoring"
-            ExtensionType      = "MicrosoftMonitoringAgent"
-            TypeHandlerVersion = "1.0"
-            Settings           = @{ "workspaceId" = "xxxx" }
-            ProtectedSettings  = @{ "workspaceKey" = "xxxx" }
-            Location           = "uksouth"
-    }
-    Set-AzVMExtension @SetAzVMExtensionParam
-
-    .EXAMPLE
-    $splatme = {
-        Copy-Item -Path "test.txt" -Destination "test2.txt" -WhatIf
-    }
-    ConvertTo-Splatting $splatme
-
-    Converts the scriptblock splatme to splatting
-
-    --- Output ----
-    $CopyItemParam = @{
-            Path        = "test.txt"
-            Destination = "test2.txt"
-            WhatIf      = $true
-    }
-    Copy-Item @CopyItemParam
-
-    .EXAMPLE
-    $splatme = {
-        Get-AzVM `
-            -ResourceGroupName "ResourceGroup11" `
-            -Name "VirtualMachine07" `
-            -Status
-    }
-    ConvertTo-Splatting $splatme
-
-    Removed backticks and converts the scriptblock splatme to splatting
-
-    --- Output ----
-    $GetAzVMParam = @{
-        ResourceGroupName = "ResourceGroup11"
-        Name              = "VirtualMachine07"
-        Status            = $true
-    }
-    Get-AzVM @GetAzVMParam
-
-    .NOTES
-    about_Splatting - https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_splatting
-    #>
     [CmdletBinding()]
     param(
         [Parameter(ParameterSetName = 'string', Position = 0)]

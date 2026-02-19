@@ -1,8 +1,12 @@
 ---
-external help file: PSNotes-help.xml
+document type: cmdlet
+external help file: PSNotes-Help.xml
+HelpUri: ''
+Locale: en-US
 Module Name: PSNotes
-online version: 
-schema: 2.0.0
+ms.date: 02/19/2026
+PlatyPS schema version: 2024-05-01
+title: ConvertTo-Splatting
 ---
 
 # ConvertTo-Splatting
@@ -16,14 +20,19 @@ Use to convert an existing PowerShell command to splatting
 ### string
 
 ```
-ConvertTo-Splatting [[-Command <String>]] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ConvertTo-Splatting [[-Command] <string>] [<CommonParameters>]
 ```
 
 ### scriptblock
 
 ```
-ConvertTo-Splatting [[-ScriptBlock <ScriptBlock>]] [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ConvertTo-Splatting [[-ScriptBlock] <scriptblock>] [<CommonParameters>]
 ```
+
+## ALIASES
+
+This cmdlet has the following aliases,
+  {{Insert list of aliases}}
 
 ## DESCRIPTION
 
@@ -31,17 +40,14 @@ Splatting is a much cleaner and safer way to shorten command lines without needi
 This function excepts any command as a string or a scriptblock and will convert the existing parameters
 to a hashtable and output the fully splatted command for you.
 
-
 ## EXAMPLES
 
-### Example 1: EXAMPLE 1
+### EXAMPLE 1
 
-```
 $splatme = @'
 Set-AzVMExtension -ExtensionName "MicrosoftMonitoringAgent" -ResourceGroupName "rg-xxxx" -VMName "vm-xxxx" -Publisher "Microsoft.EnterpriseCloud.Monitoring" -ExtensionType "MicrosoftMonitoringAgent" -TypeHandlerVersion "1.0" -Settings @{"workspaceId" = "xxxx" } -ProtectedSettings @{"workspaceKey" = "xxxx"} -Location "uksouth"
 '@
 ConvertTo-Splatting $splatme
-```
 
 Converts the string splatme to splatting
 
@@ -59,18 +65,12 @@ $SetAzVMExtensionParam = @{
 }
 Set-AzVMExtension @SetAzVMExtensionParam
 
+### EXAMPLE 2
 
-
-
-
-### Example 2: EXAMPLE 2
-
-```
 $splatme = {
     Copy-Item -Path "test.txt" -Destination "test2.txt" -WhatIf
 }
 ConvertTo-Splatting $splatme
-```
 
 Converts the scriptblock splatme to splatting
 
@@ -82,13 +82,8 @@ $CopyItemParam = @{
 }
 Copy-Item @CopyItemParam
 
+### EXAMPLE 3
 
-
-
-
-### Example 3: EXAMPLE 3
-
-```
 $splatme = {
     Get-AzVM `
         -ResourceGroupName "ResourceGroup11" `
@@ -96,7 +91,6 @@ $splatme = {
         -Status
 }
 ConvertTo-Splatting $splatme
-```
 
 Removed backticks and converts the scriptblock splatme to splatting
 
@@ -108,11 +102,6 @@ $GetAzVMParam = @{
 }
 Get-AzVM @GetAzVMParam
 
-
-
-
-
-
 ## PARAMETERS
 
 ### -Command
@@ -120,35 +109,20 @@ Get-AzVM @GetAzVMParam
 The command string you want to convert to using splatting
 
 ```yaml
-Type: String
-Parameter Sets: string
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (string)
-Position: 0
-Default value: 
-Accept pipeline input: False
-Accept wildcard characters: False
-DontShow: False
-```
-
-### -ProgressAction
-
-{{ Fill ProgressAction Description }}
-
-```yaml
-Type: ActionPreference
-Parameter Sets: (All)
-Aliases: proga
-Accepted values: 
-
-Required: True (None) False (All)
-Position: Named
-Default value: 
-Accept pipeline input: False
-Accept wildcard characters: False
-DontShow: False
+Type: System.String
+DefaultValue: ''
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: string
+  Position: 0
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: false
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
 
 ### -ScriptBlock
@@ -156,23 +130,32 @@ DontShow: False
 The command scriptblock you want to convert to using splatting
 
 ```yaml
-Type: ScriptBlock
-Parameter Sets: scriptblock
-Aliases: 
-Accepted values: 
-
-Required: True (None) False (scriptblock)
-Position: 0
-Default value: 
-Accept pipeline input: False
-Accept wildcard characters: False
-DontShow: False
+Type: System.Management.Automation.ScriptBlock
+DefaultValue: ''
+SupportsWildcards: false
+Aliases: []
+ParameterSets:
+- Name: scriptblock
+  Position: 0
+  IsRequired: false
+  ValueFromPipeline: false
+  ValueFromPipelineByPropertyName: false
+  ValueFromRemainingArguments: false
+DontShow: false
+AcceptedValues: []
+HelpMessage: ''
 ```
-
 
 ### CommonParameters
 
-This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable, -InformationAction, -InformationVariable, -OutVariable, -OutBuffer, -PipelineVariable, -Verbose, -WarningAction, and -WarningVariable. For more information, see [about_CommonParameters](http://go.microsoft.com/fwlink/?LinkID=113216).
+This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable,
+-InformationAction, -InformationVariable, -OutBuffer, -OutVariable, -PipelineVariable,
+-ProgressAction, -Verbose, -WarningAction, and -WarningVariable. For more information, see
+[about_CommonParameters](https://go.microsoft.com/fwlink/?LinkID=113216).
+
+## INPUTS
+
+## OUTPUTS
 
 ## NOTES
 
@@ -181,5 +164,5 @@ about_Splatting - https://docs.microsoft.com/en-us/powershell/module/microsoft.p
 
 ## RELATED LINKS
 
-Fill Related Links Here
+{{ Fill in the related links here }}
 

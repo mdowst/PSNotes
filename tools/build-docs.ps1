@@ -11,7 +11,14 @@ Import-Module $psd1.FullName -Force
 
 Get-ChildItem .\Documentation -Filter '*.md' | Remove-Item -Force
 
-New-MarkdownHelp -Module PSNotes -OutputFolder .\Documentation
+
+$newMarkdownCommandHelpSplat = @{
+    ModuleInfo = Get-Module PSNotes
+    OutputFolder = '.\Documentation'
+    HelpVersion = '1.0.0.0'
+    WithModulePage = $true
+}
+New-MarkdownCommandHelp @newMarkdownCommandHelpSplat
 
 
 $readme = Get-Content .\README.md
@@ -41,6 +48,7 @@ $readmeupdate = foreach($line in $readme){
     }
 }
 
-$readmeupdate | Out-File .\README.md
+#$readmeupdate | Out-File .\README.md
 
 Set-Location -LiteralPath $currentPath
+#>
