@@ -1,7 +1,7 @@
 ---
 document type: cmdlet
 external help file: PSNotes-Help.xml
-HelpUri: https://github.com/mdowst/PSNotes
+HelpUri: ''
 Locale: en-US
 Module Name: PSNotes
 ms.date: 02/19/2026
@@ -13,7 +13,7 @@ title: Get-PSNote
 
 ## SYNOPSIS
 
-Search for or list PSNotes
+Retrieves PSNotes from the note store by listing or searching.
 
 ## SYNTAX
 
@@ -30,85 +30,73 @@ Get-PSNote [-Note <string>] [-Tag <string>] [-Copy] [-Run] [-Catalog <string[]>]
 Get-PSNote [-Run] [-Catalog <string[]>] [-Search <string>] [<CommonParameters>]
 ```
 
-## ALIASES
-
-This cmdlet has the following aliases,
-  {{Insert list of aliases}}
-
 ## DESCRIPTION
 
-Searches notes by name, tag, or text across all note properties.
-You can also
-filter by catalog and optionally copy or run the returned snippet.
+Get-PSNote returns notes stored in the PSNotes store.
+By default, all notes are returned.
+You can filter results by name, alias, tag, catalog, or search text depending on the
+parameter set in use.
+
+This cmdlet returns PSNote objects that can be piped into other PSNotes commands such as
+Remove-PSNote, Move-PSNote, Export-PSNote, or Set-PSNote.
+
+Wildcard matching is supported where applicable.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 
+```powershell
 Get-PSNote
+```
 
-Returns all notes.
+Returns all notes in the store.
 
 ### EXAMPLE 2
 
-Get-PSNote -Note 'Creds'
+```powershell
+Get-PSNote -Catalog 'Azure'
+```
 
-Returns the note named 'Creds'.
+Returns all notes in the Azure catalog.
 
 ### EXAMPLE 3
 
-Get-PSNote -Note 'Cred*'
+```powershell
+Get-PSNote -Name 'Get-*'
+```
 
-Returns all notes with names that start with 'Cred'.
+Returns notes with names that match the pattern.
 
 ### EXAMPLE 4
 
-Get-PSNote -Tag 'AD'
+```powershell
+Get-PSNote -Tag 'VM'
+```
 
-Returns all notes with the tag 'AD'.
+Returns notes tagged with 'VM'.
 
 ### EXAMPLE 5
 
-Get-PSNote -Note '*User*' -Tag 'AD'
+```powershell
+Get-PSNote -Search 'backup'
+```
 
-Returns notes with 'User' in the name and the tag 'AD'.
+Searches across note properties for the term 'backup'.
 
 ### EXAMPLE 6
 
-Get-PSNote -SearchString 'day'
+```powershell
+Get-PSNote -Catalog 'Azure' | Remove-PSNote
+```
 
-Returns notes where 'day' appears in the name, details, snippet, alias, or tags.
-
-### EXAMPLE 7
-
-Get-PSNote -Catalog 'Default'
-
-Returns all notes in the Default catalog.
-
-### EXAMPLE 8
-
-Get-PSNote -SearchString 'day' -Catalog 'Work*','Personal*'
-
-Searches only within the matching catalogs.
-
-### EXAMPLE 9
-
-Get-PSNote -Note 'CpuUsage' -Copy
-
-Copies the snippet for the selected note to the clipboard.
-
-### EXAMPLE 10
-
-Get-PSNote -SearchString 'token' -Run
-
-Runs the selected note; prompts to choose if multiple notes match.
+Finds notes in the Azure catalog and removes them.
 
 ## PARAMETERS
 
 ### -Catalog
 
-Filter notes by catalog name.
-Accepts wildcards and multiple values.
+Returns notes from the specified catalog.
 
 ```yaml
 Type: System.String[]
@@ -135,7 +123,6 @@ HelpMessage: ''
 
 ### -Copy
 
-Copy the selected snippet to the clipboard.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -156,8 +143,6 @@ HelpMessage: ''
 
 ### -Note
 
-The note name to return.
-Accepts wildcards.
 
 ```yaml
 Type: System.String
@@ -178,7 +163,6 @@ HelpMessage: ''
 
 ### -Run
 
-Run the selected snippet via Invoke-PSNote.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -205,7 +189,7 @@ HelpMessage: ''
 
 ### -Search
 
-{{ Fill Search Description }}
+Performs a broader search across note properties such as name, alias, and tags.
 
 ```yaml
 Type: System.String
@@ -227,7 +211,7 @@ HelpMessage: ''
 
 ### -Tag
 
-Return notes that contain the specified tag.
+Returns notes that contain one or more specified tags.
 
 ```yaml
 Type: System.String
@@ -257,8 +241,16 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
+### PSNote
+
+
 ## NOTES
+
+- Returns PSNote objects.
+- Wildcards are supported for Name and Alias parameters.
+- See also: New-PSNote, Set-PSNote, Remove-PSNote, Move-PSNote, Export-PSNote
+
 
 ## RELATED LINKS
 
-- [](https://github.com/mdowst/PSNotes)
+

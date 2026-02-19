@@ -13,7 +13,7 @@ title: Update-PSNoteStore
 
 ## SYNOPSIS
 
-Update PSNotes catalogs to the latest format
+Updates PSNotes catalogs to the latest format.
 
 ## SYNTAX
 
@@ -23,35 +23,41 @@ Update PSNotes catalogs to the latest format
 Update-PSNoteStore [[-DefaultBehavior] <string>] [<CommonParameters>]
 ```
 
-## ALIASES
-
-This cmdlet has the following aliases,
-  {{Insert list of aliases}}
-
 ## DESCRIPTION
 
-Scans the PSNotes home directory for JSON catalogs and migrates any
-catalogs that are not in the current format.
-Migration results are
-imported back into the store using the specified conflict behavior.
+Update-PSNoteStore scans the PSNotes home directory for JSON catalogs and migrates any catalogs
+that are not in the current format.
+Migrated content is then imported back into the PSNotes
+store using the specified conflict behavior.
+
+Use -DefaultBehavior to control how note conflicts are handled during import:
+- Prompt: prompts when conflicts occur
+- SkipMigratedNotes: keeps existing notes and skips conflicting migrated notes
+- OverwriteExistingNotes: overwrites existing notes with migrated versions
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 
+```powershell
 Update-PSNoteStore
+```
 
 Migrates any outdated catalogs and prompts when conflicts occur.
 
 ### EXAMPLE 2
 
+```powershell
 Update-PSNoteStore -DefaultBehavior SkipMigratedNotes
+```
 
 Migrates catalogs and skips notes that already exist.
 
 ### EXAMPLE 3
 
+```powershell
 Update-PSNoteStore -DefaultBehavior OverwriteExistingNotes
+```
 
 Migrates catalogs and overwrites existing notes when conflicts occur.
 
@@ -59,8 +65,14 @@ Migrates catalogs and overwrites existing notes when conflicts occur.
 
 ### -DefaultBehavior
 
-Determines how to handle existing notes when conflicts are detected.
-Valid values: Prompt, SkipMigratedNotes, OverwriteExistingNotes.
+Determines how to handle existing notes when conflicts are detected during import.
+
+Valid values:
+- Prompt
+- SkipMigratedNotes
+- OverwriteExistingNotes
+
+The default is 'Prompt'.
 
 ```yaml
 Type: System.String
@@ -91,6 +103,11 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## OUTPUTS
 
 ## NOTES
+
+- This cmdlet migrates catalogs discovered under $env:PSNOTES_HOME.
+- Conflict behavior applies when importing migrated notes back into the store.
+- See also: Initialize-PSNoteStore, Import-PSNote, Export-PSNote
+
 
 ## RELATED LINKS
 

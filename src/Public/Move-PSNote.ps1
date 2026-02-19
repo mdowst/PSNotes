@@ -1,43 +1,71 @@
 <#
 .SYNOPSIS
-    Moves a note to a different catalog.
+Moves one or more PSNotes to a different catalog.
 
 .DESCRIPTION
-    Moves a note from its current catalog to another catalog. Supports
-    confirmation prompts via ShouldProcess.
+Move-PSNote changes the catalog assignment of existing PSNotes. This allows you to reorganize
+your note library as it grows without recreating notes.
+
+You can specify notes directly by name, alias, or other supported parameters, or pipe PSNote
+objects from Get-PSNote.
+
+This cmdlet updates the note metadata and persists the changes to the PSNotes store.
+Supports ShouldProcess, enabling the use of -WhatIf and -Confirm.
+
+.FUNCTIONALITY
+PSNotes Notes
+
+.ROLE
+Public
+
+.COMPONENT
+Notes
+
+.PARAMETER Name
+The name of the note to move. Wildcards may be supported depending on the implementation.
+
+.PARAMETER Alias
+The alias of the note to move.
 
 .PARAMETER InputObject
-    The note to move. Accepts pipeline input from Get-PSNote.
+One or more PSNote objects to move. Accepts pipeline input from Get-PSNote.
 
-.PARAMETER DestinationCatalog
-    The target catalog name to move the note to.
+.PARAMETER Catalog
+The destination catalog to move the note(s) into.
 
 .PARAMETER Force
-    Overwrites the destination note if it already exists.
+Suppresses confirmation prompts when moving notes.
 
 .PARAMETER PassThru
-    Returns the moved note object.
+Returns the moved PSNote objects.
 
 .EXAMPLE
-    PS> Get-PSNote -Note 'Install-Module' | Move-PSNote -DestinationCatalog 'Work'
-    Moves the note named 'Install-Module' to the 'Work' catalog.
+PS> Move-PSNote -Name 'Get-VMInfo' -Catalog 'Azure'
+
+Moves the note named 'Get-VMInfo' to the Azure catalog.
 
 .EXAMPLE
-    PS> Get-PSNote -Catalog 'Personal' | Move-PSNote -DestinationCatalog 'Archive' -Force
-    Moves all notes from 'Personal' to 'Archive', overwriting duplicates.
+PS> Get-PSNote -Catalog 'General' | Move-PSNote -Catalog 'Archive'
+
+Moves all notes from the General catalog to the Archive catalog.
 
 .EXAMPLE
-    PS> Get-PSNote -Note 'Install-Module' | Move-PSNote -DestinationCatalog 'Work' -PassThru
-    Moves the note and returns the moved note object.
+PS> Move-PSNote -Alias 'azvm' -Catalog 'Azure' -WhatIf
+
+Shows what would happen if the note were moved, without performing the action.
+
+.EXAMPLE
+PS> Get-PSNote -Tag 'Legacy' | Move-PSNote -Catalog 'Archive' -Force -PassThru
+
+Moves all notes tagged 'Legacy' into the Archive catalog without prompting and returns the updated notes.
 
 .OUTPUTS
-    PSNote
-    Returns note objects when -PassThru is specified; otherwise returns nothing.
+PSNote
 
-.LINK
-    Get-PSNote
-    Set-PSNote
-    Remove-PSNote
+.NOTES
+- Supports -WhatIf and -Confirm through ShouldProcess.
+- Use Get-PSNote to identify notes before moving them.
+- See also: Get-PSNote, Set-PSNote, Remove-PSNote
 #>
 function Move-PSNote {
     [CmdletBinding(SupportsShouldProcess)]

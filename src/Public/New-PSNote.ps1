@@ -1,142 +1,82 @@
-﻿Function New-PSNote {
-    <#
-    .SYNOPSIS
-        Creates a new PSNote for storing and reusing code snippets or script references.
+﻿<#
+.SYNOPSIS
+Creates a new PSNote for storing reusable snippets or script references.
 
-    .DESCRIPTION
-        Creates a new PSNote to store code snippets, script blocks, or references to script files.
-        PSNotes can be stored in different catalogs and tagged for easy retrieval. Each note
-        has an alias that can be used to quickly access it.
+.DESCRIPTION
+New-PSNote creates a note in the PSNotes store that can represent either:
 
-        If a note with the same name already exists in the specified catalog, you must supply 
-        the Force switch to overwrite its properties.
+- A reusable PowerShell snippet (inline code)
+- A script reference (a path to a script file to execute)
 
-        The note Kind is automatically set based on the parameter used:
-        - Snippet or ScriptBlock: Creates a note of Kind 'Snippet' (inline code)
-        - ScriptPath: Creates a note of Kind 'Script' (file reference)
+Notes can include metadata such as catalog, alias, and tags to make them easier to organize and
+retrieve later. Once created, notes can be recalled using Get-PSNote, invoked quickly by alias
+with Get-PSNoteAlias, or selected interactively using Get-PSNoteMenu.
 
-    .PARAMETER Note
-        The unique name of the note to create within the specified catalog.
+This cmdlet supports ShouldProcess, enabling -WhatIf and -Confirm.
 
-    .PARAMETER Snippet
-        The text of the code snippet to store. This is typically a single line or small block 
-        of PowerShell code. Use this parameter for simple snippets.
+.FUNCTIONALITY
+PSNotes Notes
 
-    .PARAMETER ScriptBlock
-        A PowerShell script block containing the code to save. Enclose the commands in braces { } 
-        to create a script block. This is useful for multi-line code with proper syntax highlighting.
+.ROLE
+Public
 
-    .PARAMETER ScriptPath
-        The file path to a PowerShell script (.ps1) file. When specified, the note will reference 
-        this external script file and the note Kind will be set to 'Script'. The script file must 
-        exist at the specified path.
+.COMPONENT
+Notes
 
-    .PARAMETER Details
-        A description or additional information about the note. This helps document what the 
-        note does and when to use it.
+.PARAMETER Name
+The name of the note.
 
-    .PARAMETER Alias
-        The alias to create for this note. If not supplied, it will use the Note name as the alias.
-        The alias can only contain letters, numbers, dashes (-), and underscores (_).
-        The alias is set as a global alias that invokes Get-PSNoteAlias.
+.PARAMETER Catalog
+The catalog to create the note in.
 
-    .PARAMETER Tags
-        A string array of tags to associate with the note. Tags help categorize and search for 
-        notes. Multiple tags can be specified.
+.PARAMETER Alias
+An optional short alias used for quick recall (for example, with Get-PSNoteAlias).
 
-    .PARAMETER Catalog
-        The catalog to add the note to. Catalogs are used to organize notes into different 
-        collections (e.g., 'Personal', 'Work', 'Team'). Defaults to 'Default'.
+.PARAMETER Tags
+One or more tags to associate with the note.
 
-    .PARAMETER Run
-        Indicates whether the note should be executed automatically when retrieved. 
-        When set to $true, the note will run when accessed. When set to $false (default), 
-        the note content will be returned without execution.
+.PARAMETER Snippet
+The PowerShell snippet content to store in the note.
 
-    .PARAMETER Force
-        Forces the creation of the note even if a note with the same name already exists in 
-        the catalog. Without this switch, an error will be thrown if the note already exists.
-    
-    .EXAMPLE
-        New-PSNote -Note 'GetServices' -Snippet 'Get-Service | Where-Object Status -eq Running' -Alias 'running'
+.PARAMETER ScriptPath
+A script path to store in the note for later execution.
 
-        Creates a simple note with a one-line snippet. The snippet can be retrieved or executed using the alias 'running'.
+.PARAMETER Force
+Overwrites an existing note with the same name (or alias conflict) where supported.
 
-    .EXAMPLE
-        New-PSNote -Note 'DayOfWeek' -Alias 'today' -Snippet '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__)' -Details "Returns the abbreviated name of the current day" -Tags 'date','time'
+.PARAMETER PassThru
+Returns the created PSNote object.
 
-        Creates a note with a snippet, description, and multiple tags for easy searching.
+.EXAMPLE
+PS> New-PSNote -Name 'List-AzVMs' -Catalog 'Azure' -Alias 'azvms' -Tag 'VM','Azure' -Snippet 'Get-AzVM'
 
-    .EXAMPLE
-        New-PSNote -Note 'CpuUsage' -Tags 'perf','monitoring' -Alias 'cpu' -ScriptBlock {
-            Get-CimInstance Win32_Processor | 
-                Measure-Object -Property LoadPercentage -Average | 
-                Select-Object -ExpandProperty Average
-        }
+Creates a snippet note named List-AzVMs in the Azure catalog with an alias and tags.
 
-        Creates a note using a script block with multi-line code and a custom alias 'cpu'.
+.EXAMPLE
+PS> New-PSNote -Name 'Build' -Catalog 'Dev' -Alias 'build' -ScriptPath 'C:\Scripts\Build.ps1'
 
-    .EXAMPLE
-        $MultiLineSnippet = @'
-        $sb = [System.Text.StringBuilder]::new()
-        for ($i = 1; $i -le 10; $i++) {
-            [void]$sb.AppendLine("Item $i")
-        }
-        $sb.ToString()
-        '@
-        New-PSNote -Note 'StringBuilder' -Snippet $MultiLineSnippet -Details "Demonstrates StringBuilder usage" -Tags 'string','performance'
+Creates a script-path note that references a script to run later.
 
-        Creates a note with a multi-line snippet stored in a here-string variable.
+.EXAMPLE
+PS> New-PSNote -Name 'TestNote' -Catalog 'General' -Snippet 'Get-Date' -WhatIf
 
-    .EXAMPLE
-        New-PSNote -Note 'GetDateIso' -Snippet 'Get-Date -Format "yyyy-MM-dd"' -Catalog 'Work' -Tags 'date','formatting'
+Shows what would happen if the note were created without making changes.
 
-        Creates a new note in the 'Work' catalog instead of the default catalog.
+.EXAMPLE
+PS> New-PSNote -Name 'List-AzVMs' -Catalog 'Azure' -Snippet 'Get-AzVM' -Force -PassThru
 
-    .EXAMPLE
-        New-PSNote -Note 'TestConnection' -Alias 'test-conn' -Snippet 'Test-Connection -ComputerName 8.8.8.8 -Count 2 -Quiet' -Run $true -Details "Quick connectivity test"
+Overwrites an existing note (if present) and returns the created note object.
 
-        Creates a note that will automatically execute when retrieved (Run = $true).
+.OUTPUTS
+PSNote
 
-    .EXAMPLE
-        New-PSNote -Note 'DeploymentScript' -ScriptPath 'C:\Scripts\Deploy-Application.ps1' -Details "Main deployment script for production" -Tags 'deployment','production','automation' -Catalog 'Work'
-
-        Creates a note that references an external script file. The note Kind will be 'Script'.
-        The script file must exist at the specified path.
-
-    .EXAMPLE
-        New-PSNote -Note 'BackupScript' -ScriptPath '\\FileServer\Scripts\Backup.ps1' -Alias 'backup' -Details "Automated backup script" -Tags 'backup','maintenance'
-
-        Creates a note referencing a script on a network share with a custom alias.
-
-    .EXAMPLE
-        New-PSNote -Note 'GetServices' -Snippet 'Get-Service | Sort-Object Status' -Force
-
-        Updates an existing note named 'GetServices' with new snippet content using the -Force switch.
-        Without -Force, this would throw an error if the note already exists.
-
-    .EXAMPLE
-        New-PSNote -Note 'QuickTest' -Snippet 'Write-Host "Test"' -Details "Original"
-        New-PSNote -Note 'QuickTest' -Snippet 'Write-Host "Updated"' -Details "Modified version" -Force
-
-        Demonstrates creating a note and then updating it with the -Force parameter.
-
-    .NOTES
-        The note alias is created as a global alias pointing to Get-PSNoteAlias.
-        This allows you to simply type the alias to retrieve or run the note.
-
-    .LINK
-        https://github.com/mdowst/PSNotes
-
-    .LINK
-        Get-PSNote
-
-    .LINK
-        Set-PSNote
-
-    .LINK
-        Remove-PSNote
-    #>
+.NOTES
+- Supports -WhatIf and -Confirm through ShouldProcess.
+- Notes may be uniquely identified by name and/or alias depending on store rules.
+- Use Set-PSNote to update an existing note.
+- See also: Get-PSNote, Set-PSNote, Get-PSNoteAlias, Get-PSNoteMenu
+#>
+Function New-PSNote {
     [cmdletbinding(SupportsShouldProcess = $true, ConfirmImpact = 'Low', DefaultParameterSetName = "Note")]
     param(
         [parameter(Mandatory = $true)]

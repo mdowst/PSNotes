@@ -13,7 +13,7 @@ title: Get-CommandSplatting
 
 ## SYNOPSIS
 
-Use to output the parameters for a command in splatting format
+Generates a splatting template for a PowerShell command.
 
 ## SYNTAX
 
@@ -37,145 +37,69 @@ Get-CommandSplatting [-Command] <string> [-ListParameterSets] [-IncludeCommon] [
 Get-CommandSplatting [-Command] <string> [-All] [-IncludeCommon] [-Copy] [<CommonParameters>]
 ```
 
-## ALIASES
-
-This cmdlet has the following aliases,
-  {{Insert list of aliases}}
-
 ## DESCRIPTION
 
-Use to output the parameters for a command in splatting format
+Get-CommandSplatting inspects a command’s parameter metadata and produces a ready-to-paste splatting
+template.
+It returns one or more objects that include:
+
+- A variable “set block” with typed variable declarations for each parameter
+- A hashtable “hash block” formatted for splatting (including required-parameter comments)
+- A final example invocation that splats the hashtable into the command
+
+By default, the cmdlet outputs the default parameter set for the command.
+You can list available
+parameter sets, generate a specific parameter set, or generate templates for all parameter sets.
+Optionally include the PowerShell common parameters and/or copy the first generated template to the
+clipboard.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 
+```powershell
 Get-CommandSplatting -Command 'Get-Item'
+```
 
-Get the default parameter set for a command
-
---- Output ----
-Name      : Path
-IsDefault : True
-SetBlock :
-        [string[]]$Path = ''
-        [string]$Filter = ''
-        [string[]]$Include = ''
-        [string[]]$Exclude = ''
-        [Boolean]$Force = $false # Switch
-        [pscredential]$Credential = ''
-        [string[]]$Stream = ''
-HashBlock :
-        $Item = @{
-                Path       = $Path       #Required
-                Filter     = $Filter
-                Include    = $Include
-                Exclude    = $Exclude
-                Force      = $Force
-                Credential = $Credential
-                Stream     = $Stream
-        }
-        Get-Item @Item
+Generates a splatting template for the default parameter set of Get-Item.
 
 ### EXAMPLE 2
 
+```powershell
 Get-CommandSplatting -Command 'Get-Item' -ListParameterSets
+```
 
-List the available parameter sets for a command
-
---- Output ----
-ParameterSet : Path
-IsDefault    : True
-Parameters   : Path, Filter, Include, Exclude, Force, Credential, Stream
-
-ParameterSet : LiteralPath
-IsDefault    : False
-Parameters   : LiteralPath, Filter, Include, Exclude, Force, Credential, Stream
+Lists the available parameter sets for Get-Item and shows the parameters included in each set.
 
 ### EXAMPLE 3
 
+```powershell
 Get-CommandSplatting -Command 'Get-Item' -ParameterSet LiteralPath
+```
 
-Get specific parameter set for a command
-
---- Output ----
-ParameterSet : LiteralPath
-IsDefault    : False
-SetBlock     :
-        [string[]]$LiteralPath = '' 
-        [string]$Filter = '' 
-        [string[]]$Include = ''
-        [string[]]$Exclude = ''
-        [Boolean]$Force = $false # Switch
-        [pscredential]$Credential = ''
-        [string[]]$Stream = ''
-HashBlock  :
-        $ItemLiteralPath = @{
-                LiteralPath = $LiteralPath #Required
-                Filter      = $Filter
-                Include     = $Include
-                Exclude     = $Exclude
-                Force       = $Force
-                Credential  = $Credential
-                Stream      = $Stream
-        }
-        Get-Item @ItemLiteralPath
+Generates a splatting template for the LiteralPath parameter set.
 
 ### EXAMPLE 4
 
+```powershell
 Get-CommandSplatting -Command 'Get-Item' -All
+```
 
-Get all parameter sets for a command
+Generates splatting templates for all parameter sets of Get-Item.
 
---- Output ----
-ParameterSet : Path
-IsDefault    : True
-SetBlock     :
-        [string[]]$Path = '' 
-        [string]$Filter = '' 
-        [string[]]$Include = '' 
-        [string[]]$Exclude = '' 
-        [Boolean]$Force = $false # Switch 
-        [pscredential]$Credential = '' 
-        [string[]]$Stream = ''
-HashBlock  :
-        $ItemPath = @{ 
-                Path       = $Path       #Required 
-                Filter     = $Filter 
-                Include    = $Include 
-                Exclude    = $Exclude
-                Force      = $Force
-                Credential = $Credential
-                Stream     = $Stream
-        }
-        Get-Item @ItemPath
-ParameterSet : LiteralPath
-IsDefault    : False
-SetBlock     :
-        [string[]]$LiteralPath = ''
-        [string]$Filter = ''
-        [string[]]$Include = ''
-        [string[]]$Exclude = ''
-        [Boolean]$Force = $false # Switch
-        [pscredential]$Credential = ''
-        [string[]]$Stream = ''
-HashBlock  :
-        $ItemLiteralPath = @{
-                LiteralPath = $LiteralPath #Required
-                Filter      = $Filter
-                Include     = $Include
-                Exclude     = $Exclude
-                Force       = $Force
-                Credential  = $Credential
-                Stream      = $Stream
-        }
-        Get-Item @ItemLiteralPath
+### EXAMPLE 5
+
+```powershell
+Get-CommandSplatting -Command 'Get-Item' -IncludeCommon -Copy
+```
+
+Generates the default parameter set template including common parameters and copies the first template to the clipboard.
 
 ## PARAMETERS
 
 ### -All
 
-Use to return full splatting for all parameter sets
+Generates splatting templates for all parameter sets for the specified command.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -196,7 +120,7 @@ HelpMessage: ''
 
 ### -Command
 
-The command to get the parameters for
+The name of the command to generate a splatting template for (cmdlet/function/alias supported by Get-Command).
 
 ```yaml
 Type: System.String
@@ -217,7 +141,7 @@ HelpMessage: ''
 
 ### -Copy
 
-{{ Fill Copy Description }}
+Copies the first generated template (SetBlock + HashBlock) to the clipboard.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -238,9 +162,7 @@ HelpMessage: ''
 
 ### -IncludeCommon
 
-Use to include the PowerShell common parameters in the splatting output.
-(e.g.
-Verbose, ErrorAction, etc.)
+Includes PowerShell common parameters (for example: Verbose, Debug, ErrorAction) in the generated output.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -261,10 +183,8 @@ HelpMessage: ''
 
 ### -ListParameterSets
 
-Use to list the different Parameter Sets available for the command.
-Output is shortened 
-to only show the names.
-Use -All to return splatting for all parameter sets.
+Lists available parameter sets for the specified command, including whether each set is the default and the
+parameter names in that set.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -285,9 +205,8 @@ HelpMessage: ''
 
 ### -ParameterSet
 
-Use to specify a specific parameter set.
-Use the -ListParameterSets to get a quick
-view of all the different Parameter Set names.
+The name of a specific parameter set to generate.
+Use -ListParameterSets to discover available names.
 
 ```yaml
 Type: System.String
@@ -317,12 +236,16 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
+### SplatBlock
+
+
 ## NOTES
 
-General notes
+- Required parameters are annotated in the hashtable output with a "#Required" comment.
+- Switch parameters are represented as [Boolean] variables in the set block, defaulting to $false.
+- Use -ListParameterSets to discover parameter set names before using -ParameterSet.
 
 
 ## RELATED LINKS
 
-{{ Fill in the related links here }}
 

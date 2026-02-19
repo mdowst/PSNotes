@@ -13,7 +13,7 @@ title: Get-RemoteCatalog
 
 ## SYNOPSIS
 
-Gets configured remote catalogs.
+Gets remote catalogs registered with PSNotes.
 
 ## SYNTAX
 
@@ -23,42 +23,50 @@ Gets configured remote catalogs.
 Get-RemoteCatalog [[-Catalog] <string>] [<CommonParameters>]
 ```
 
-## ALIASES
-
-This cmdlet has the following aliases,
-  {{Insert list of aliases}}
-
 ## DESCRIPTION
 
-Retrieves one or more remote catalogs from the note store configuration.
+Get-RemoteCatalog retrieves remote catalog registrations from the PSNotes configuration.
+Remote catalogs
+represent external sources (such as a URL) that can be imported into PSNotes or kept registered for future
+imports.
 
-Remote catalogs are external sources used to import notes from other locations.
+Use -Catalog to return a specific remote catalog by name, or provide a wildcard pattern to match multiple
+registrations.
+If no remote catalogs are configured, this cmdlet returns an empty array.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 
+```powershell
 Get-RemoteCatalog
+```
+
 Returns all configured remote catalogs.
 
 ### EXAMPLE 2
 
+```powershell
 Get-RemoteCatalog -Catalog 'github'
-Returns the remote catalog named 'github'.
+```
+
+Returns the remote catalog registration named 'github'.
 
 ### EXAMPLE 3
 
+```powershell
 Get-RemoteCatalog -Catalog 'git*'
-Returns all remote catalogs matching the pattern 'git*'.
+```
+
+Returns all remote catalog registrations with names that match the pattern 'git*'.
 
 ## PARAMETERS
 
 ### -Catalog
 
-The name or wildcard pattern of the catalog to retrieve.
+The name or wildcard pattern of the remote catalog registration to retrieve.
 
-Supports wildcards (e.g., 'git*' to match 'github', 'gitlab', etc.).
-Default value is '*' which returns all configured remote catalogs.
+The default value is '*' which returns all configured remote catalogs.
 
 ```yaml
 Type: System.String
@@ -89,16 +97,16 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 ## OUTPUTS
 
 ### System.Object
-Returns remote catalog configuration objects or an empty array if no catalogs are configured.
 
-{{ Fill in the Description }}
 
 ## NOTES
 
-This cmdlet requires the PSNotes module to be initialized with remote catalogs configured.
+- Remote catalog registrations are stored in the PSNotes configuration (for example, in the note store config file).
+- If the PSNotes store is not initialized or no remote catalogs are configured, an empty array is returned.
+- See also: Import-RemoteCatalog, Remove-RemoteCatalog
 
 
 ## RELATED LINKS
 
-- [Import-RemoteCatalog
-Remove-RemoteCatalog]()
+- [Remove-RemoteCatalog
+Import-RemoteCatalog]()

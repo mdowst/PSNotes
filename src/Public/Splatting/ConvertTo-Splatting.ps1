@@ -1,55 +1,52 @@
 <#
 .SYNOPSIS
-Converts a PowerShell command into a splatted hashtable form.
+Converts an existing PowerShell command into a splatting hashtable and splatted command.
 
 .DESCRIPTION
-Takes an existing PowerShell command line and rewrites it into a hashtable suitable for splatting (@params). 
-This makes commands easier to read, maintain, and modify—especially when many parameters are involved. 
-The output can be copied directly into a script and adjusted as needed.
+ConvertTo-Splatting takes a PowerShell command provided as a string or script block and rewrites it
+into a splatting-friendly format. It parses the command, identifies the command name and parameters,
+and produces:
+
+- A hashtable assignment (for example, $GetItemParam = @{ ... })
+- A command invocation that uses splatting (for example, Get-Item @GetItemParam)
+
+This is useful for refactoring long command lines into a clearer, more maintainable structure, and for
+turning backtick-continued commands into a single normalized form.
+
+.FUNCTIONALITY
+PowerShell Utilities
+
+.ROLE
+Utility
+
+.COMPONENT
+Splatting
 
 .PARAMETER Command
-The command string you want to convert to using splatting
+The command text to convert to splatting. Provide a full command line as a string.
 
 .PARAMETER ScriptBlock
-The command scriptblock you want to convert to using splatting
-
-.EXAMPLE     
-$splatme = @'
-Set-AzVMExtension -ExtensionName "MicrosoftMonitoringAgent" -ResourceGroupName "rg-xxxx" -VMName "vm-xxxx" -Publisher "Microsoft.EnterpriseCloud.Monitoring" -ExtensionType "MicrosoftMonitoringAgent" -TypeHandlerVersion "1.0" -Settings @{"workspaceId" = "xxxx" } -ProtectedSettings @{"workspaceKey" = "xxxx"} -Location "uksouth"
-'@
-ConvertTo-Splatting $splatme
-
-Converts the string splatme to splatting
-
---- Output ----
-$SetAzVMExtensionParam = @{
-        ExtensionName      = "MicrosoftMonitoringAgent"
-        ResourceGroupName  = "rg-xxxx"
-        VMName             = "vm-xxxx"
-        Publisher          = "Microsoft.EnterpriseCloud.Monitoring"
-        ExtensionType      = "MicrosoftMonitoringAgent"
-        TypeHandlerVersion = "1.0"
-        Settings           = @{ "workspaceId" = "xxxx" }
-        ProtectedSettings  = @{ "workspaceKey" = "xxxx" }
-        Location           = "uksouth"
-}
-Set-AzVMExtension @SetAzVMExtensionParam
+The command to convert to splatting, provided as a script block. The script block is converted to text
+and normalized prior to parsing.
 
 .EXAMPLE
-$splatme = {
-    Copy-Item -Path "test.txt" -Destination "test2.txt" -WhatIf
-}
+$splatme = @'
+Set-AzVMExtension -ExtensionName "MicrosoftMonitoringAgent" -ResourceGroupName "rg-xxxx" -VMName "vm-xxxx" `
+    -Publisher "Microsoft.EnterpriseCloud.Monitoring" -ExtensionType "MicrosoftMonitoringAgent" `
+    -TypeHandlerVersion "1.0" -Settings @{"workspaceId" = "xxxx"} `
+    -ProtectedSettings @{"workspaceKey" = "xxxx"} -Location "uksouth"
+'@
+
 ConvertTo-Splatting $splatme
 
-Converts the scriptblock splatme to splatting
+Creates a parameter hashtable and a splatted Set-AzVMExtension call.
 
---- Output ----
-$CopyItemParam = @{
-        Path        = "test.txt"
-        Destination = "test2.txt"
-        WhatIf      = $true
-}
-Copy-Item @CopyItemParam
+.EXAMPLE
+$splatme = { Copy-Item -Path "test.txt" -Destination "test2.txt" -WhatIf }
+ConvertTo-Splatting $splatme
+
+Converts a script block command into a hashtable and a splatted Copy-Item call. Switch parameters are
+represented as $true.
 
 .EXAMPLE
 $splatme = {
@@ -60,18 +57,14 @@ $splatme = {
 }
 ConvertTo-Splatting $splatme
 
-Removed backticks and converts the scriptblock splatme to splatting
-
---- Output ----
-$GetAzVMParam = @{
-    ResourceGroupName = "ResourceGroup11"
-    Name              = "VirtualMachine07"
-    Status            = $true
-}
-Get-AzVM @GetAzVMParam
+Normalizes backtick line continuations and converts the command to splatting.
 
 .NOTES
-about_Splatting - https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_splatting
+- If the command starts with a variable assignment, the variable(s) are preserved as part of the parsed command.
+- The hashtable variable name is derived from the command name (for example, Get-Item -> $GetItemParam). If that
+  name conflicts with an existing constant variable, a fallback name is used.
+- For background on splatting, see:
+  about_Splatting - https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_splatting
 #>
 Function ConvertTo-Splatting {
     [CmdletBinding()]

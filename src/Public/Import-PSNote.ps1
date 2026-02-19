@@ -1,40 +1,64 @@
+<#
+.SYNOPSIS
+Imports PSNotes from a JSON export file into the local note store.
+
+.DESCRIPTION
+Import-PSNote reads a PSNotes JSON export file and imports the contained notes into the local
+PSNotes store.
+
+Import behavior may merge with existing notes or create new notes depending on the options
+provided and the contents of the import file. Use -Force (if supported) to overwrite existing
+notes when conflicts occur.
+
+This cmdlet is commonly used to restore backups created by Export-PSNote, migrate notes between
+machines, or share curated note libraries.
+
+.FUNCTIONALITY
+PSNotes Data Exchange
+
+.ROLE
+Public
+
+.COMPONENT
+Serialization
+
+.PARAMETER Path
+The path to the PSNotes JSON file to import.
+
+.PARAMETER Catalog
+Imports notes into the specified catalog (or maps imported notes into that catalog depending on implementation).
+
+.PARAMETER DefaultBehavior
+Determines how to handle existing notes when conflicts are detected during import.
+Valid values:
+- Prompt: prompts when conflicts occur
+- SkipMigratedNotes: keeps existing notes and skips conflicting imported notes
+- OverwriteExistingNotes: overwrites existing notes with imported versions
+
+.EXAMPLE
+PS> Import-PSNote -Path .\backup.json
+
+Imports all notes from backup.json into the local store.
+
+.EXAMPLE
+PS> Import-PSNote -Path .\azure-notes.json -Catalog 'Azure'
+
+Imports notes from azure-notes.json and places them into the Azure catalog (if supported).
+
+.EXAMPLE
+PS> Import-PSNote -Path .\backup.json -DefaultBehavior OverwriteExistingNotes
+
+Imports notes, overwriting conflicts, and returns the imported note objects.
+
+.OUTPUTS
+System.Object
+
+.NOTES
+- This cmdlet is designed to round-trip with Export-PSNote.
+- If you encounter format/version differences after upgrading PSNotes, run Update-PSNoteStore.
+- See also: Export-PSNote, Get-PSNote, Update-PSNoteStore
+#>
 Function Import-PSNote {
-    <#
-    .SYNOPSIS
-        Import a PSNotes JSON file
-
-    .DESCRIPTION
-        Imports PSNotes from a JSON catalog file into your local note store. You can import into the default
-        catalog or a named catalog, and control how existing notes are handled.
-
-    .PARAMETER Path
-        The path to the PSNotes JSON catalog file to import.
-
-    .PARAMETER Catalog
-        The destination catalog name to import into. Defaults to 'Default'.
-
-    .PARAMETER DefaultBehavior
-        Determines how to handle existing notes when conflicts are detected.
-        Valid values: Prompt, SkipMigratedNotes, OverwriteExistingNotes.
-
-    .EXAMPLE
-        Import-PSNote -Path C:\Import\MyPSNotes.json
-
-        Imports the contents of MyPSNotes.json into the Default catalog.
-
-    .EXAMPLE
-        Import-PSNote -Path C:\Export\MyPSNotes.json -Catalog 'ADNotes'
-
-        Imports the contents of MyPSNotes.json into the ADNotes catalog.
-
-    .EXAMPLE
-        Import-PSNote -Path C:\Export\MyPSNotes.json -Catalog 'Work' -DefaultBehavior OverwriteExistingNotes
-
-        Imports into the Work catalog and overwrites existing notes when conflicts occur.
-    
-    .LINK
-        https://github.com/mdowst/PSNotes
-    #>
     [cmdletbinding(DefaultParameterSetName = "Note")]
     param(    
         [parameter(Mandatory = $true)]

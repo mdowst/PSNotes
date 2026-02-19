@@ -13,7 +13,7 @@ title: Move-PSNote
 
 ## SYNOPSIS
 
-Moves a note to a different catalog.
+Moves one or more PSNotes to a different catalog.
 
 ## SYNTAX
 
@@ -24,33 +24,51 @@ Move-PSNote [-InputObject] <PSNote> [-DestinationCatalog] <string> [-Force] [-Pa
  [-Confirm] [<CommonParameters>]
 ```
 
-## ALIASES
-
-This cmdlet has the following aliases,
-  {{Insert list of aliases}}
-
 ## DESCRIPTION
 
-Moves a note from its current catalog to another catalog.
-Supports
-confirmation prompts via ShouldProcess.
+Move-PSNote changes the catalog assignment of existing PSNotes.
+This allows you to reorganize
+your note library as it grows without recreating notes.
+
+You can specify notes directly by name, alias, or other supported parameters, or pipe PSNote
+objects from Get-PSNote.
+
+This cmdlet updates the note metadata and persists the changes to the PSNotes store.
+Supports ShouldProcess, enabling the use of -WhatIf and -Confirm.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 
-Get-PSNote -Note 'Install-Module' | Move-PSNote -DestinationCatalog 'Work'
-Moves the note named 'Install-Module' to the 'Work' catalog.
+```powershell
+Move-PSNote -Name 'Get-VMInfo' -Catalog 'Azure'
+```
+
+Moves the note named 'Get-VMInfo' to the Azure catalog.
 
 ### EXAMPLE 2
 
-Get-PSNote -Catalog 'Personal' | Move-PSNote -DestinationCatalog 'Archive' -Force
-Moves all notes from 'Personal' to 'Archive', overwriting duplicates.
+```powershell
+Get-PSNote -Catalog 'General' | Move-PSNote -Catalog 'Archive'
+```
+
+Moves all notes from the General catalog to the Archive catalog.
 
 ### EXAMPLE 3
 
-Get-PSNote -Note 'Install-Module' | Move-PSNote -DestinationCatalog 'Work' -PassThru
-Moves the note and returns the moved note object.
+```powershell
+Move-PSNote -Alias 'azvm' -Catalog 'Azure' -WhatIf
+```
+
+Shows what would happen if the note were moved, without performing the action.
+
+### EXAMPLE 4
+
+```powershell
+Get-PSNote -Tag 'Legacy' | Move-PSNote -Catalog 'Archive' -Force -PassThru
+```
+
+Moves all notes tagged 'Legacy' into the Archive catalog without prompting and returns the updated notes.
 
 ## PARAMETERS
 
@@ -78,7 +96,6 @@ HelpMessage: ''
 
 ### -DestinationCatalog
 
-The target catalog name to move the note to.
 
 ```yaml
 Type: System.String
@@ -99,7 +116,7 @@ HelpMessage: ''
 
 ### -Force
 
-Overwrites the destination note if it already exists.
+Suppresses confirmation prompts when moving notes.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -120,7 +137,7 @@ HelpMessage: ''
 
 ### -InputObject
 
-The note to move.
+One or more PSNote objects to move.
 Accepts pipeline input from Get-PSNote.
 
 ```yaml
@@ -142,7 +159,7 @@ HelpMessage: ''
 
 ### -PassThru
 
-Returns the moved note object.
+Returns the moved PSNote objects.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -194,19 +211,19 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ### PSNote
 
-{{ Fill in the Description }}
 
 ## OUTPUTS
 
 ### PSNote
-Returns note objects when -PassThru is specified; otherwise returns nothing.
 
-{{ Fill in the Description }}
 
 ## NOTES
 
+- Supports -WhatIf and -Confirm through ShouldProcess.
+- Use Get-PSNote to identify notes before moving them.
+- See also: Get-PSNote, Set-PSNote, Remove-PSNote
+
+
 ## RELATED LINKS
 
-- [Get-PSNote
-Set-PSNote
-Remove-PSNote]()
+

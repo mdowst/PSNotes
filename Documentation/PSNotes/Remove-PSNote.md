@@ -1,7 +1,7 @@
 ---
 document type: cmdlet
 external help file: PSNotes-Help.xml
-HelpUri: https://github.com/mdowst/PSNotes
+HelpUri: ''
 Locale: en-US
 Module Name: PSNotes
 ms.date: 02/19/2026
@@ -13,7 +13,7 @@ title: Remove-PSNote
 
 ## SYNOPSIS
 
-Remove one or more PSNotes from the note store.
+Removes one or more PSNotes from the note store.
 
 ## SYNTAX
 
@@ -37,47 +37,56 @@ Remove-PSNote -SearchString <string> [-Catalog <string[]>] [-Force] [-WhatIf] [-
  [<CommonParameters>]
 ```
 
-## ALIASES
-
-This cmdlet has the following aliases,
-  {{Insert list of aliases}}
-
 ## DESCRIPTION
 
-You can remove notes by piping results from Get-PSNote, or by using the same
-discovery parameters (Note/Tag/Catalog/SearchString) to select notes to remove.
+Remove-PSNote deletes notes from the PSNotes store.
+You can target notes by name, alias,
+catalog, tag, or by piping PSNote objects from Get-PSNote.
+
+This cmdlet updates the store immediately and permanently removes the selected notes.
+Supports ShouldProcess, enabling the use of -WhatIf and -Confirm for safer operations.
+
+Use -Force to suppress confirmation prompts where applicable.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 
-Get-PSNote -SearchString 'cred' -Catalog 'Work*' | Remove-PSNote
+```powershell
+Remove-PSNote -Name 'OldNote'
+```
 
-Removes notes matched by search string from catalogs that start with 'Work'.
+Removes the note named 'OldNote'.
 
 ### EXAMPLE 2
 
-Remove-PSNote -Note 'cred*' -Catalog 'Default'
+```powershell
+Get-PSNote -Catalog 'Archive' | Remove-PSNote
+```
 
-Removes notes with names starting with 'cred' from the Default catalog.
+Removes all notes in the Archive catalog.
 
 ### EXAMPLE 3
 
-Remove-PSNote -SearchString 'token' -Catalog 'Work*','Personal*' -Force
+```powershell
+Remove-PSNote -Alias 'azvm' -WhatIf
+```
 
-Removes notes matching 'token' in the Work and Personal catalogs without confirmation.
+Shows what would happen if the note with alias 'azvm' were removed.
 
 ### EXAMPLE 4
 
-Get-PSNote -Tag 'deprecated' | Remove-PSNote -Force
+```powershell
+Get-PSNote -Tag 'Legacy' | Remove-PSNote -Force -PassThru
+```
 
-Removes all notes tagged 'deprecated' via pipeline without confirmation.
+Removes all notes tagged 'Legacy' without prompting and returns the removed note objects.
 
 ## PARAMETERS
 
 ### -Catalog
 
-Filter by catalog name (wildcards supported; accepts multiple values).
+Removes notes from the specified catalog.
 
 ```yaml
 Type: System.String[]
@@ -126,7 +135,7 @@ HelpMessage: ''
 
 ### -Force
 
-Suppress confirmation prompts (still honors -WhatIf).
+Suppresses confirmation prompts.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -147,7 +156,8 @@ HelpMessage: ''
 
 ### -InputObject
 
-Pipeline input (typically from Get-PSNote).
+One or more PSNote objects to remove.
+Accepts pipeline input from Get-PSNote.
 
 ```yaml
 Type: System.Object
@@ -168,8 +178,7 @@ HelpMessage: ''
 
 ### -Note
 
-Note name pattern (wildcards supported).
-Defaults to '*'.
+Discovery params (match Get-PSNote)
 
 ```yaml
 Type: System.String
@@ -190,7 +199,6 @@ HelpMessage: ''
 
 ### -SearchString
 
-Free-text search across Note/Alias/Details/Snippet/Tags.
 
 ```yaml
 Type: System.String
@@ -211,7 +219,7 @@ HelpMessage: ''
 
 ### -Tag
 
-Filter by tag (exact match, consistent with Get-PSNote).
+Removes notes that contain one or more specified tags.
 
 ```yaml
 Type: System.String
@@ -263,12 +271,20 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ### System.Object
 
-{{ Fill in the Description }}
 
 ## OUTPUTS
 
+### PSNote
+
+
 ## NOTES
+
+- Supports -WhatIf and -Confirm through ShouldProcess.
+- Deletions are permanent once committed.
+- Use Get-PSNote to preview notes before removing them.
+- See also: Get-PSNote, New-PSNote, Set-PSNote, Move-PSNote
+
 
 ## RELATED LINKS
 
-- [](https://github.com/mdowst/PSNotes)
+

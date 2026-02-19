@@ -1,25 +1,46 @@
-﻿Function Get-PSNoteAlias{
-    <#
-    .SYNOPSIS
-        Use display snippet and copy to clipboard using an Alias
+﻿<#
+.SYNOPSIS
+Resolves a PSNote by alias and outputs, copies, or executes its content.
 
-    .DESCRIPTION
-        When the PSNotes module loads, it creates Aliases for all snippets.
-        Those aliases are mapped to this command and it will return the snippet
-        and copy it to your clipboard. You cannot call this function directly
-        as it will not return anything.
+.DESCRIPTION
+Get-PSNoteAlias locates a PSNote using its alias and performs a quick action against it.
 
-    .LINK
-        https://github.com/mdowst/PSNotes
-    
-    .NOTES
-        This function is designed to be called via an alias created for each note.
-        The alias name matches the note name by default but can be customized when creating the note.
-        When invoked, it retrieves the corresponding note and either executes the snippet or copies it to the clipboard based on parameters and note settings.
-         - If the note is set to run by default or the -Run switch is used, it executes the snippet.
-         - If the -Copy switch is used, it copies the snippet to the clipboard instead of executing it.
-        Eventhough the function cannot be called directly, it has to be public to be accessible via the aliases.
-    #>
+Depending on the note’s Kind and the parameters supplied, the cmdlet can:
+
+- Output the snippet content to the console
+- Copy the snippet content to the clipboard
+- Execute the snippet directly
+- Execute a referenced script path
+
+This command is designed for fast recall of frequently used commands through short,
+easy-to-remember aliases.
+
+.FUNCTIONALITY
+PSNotes Notes
+
+.ROLE
+Public
+
+.COMPONENT
+Notes
+
+.PARAMETER Copy
+Copies the note content to the clipboard instead of writing it to the console.
+
+.PARAMETER Run
+Executes the note content. For snippet notes, the script block is invoked. For script-path
+notes, the referenced script is executed.
+
+.OUTPUTS
+System.String
+
+.NOTES
+- Alias values are intended to be unique within the PSNotes store.
+- Behavior differs based on the note Kind (for example, Snippet vs ScriptPath).
+- Clipboard functionality depends on platform support.
+- See also: Get-PSNote, New-PSNote, Set-PSNote
+#>
+Function Get-PSNoteAlias{
     [cmdletbinding()]
     param(
         [parameter(Mandatory=$false)]

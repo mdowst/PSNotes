@@ -1,41 +1,68 @@
 <#
 .SYNOPSIS
-    Removes a remote catalog registration.
+Removes a remote catalog registration from PSNotes.
 
 .DESCRIPTION
-    Removes a registered remote catalog. Optionally converts the cached remote
-    catalog to a local catalog before removing the registration.
+Remove-RemoteCatalog unregisters one or more remote catalog sources from the PSNotes configuration.
+
+By default, this cmdlet removes only the remote registration and leaves any previously imported
+local catalog content unchanged.
+
+If -ConvertToLocal is specified, the cached remote catalog is converted into a local catalog
+before removing the remote registration. This allows you to keep the notes while removing the
+remote dependency.
+
+This cmdlet supports pipeline input from Get-RemoteCatalog and implements ShouldProcess,
+allowing the use of -WhatIf and -Confirm.
+
+.FUNCTIONALITY
+PSNotes Remote Catalogs
+
+.ROLE
+Public
+
+.COMPONENT
+RemoteCatalogs
 
 .PARAMETER InputObject
-    The remote catalog object to remove. Accepts pipeline input from
-    Get-RemoteCatalog.
+A remote catalog object to remove. Accepts pipeline input from Get-RemoteCatalog.
 
 .PARAMETER ConvertToLocal
-    Converts the cached remote catalog into a local catalog before removing
-    the remote registration.
+Converts the cached remote catalog into a local catalog before removing the remote registration.
 
 .PARAMETER Force
-    Forces removal or conversion if the target already exists.
+Suppresses confirmation prompts when removing a remote catalog registration.
 
 .PARAMETER PassThru
-    Returns the removed catalog object.
+Returns the removed (or converted) catalog object.
 
 .EXAMPLE
-    PS> Get-RemoteCatalog -Catalog 'github' | Remove-RemoteCatalog
-    Removes the remote catalog registration for 'github'.
+PS> Get-RemoteCatalog
+
+Lists all registered remote catalogs.
 
 .EXAMPLE
-    PS> Get-RemoteCatalog -Catalog 'github' | Remove-RemoteCatalog -ConvertToLocal
-    Converts the cached remote catalog to a local catalog and removes the
-    remote registration.
+PS> Get-RemoteCatalog -Catalog 'github' | Remove-RemoteCatalog
+
+Removes the 'github' remote catalog registration.
 
 .EXAMPLE
-    PS> Get-RemoteCatalog | Remove-RemoteCatalog -Force -PassThru
-    Removes all remote catalogs and returns the removed objects.
+PS> Get-RemoteCatalog -Catalog 'github' | Remove-RemoteCatalog -ConvertToLocal
+
+Converts the cached remote catalog into a local catalog and removes the remote registration.
+
+.EXAMPLE
+PS> Get-RemoteCatalog | Remove-RemoteCatalog -Force
+
+Removes all remote catalog registrations without prompting.
 
 .OUTPUTS
-    System.Object
-    Returns catalog objects when -PassThru is specified; otherwise returns nothing.
+System.Object
+
+.NOTES
+- Supports -WhatIf and -Confirm through ShouldProcess.
+- Removing a remote catalog does not delete local catalogs unless explicitly converted or managed separately.
+- See also: Get-RemoteCatalog, Import-RemoteCatalog
 
 .LINK
     Get-RemoteCatalog

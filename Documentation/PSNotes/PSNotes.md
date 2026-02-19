@@ -14,71 +14,71 @@ title: PSNotes Module
 
 ## Description
 
-PSNotes is a PowerShell module that allows you to create your own custom snippet library, that you can use to reference commands. It is great for long command you run often or commands you don't run often and need a reminder on. Snippets can either be executed directly, copied to your clipboard, or simply output to the screen for you to do whatever you want with them. When you create a note, you assign an alias to it, so you can have an easy to remember keyword that you can then use to recall it. Notes can also be classified with tags, so you group them in logic collections. You can also easily search for them by tag, name, details, or text within the snippet.
+PSNotes is a PowerShell module that provides a structured, versioned snippet and script library for reusable automation patterns. Create notes with aliases, tags, and metadata to quickly execute, copy, or preview commands. Organize notes into local or remote catalogs, search by name, tag, details, or snippet content, and turn frequently used automation into first-class commands.
 
 ## PSNotes
 
 ### [ConvertTo-Splatting](ConvertTo-Splatting.md)
 
-Use to convert an existing PowerShell command to splatting
+Converts an existing PowerShell command into a splatting hashtable and splatted command.
 
 ### [Export-PSNote](Export-PSNote.md)
 
-Export PSNotes to a JSON file
+Exports PSNotes to a JSON file for backup or sharing.
 
 ### [Get-CommandSplatting](Get-CommandSplatting.md)
 
-Use to output the parameters for a command in splatting format
+Generates a splatting template for a PowerShell command.
 
 ### [Get-PSNote](Get-PSNote.md)
 
-Search for or list PSNotes
+Retrieves PSNotes from the note store by listing or searching.
 
 ### [Get-PSNoteAlias](Get-PSNoteAlias.md)
 
-Use display snippet and copy to clipboard using an Alias
+Resolves a PSNote by alias and outputs, copies, or executes its content.
 
 ### [Get-PSNoteMenu](Get-PSNoteMenu.md)
 
-Displays an interactive, paged menu of PSNotes and lets the user pick one by number.
+Displays an interactive, paged console menu for browsing and selecting PSNotes.
 
 ### [Get-RemoteCatalog](Get-RemoteCatalog.md)
 
-Gets configured remote catalogs.
+Gets remote catalogs registered with PSNotes.
 
 ### [Import-PSNote](Import-PSNote.md)
 
-Import a PSNotes JSON file
+Imports PSNotes from a JSON export file into the local note store.
 
 ### [Import-RemoteCatalog](Import-RemoteCatalog.md)
 
-Registers or imports a remote catalog.
+Registers a remote PSNotes catalog or imports it as a local catalog.
 
 ### [Initialize-PSNoteStore](Initialize-PSNoteStore.md)
 
-Initialize the PSNotes store
+Initializes the PSNotes store and required supporting files.
 
 ### [Move-PSNote](Move-PSNote.md)
 
-Moves a note to a different catalog.
+Moves one or more PSNotes to a different catalog.
 
 ### [New-PSNote](New-PSNote.md)
 
-Creates a new PSNote for storing and reusing code snippets or script references.
+Creates a new PSNote for storing reusable snippets or script references.
 
 ### [Remove-PSNote](Remove-PSNote.md)
 
-Remove one or more PSNotes from the note store.
+Removes one or more PSNotes from the note store.
 
 ### [Remove-RemoteCatalog](Remove-RemoteCatalog.md)
 
-Removes a remote catalog registration.
+Removes a remote catalog registration from PSNotes.
 
 ### [Set-PSNote](Set-PSNote.md)
 
-Updates an existing PSNote or creates a new one if it doesn't exist.
+Updates an existing PSNote or creates it if it does not already exist.
 
 ### [Update-PSNoteStore](Update-PSNoteStore.md)
 
-Update PSNotes catalogs to the latest format
+Updates PSNotes catalogs to the latest format.
 

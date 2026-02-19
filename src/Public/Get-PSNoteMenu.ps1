@@ -1,23 +1,51 @@
+<#
+.SYNOPSIS
+Displays an interactive, paged console menu for browsing and selecting PSNotes.
+
+.DESCRIPTION
+Get-PSNoteMenu presents PSNotes in an interactive terminal-based menu with paging support.
+Users can navigate through notes, select one by number, and then choose an action such as:
+
+- Output the note content
+- Copy the note to the clipboard
+- Execute the snippet
+- Execute a referenced script path
+
+The menu is designed to provide a streamlined console experience for browsing catalogs,
+favorites, or filtered note sets. When multiple pages are present, page indicators
+(for example, "Page 1/3") are shown.
+
+This cmdlet is intended for interactive use within the current console session.
+
+.FUNCTIONALITY
+PSNotes Interactive UI
+
+.ROLE
+Interactive
+
+.COMPONENT
+UI
+
+.PARAMETER InputObject
+A collection of PSNote objects to display. Accepts pipeline input from Get-PSNote.
+
+If not provided, all notes are displayed by default.
+
+.EXAMPLE
+PS> Get-PSNoteMenu
+
+Displays all notes in an interactive menu.
+
+.OUTPUTS
+PSNote
+
+.NOTES
+- Designed for interactive terminal use.
+- Supports paging when the number of notes exceeds the configured page size.
+- After selecting a note, a secondary action menu is displayed (output, copy, run).
+- See also: Get-PSNote, Get-PSNoteAlias, Start-PSNote
+#>
 function Get-PSNoteMenu {
-    <#
-    .SYNOPSIS
-    Displays an interactive, paged menu of PSNotes and lets the user pick one by number.
-
-    .DESCRIPTION
-    Renders notes in a numbered, multi-column list sized to the current console window.
-    Prompts for a number to select a note, or Enter to advance to the next page.
-
-    Output:
-      - Returns the selected PSNote object (or $null if quit / nothing selected).
-
-    Assumptions:
-      - Get-PSNote returns objects with (at least) Catalog, Alias, and Note properties.
-        (If Catalog is missing/empty, it displays "Default".)
-
-    .EXAMPLE
-    $note = Get-PSNoteMenu
-    #>
-
     [CmdletBinding()]
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingWriteHost', '')]
     param(

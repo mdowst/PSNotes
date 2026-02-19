@@ -1,53 +1,76 @@
-﻿Function Remove-PSNote {
-    <#
-    .SYNOPSIS
-        Remove one or more PSNotes from the note store.
+﻿<#
+.SYNOPSIS
+Removes one or more PSNotes from the note store.
 
-    .DESCRIPTION
-        You can remove notes by piping results from Get-PSNote, or by using the same
-        discovery parameters (Note/Tag/Catalog/SearchString) to select notes to remove.
+.DESCRIPTION
+Remove-PSNote deletes notes from the PSNotes store. You can target notes by name, alias,
+catalog, tag, or by piping PSNote objects from Get-PSNote.
 
-    .PARAMETER InputObject
-        Pipeline input (typically from Get-PSNote).
+This cmdlet updates the store immediately and permanently removes the selected notes.
+Supports ShouldProcess, enabling the use of -WhatIf and -Confirm for safer operations.
 
-    .PARAMETER Note
-        Note name pattern (wildcards supported). Defaults to '*'.
+Use -Force to suppress confirmation prompts where applicable.
 
-    .PARAMETER Tag
-        Filter by tag (exact match, consistent with Get-PSNote).
+.FUNCTIONALITY
+PSNotes Notes
 
-    .PARAMETER Catalog
-        Filter by catalog name (wildcards supported; accepts multiple values).
+.ROLE
+Public
 
-    .PARAMETER SearchString
-        Free-text search across Note/Alias/Details/Snippet/Tags.
+.COMPONENT
+Notes
 
-    .PARAMETER Force
-        Suppress confirmation prompts (still honors -WhatIf).
+.PARAMETER Name
+The name of the note to remove. Wildcards may be supported depending on implementation.
 
-    .EXAMPLE
-        Get-PSNote -SearchString 'cred' -Catalog 'Work*' | Remove-PSNote
+.PARAMETER Alias
+The alias of the note to remove.
 
-        Removes notes matched by search string from catalogs that start with 'Work'.
+.PARAMETER Catalog
+Removes notes from the specified catalog.
 
-    .EXAMPLE
-        Remove-PSNote -Note 'cred*' -Catalog 'Default'
+.PARAMETER Tag
+Removes notes that contain one or more specified tags.
 
-        Removes notes with names starting with 'cred' from the Default catalog.
+.PARAMETER InputObject
+One or more PSNote objects to remove. Accepts pipeline input from Get-PSNote.
 
-    .EXAMPLE
-        Remove-PSNote -SearchString 'token' -Catalog 'Work*','Personal*' -Force
+.PARAMETER Force
+Suppresses confirmation prompts.
 
-        Removes notes matching 'token' in the Work and Personal catalogs without confirmation.
+.PARAMETER PassThru
+Returns the removed PSNote objects.
 
-    .EXAMPLE
-        Get-PSNote -Tag 'deprecated' | Remove-PSNote -Force
+.EXAMPLE
+PS> Remove-PSNote -Name 'OldNote'
 
-        Removes all notes tagged 'deprecated' via pipeline without confirmation.
+Removes the note named 'OldNote'.
 
-    .LINK
-        https://github.com/mdowst/PSNotes
-    #>
+.EXAMPLE
+PS> Get-PSNote -Catalog 'Archive' | Remove-PSNote
+
+Removes all notes in the Archive catalog.
+
+.EXAMPLE
+PS> Remove-PSNote -Alias 'azvm' -WhatIf
+
+Shows what would happen if the note with alias 'azvm' were removed.
+
+.EXAMPLE
+PS> Get-PSNote -Tag 'Legacy' | Remove-PSNote -Force -PassThru
+
+Removes all notes tagged 'Legacy' without prompting and returns the removed note objects.
+
+.OUTPUTS
+PSNote
+
+.NOTES
+- Supports -WhatIf and -Confirm through ShouldProcess.
+- Deletions are permanent once committed.
+- Use Get-PSNote to preview notes before removing them.
+- See also: Get-PSNote, New-PSNote, Set-PSNote, Move-PSNote
+#>
+Function Remove-PSNote {
     [CmdletBinding(SupportsShouldProcess = $true, ConfirmImpact = 'High', DefaultParameterSetName = 'Note')]
     param(
         # Pipeline input from Get-PSNote

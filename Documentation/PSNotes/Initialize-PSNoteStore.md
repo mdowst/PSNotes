@@ -1,7 +1,7 @@
 ---
 document type: cmdlet
 external help file: PSNotes-Help.xml
-HelpUri: https://github.com/mdowst/PSNotes
+HelpUri: ''
 Locale: en-US
 Module Name: PSNotes
 ms.date: 02/19/2026
@@ -13,7 +13,7 @@ title: Initialize-PSNoteStore
 
 ## SYNOPSIS
 
-Initialize the PSNotes store
+Initializes the PSNotes store and required supporting files.
 
 ## SYNTAX
 
@@ -23,32 +23,25 @@ Initialize the PSNotes store
 Initialize-PSNoteStore [<CommonParameters>]
 ```
 
-## ALIASES
-
-This cmdlet has the following aliases,
-  {{Insert list of aliases}}
-
 ## DESCRIPTION
 
-Loads all PSNotes catalogs from $env:PSNOTES_HOME into the in-memory note store
-and verifies clipboard support.
-This is typically called internally by other
-commands, but can be invoked to refresh the store after external changes.
+Initialize-PSNoteStore ensures the PSNotes store is present and ready for use.
+It creates the
+required folder structure and base configuration files when they do not already exist.
+
+This cmdlet is typically invoked automatically by other PSNotes commands as needed, but it can
+also be called directly when setting up PSNotes on a new machine or when repairing an incomplete
+store.
 
 ## EXAMPLES
 
 ### EXAMPLE 1
 
+```powershell
 Initialize-PSNoteStore
+```
 
-Initializes the PSNotes store by loading catalogs from $env:PSNOTES_HOME.
-
-### EXAMPLE 2
-
-$env:PSNOTES_HOME = 'C:\Users\Me\AppData\Roaming\PSNotes'
-Initialize-PSNoteStore
-
-Initializes the store using a custom PSNotes home path.
+Initializes the PSNotes store using the default location.
 
 ## PARAMETERS
 
@@ -63,8 +56,16 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
+### System.Object
+
+
 ## NOTES
+
+- This cmdlet prepares the store layout and configuration required by the PSNotes module.
+- Most PSNotes commands will initialize the store automatically when needed.
+- See also: Update-PSNoteStore, Get-PSNote
+
 
 ## RELATED LINKS
 
-- [](https://github.com/mdowst/PSNotes)
+

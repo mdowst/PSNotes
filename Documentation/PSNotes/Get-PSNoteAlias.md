@@ -1,7 +1,7 @@
 ---
 document type: cmdlet
 external help file: PSNotes-Help.xml
-HelpUri: https://github.com/mdowst/PSNotes
+HelpUri: ''
 Locale: en-US
 Module Name: PSNotes
 ms.date: 02/19/2026
@@ -13,7 +13,7 @@ title: Get-PSNoteAlias
 
 ## SYNOPSIS
 
-Use display snippet and copy to clipboard using an Alias
+Resolves a PSNote by alias and outputs, copies, or executes its content.
 
 ## SYNTAX
 
@@ -23,26 +23,59 @@ Use display snippet and copy to clipboard using an Alias
 Get-PSNoteAlias [-Copy] [-Run] [<CommonParameters>]
 ```
 
-## ALIASES
-
-This cmdlet has the following aliases,
-  {{Insert list of aliases}}
-
 ## DESCRIPTION
 
-When the PSNotes module loads, it creates Aliases for all snippets.
-Those aliases are mapped to this command and it will return the snippet
-and copy it to your clipboard.
-You cannot call this function directly
-as it will not return anything.
+Get-PSNoteAlias locates a PSNote using its alias and performs a quick action against it.
+
+Depending on the note’s Kind and the parameters supplied, the cmdlet can:
+
+- Output the snippet content to the console
+- Copy the snippet content to the clipboard
+- Execute the snippet directly
+- Execute a referenced script path
+
+This command is designed for fast recall of frequently used commands through short,
+easy-to-remember aliases.
 
 ## EXAMPLES
+
+### EXAMPLE 1
+
+```powershell
+Get-PSNoteAlias -Alias azvm
+```
+
+Outputs the snippet associated with the alias 'azvm'.
+
+### EXAMPLE 2
+
+```powershell
+Get-PSNoteAlias -Alias azvm -Copy
+```
+
+Copies the snippet associated with 'azvm' to the clipboard.
+
+### EXAMPLE 3
+
+```powershell
+Get-PSNoteAlias -Alias azvm -Run
+```
+
+Executes the snippet associated with 'azvm'.
+
+### EXAMPLE 4
+
+```powershell
+Get-PSNoteAlias -Alias buildscript -Run
+```
+
+Executes the script referenced by the 'buildscript' note if it is a script-path note.
 
 ## PARAMETERS
 
 ### -Copy
 
-{{ Fill Copy Description }}
+Copies the note content to the clipboard instead of writing it to the console.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -63,7 +96,10 @@ HelpMessage: ''
 
 ### -Run
 
-{{ Fill Run Description }}
+Executes the note content.
+For snippet notes, the script block is invoked.
+For script-path
+notes, the referenced script is executed.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -93,16 +129,17 @@ This cmdlet supports the common parameters: -Debug, -ErrorAction, -ErrorVariable
 
 ## OUTPUTS
 
+### System.String
+
+
 ## NOTES
 
-This function is designed to be called via an alias created for each note.
-The alias name matches the note name by default but can be customized when creating the note.
-When invoked, it retrieves the corresponding note and either executes the snippet or copies it to the clipboard based on parameters and note settings.
- - If the note is set to run by default or the -Run switch is used, it executes the snippet.
- - If the -Copy switch is used, it copies the snippet to the clipboard instead of executing it.
-Eventhough the function cannot be called directly, it has to be public to be accessible via the aliases.
+- Alias values are intended to be unique within the PSNotes store.
+- Behavior differs based on the note Kind (for example, Snippet vs ScriptPath).
+- Clipboard functionality depends on platform support.
+- See also: Get-PSNote, New-PSNote, Set-PSNote
 
 
 ## RELATED LINKS
 
-- [](https://github.com/mdowst/PSNotes)
+

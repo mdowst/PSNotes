@@ -1,83 +1,83 @@
-﻿Function Get-PSNote{
-    <#
-    .SYNOPSIS
-        Search for or list PSNotes
+﻿<#
+.SYNOPSIS
+Retrieves PSNotes from the note store by listing or searching.
 
-    .DESCRIPTION
-        Searches notes by name, tag, or text across all note properties. You can also
-        filter by catalog and optionally copy or run the returned snippet.
+.DESCRIPTION
+Get-PSNote returns notes stored in the PSNotes store. By default, all notes are returned.
+You can filter results by name, alias, tag, catalog, or search text depending on the
+parameter set in use.
 
-    .PARAMETER Note
-        The note name to return. Accepts wildcards.
+This cmdlet returns PSNote objects that can be piped into other PSNotes commands such as
+Remove-PSNote, Move-PSNote, Export-PSNote, or Set-PSNote.
 
-    .PARAMETER Tag
-        Return notes that contain the specified tag.
+Wildcard matching is supported where applicable.
 
-    .PARAMETER Catalog
-        Filter notes by catalog name. Accepts wildcards and multiple values.
+.FUNCTIONALITY
+PSNotes Notes
 
-    .PARAMETER Copy
-        Copy the selected snippet to the clipboard.
+.ROLE
+Public
 
-    .PARAMETER Run
-        Run the selected snippet via Invoke-PSNote.
+.COMPONENT
+Notes
 
-    .PARAMETER SearchString
-        Search for text in the note's name, details, snippet, alias, or tags.
+.PARAMETER Name
+Returns notes that match the specified name. Wildcards are supported.
 
-    .EXAMPLE
-        Get-PSNote
+.PARAMETER Tag
+Returns notes that contain one or more specified tags.
 
-        Returns all notes.
+.PARAMETER Catalog
+Returns notes from the specified catalog.
 
-    .EXAMPLE
-        Get-PSNote -Note 'Creds'
+.PARAMETER Search
+Performs a broader search across note properties such as name, alias, and tags.
 
-        Returns the note named 'Creds'.
+.PARAMETER Copy
+When specified, copies the snippet content of the first matching note to the clipboard. If multiple notes match, you will be prompted to select one.
 
-    .EXAMPLE
-        Get-PSNote -Note 'Cred*'
+.PARAMETER Run
+When specified, executes the snippet content of the first matching note. If multiple notes match, you will be prompted to select one.
 
-        Returns all notes with names that start with 'Cred'.
+.EXAMPLE
+PS> Get-PSNote
 
-    .EXAMPLE
-        Get-PSNote -Tag 'AD'
+Returns all notes in the store.
 
-        Returns all notes with the tag 'AD'.
+.EXAMPLE
+PS> Get-PSNote -Catalog 'Azure'
 
-    .EXAMPLE
-        Get-PSNote -Note '*User*' -Tag 'AD'
+Returns all notes in the Azure catalog.
 
-        Returns notes with 'User' in the name and the tag 'AD'.
+.EXAMPLE
+PS> Get-PSNote -Note 'Get-*'
 
-    .EXAMPLE
-        Get-PSNote -SearchString 'day'
+Returns notes with names that match the pattern.
 
-        Returns notes where 'day' appears in the name, details, snippet, alias, or tags.
+.EXAMPLE
+PS> Get-PSNote -Tag 'VM'
 
-    .EXAMPLE
-        Get-PSNote -Catalog 'Default'
+Returns notes tagged with 'VM'.
 
-        Returns all notes in the Default catalog.
+.EXAMPLE
+PS> Get-PSNote -Search 'backup'
 
-    .EXAMPLE
-        Get-PSNote -SearchString 'day' -Catalog 'Work*','Personal*'
+Searches across note properties for the term 'backup'.
 
-        Searches only within the matching catalogs.
+.EXAMPLE
+PS> Get-PSNote -Catalog 'Azure' | Remove-PSNote
 
-    .EXAMPLE
-        Get-PSNote -Note 'CpuUsage' -Copy
+Finds notes in the Azure catalog and removes them.
 
-        Copies the snippet for the selected note to the clipboard.
+.OUTPUTS
+PSNote
 
-    .EXAMPLE
-        Get-PSNote -SearchString 'token' -Run
-
-        Runs the selected note; prompts to choose if multiple notes match.
-
-    .LINK
-        https://github.com/mdowst/PSNotes
-    #>
+.NOTES
+- Returns PSNote objects.
+- Wildcards are supported for Name and Alias parameters.
+- See also: New-PSNote, Set-PSNote, Remove-PSNote, Move-PSNote, Export-PSNote
+#>
+Function Get-PSNote{
     [cmdletbinding(DefaultParameterSetName="Note")]
     param(    
         [parameter(Mandatory=$false, ParameterSetName="Note")]
