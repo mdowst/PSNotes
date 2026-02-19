@@ -161,7 +161,7 @@ Function Set-PSNote {
     }
     
     process {
-        $check = $script:_noteStore.Notes | Where-Object { $_.Note -eq $Note -and $_.Catalog -eq $Catalog }
+        $check = $script:_noteStore.Notes | Where-Object { $_.Name -eq $Note -and $_.Catalog -eq $Catalog }
         if (-not $check) {
             Write-Warning "The note '$Note' does not exist in catalog '$Catalog'. An attempt will be made to create it."
         } 

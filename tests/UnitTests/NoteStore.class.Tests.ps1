@@ -28,7 +28,7 @@ BeforeAll {
 AfterAll {
     $env:PSNOTES_HOME = $script:OriginalPSNotesHome
     if (Test-Path $script:TestRoot) {
-        #Remove-Item -Path $script:TestRoot -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path $script:TestRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -47,7 +47,7 @@ Describe 'NoteStore.class.ps1 classes' {
         It '5-parameter constructor sets defaults (Catalog=Default, Kind=Snippet, Run=$false)' {
             $n = [PSNote]::new('N1', 'Get-Date', 'd', 'a1', @('t1'))
 
-            $n.Note    | Should -Be 'N1'
+            $n.Name    | Should -Be 'N1'
             $n.Snippet | Should -Be 'Get-Date'
             $n.Details | Should -Be 'd'
             $n.Alias   | Should -Be 'a1'
@@ -68,7 +68,7 @@ Describe 'NoteStore.class.ps1 classes' {
 
         It 'object constructor tolerates missing/invalid Kind and Run' {
             $obj = [pscustomobject]@{
-                Note    = 'N'
+                Name    = 'N'
                 Snippet = 'S'
                 Details = 'D'
                 Alias   = 'A'
@@ -132,7 +132,7 @@ Describe 'NoteStore.class.ps1 classes' {
                 StoreVersion = 999
                 Catalog      = 'BadVer'
                 Notes        = @(
-                    [pscustomobject]@{ Note = 'N'; Snippet = 'S'; Details = 'D'; Alias = 'A'; Tags = @() }
+                    [pscustomobject]@{ Name = 'N'; Snippet = 'S'; Details = 'D'; Alias = 'A'; Tags = @() }
                 )
             } | ConvertTo-Json -Depth 10
 
@@ -152,7 +152,7 @@ Describe 'NoteStore.class.ps1 classes' {
                 StoreVersion = [NoteCatalog]::CurrentStoreVersion
                 Catalog      = 'VC'
                 Notes        = @(
-                    [pscustomobject]@{ Note = 'N'; Snippet = 'S'; Details = 'D'; Alias = 'A'; Tags = @() }
+                    [pscustomobject]@{ Name = 'N'; Snippet = 'S'; Details = 'D'; Alias = 'A'; Tags = @() }
                 )
             } | ConvertTo-Json -Depth 10
             $ok | Set-Content -Path $path -Encoding UTF8
@@ -215,8 +215,8 @@ Describe 'NoteStore.class.ps1 classes' {
         It 'migrates legacy array to current object format and creates backup artifacts' {
             $legacyPath = [NoteCatalog]::ResolvePath('LegacyToMigrate')
             @(
-                [pscustomobject]@{ Note = 'N1'; Snippet = 'S1'; Details = 'D1'; Alias = 'A1'; Tags = @('t1') },
-                [pscustomobject]@{ Note = 'N2'; Snippet = 'S2'; Details = 'D2'; Alias = 'A2'; Tags = @() }
+                [pscustomobject]@{ Name = 'N1'; Snippet = 'S1'; Details = 'D1'; Alias = 'A1'; Tags = @('t1') },
+                [pscustomobject]@{ Name = 'N2'; Snippet = 'S2'; Details = 'D2'; Alias = 'A2'; Tags = @() }
             ) | ConvertTo-Json -Depth 10 | Set-Content -Path $legacyPath -Encoding UTF8
 
             $m = [NoteCatalog]::Migrate($legacyPath, $true)
@@ -248,7 +248,7 @@ Describe 'NoteStore.class.ps1 classes' {
                 StoreVersion = [NoteCatalog]::CurrentStoreVersion
                 Catalog      = 'Cat1'
                 Notes        = @(
-                    [pscustomobject]@{ Note = 'N1'; Snippet = 'S1'; Details = 'D1'; Alias = 'a1'; Tags = @('t') }
+                    [pscustomobject]@{ Name = 'N1'; Snippet = 'S1'; Details = 'D1'; Alias = 'a1'; Tags = @('t') }
                 )
             } | ConvertTo-Json -Depth 10
             $obj | Set-Content -Path $path -Encoding UTF8
@@ -292,7 +292,7 @@ Describe 'NoteStore.class.ps1 classes' {
             $n = [PSNote]::new('N', 'S', 'D', 'a', @()); $n.Catalog = 'Remote1'
             $s.AddNote($n)
 
-            ($s.Notes | Where-Object Note -eq 'N' | Measure-Object).Count | Should -Be 0
+            ($s.Notes | Where-Object Name -eq 'N' | Measure-Object).Count | Should -Be 0
             Assert-MockCalled Write-Warning -Times 1
         }
 
@@ -311,7 +311,7 @@ Describe 'NoteStore.class.ps1 classes' {
             $s.Notes.Add($n) | Out-Null
 
             $s.RemoveNote('N', 'Remote1')
-            ($s.Notes | Where-Object Note -eq 'N' | Measure-Object).Count | Should -Be 1
+            ($s.Notes | Where-Object Name -eq 'N' | Measure-Object).Count | Should -Be 1
             Assert-MockCalled Write-Warning -Times 1
         }
 
@@ -332,7 +332,7 @@ Describe 'NoteStore.class.ps1 classes' {
             $updated = [PSNote]::new('N', 'S2', 'D2', 'a', @()); $updated.Catalog = 'Remote1'
             $s.UpdateNote($updated)
 
-            ($s.Notes | Where-Object Note -eq 'N' | Select-Object -First 1).Snippet | Should -Be 'S'
+            ($s.Notes | Where-Object Name -eq 'N' | Select-Object -First 1).Snippet | Should -Be 'S'
             Assert-MockCalled Write-Warning -Times 1
         }
     }
@@ -359,7 +359,7 @@ Describe 'NoteStore.class.ps1 classes' {
 
             $f = $s.GetFavorites()
             $f.Count | Should -Be 1
-            $f[0].Note | Should -Be 'N'
+            $f[0].Name | Should -Be 'N'
 
             $s.RemoveFavorite($n)
             $s.IsFavorite($n) | Should -BeFalse
@@ -396,7 +396,7 @@ Describe 'NoteStore.class.ps1 classes' {
             ($s.Catalogs | Where-Object Catalog -eq 'Dst' | Select-Object -First 1).Notes |
             Where-Object Alias -eq 'a' |
             Select-Object -First 1 |
-            ForEach-Object { $_.Note } | Should -Be 'N'
+            ForEach-Object { $_.Name } | Should -Be 'N'
         }
     }
 
@@ -416,7 +416,7 @@ Describe 'NoteStore.class.ps1 classes' {
                             StoreVersion = [NoteCatalog]::CurrentStoreVersion
                             Catalog      = 'RemoteIgnored'
                             Notes        = @(
-                                [pscustomobject]@{ Note = 'N'; Snippet = 'S'; Details = 'D'; Alias = 'a'; Tags = @() }
+                                [pscustomobject]@{ Name = 'N'; Snippet = 'S'; Details = 'D'; Alias = 'a'; Tags = @() }
                             )
                         } | ConvertTo-Json -Depth 10)
                     Headers = @{ ETag = '"x"'; 'Last-Modified' = 'Wed, 01 Jan 2025 00:00:00 GMT' }
@@ -441,7 +441,7 @@ Describe 'NoteStore.class.ps1 classes' {
                             StoreVersion = [NoteCatalog]::CurrentStoreVersion
                             Catalog      = 'RemoteCatalogName'
                             Notes        = @(
-                                [pscustomobject]@{ Note = 'N1'; Snippet = 'S1'; Details = 'D1'; Alias = 'r1'; Tags = @() }
+                                [pscustomobject]@{ Name = 'N1'; Snippet = 'S1'; Details = 'D1'; Alias = 'r1'; Tags = @() }
                             )
                         } | ConvertTo-Json -Depth 10)
                     Headers = @{ ETag = '"x"' }
@@ -472,7 +472,7 @@ Describe 'NoteStore.class.ps1 classes' {
                             StoreVersion = [NoteCatalog]::CurrentStoreVersion
                             Catalog      = 'RemoteCatalogName'
                             Notes        = @(
-                                [pscustomobject]@{ Note = 'N1'; Snippet = 'S1'; Details = 'D1'; Alias = 'r1'; Tags = @() }
+                                [pscustomobject]@{ Name = 'N1'; Snippet = 'S1'; Details = 'D1'; Alias = 'r1'; Tags = @() }
                             )
                         } | ConvertTo-Json -Depth 10)
                     Headers = @{ }

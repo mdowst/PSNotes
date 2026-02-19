@@ -112,16 +112,16 @@ Function Get-PSNote{
 
     if($Search){
         $returned = $notes | Where-Object {
-            $_.Note    -like "*$Search*" -or
+            $_.Name    -like "*$Search*" -or
             $_.Alias   -like "*$Search*" -or
             $_.Details -like "*$Search*" -or
             $_.Snippet -like "*$Search*" -or
             ($_.Tags | Where-Object { $_ -like "*$Search*" } | Select-Object -First 1)
         }
     } elseif($Tag){
-        $returned = $notes | Where-Object{$_.Note -like $note -and $_.Tags -contains $Tag}
+        $returned = $notes | Where-Object{$_.Name -like $note -and $_.Tags -contains $Tag}
     } else {
-        $returned = $notes | Where-Object{$_.Note -like $note}
+        $returned = $notes | Where-Object{$_.Name -like $note}
     }
     
     if($copy -or $Run){

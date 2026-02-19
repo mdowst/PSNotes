@@ -15,20 +15,24 @@ if(-not $psd1){
     exit 1
 }
 
-# Run Unit Tests
+# Set test parameters for all tests
 $config = New-PesterConfiguration
 $config.Output.Verbosity = 'Detailed'
-$config.Run.Path = (Join-Path $TestPath 'UnitTests')
 $config.Run.Throw = $false
 $config.TestResult.Enabled = $true
 $config.TestResult.OutputFormat = 'JUnitXml'
-$config.TestResult.OutputPath   = (Join-Path $binPath 'Pester.TestResults.xml')
-Invoke-Pester -Configuration $config
 
 # Run Script Analyzer Tests
 $config.Run.Path = (Join-Path $TestPath 'ScriptAnalyzer')
 $config.TestResult.OutputPath   = (Join-Path $binPath 'ScriptAnalyzer.TestResults.xml')
 Invoke-Pester -Configuration $config
+
+# Run Unit Tests
+$config.Run.Path = (Join-Path $TestPath 'UnitTests')
+$config.TestResult.OutputPath   = (Join-Path $binPath 'Pester.TestResults.xml')
+Invoke-Pester -Configuration $config
+
+
 
 <# Run Build Tests
 $config.Run.Path = (Join-Path $TestPath 'Build')

@@ -122,7 +122,7 @@ Function New-PSNote {
     
     if (-not [string]::IsNullOrEmpty($ScriptPath)) {
         if (-not (Test-Path -Path $ScriptPath)) {
-            Write-Error "Script file not found: $ScriptPath"
+            throw "Script file not found: $ScriptPath"
             return
         }
         $Snippet = $ScriptPath
@@ -136,13 +136,13 @@ Function New-PSNote {
         $Snippet = $ScriptBlock.ToString()
     }
 
-    $newNote = $script:_noteStore.Notes | Where-Object { $_.Note -eq $Note -and $_.Catalog -eq $Catalog }
+    $newNote = $script:_noteStore.Notes | Where-Object { $_.Name -eq $Note -and $_.Catalog -eq $Catalog }
     if ($newNote -and -not $force) {
         Write-Error "The note '$Note' already exists. Use -force to overwrite existing properties"
         break
     }
     elseif ($newNote -and $force) {
-        $toUpdate = $script:_noteStore.Notes | Where-Object { $_.Note -eq $Note -and $_.Catalog -eq $Catalog } | ForEach-Object {
+        $toUpdate = $script:_noteStore.Notes | Where-Object { $_.Name -eq $Note -and $_.Catalog -eq $Catalog } | ForEach-Object {
             $tu = [PSNote]::new($_)
             $PSBoundParameters.GetEnumerator() | ForEach-Object {
                 if ($_.Key -eq 'ScriptBlock') {
@@ -164,7 +164,7 @@ Function New-PSNote {
             $tu
         }
         $toUpdate | ForEach-Object {
-            Write-Verbose "Updating Note: $($_.Note)"
+            Write-Verbose "Updating Note: $($_.Name)"
             $script:_noteStore.UpdateNote($_)
             if (-not [string]::IsNullOrEmpty($_.Alias)) {
                 Set-Alias -Name $_.Alias -Value Get-PSNoteAlias -Scope Global -Force

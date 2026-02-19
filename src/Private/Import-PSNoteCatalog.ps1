@@ -53,7 +53,7 @@ Function Import-PSNoteCatalog {
                 "Existing Note"
                 "-------------"
                 "Catalog : $($dup.Catalog)"
-                "Note    : $($dup.Note)"
+                "Note    : $($dup.Name)"
                 "Alias   : $($dup.Alias)"
                 "Snippet : $($dup.Snippet.Trim().Split("`n")[0])"
             )
@@ -62,7 +62,7 @@ Function Import-PSNoteCatalog {
             $lines[0] = $lines[0].PadRight($buffer + 10) + "Migrated Note"
             $lines[1] = $lines[1].PadRight($buffer + 10) + "-------------"
             $lines[2] = $lines[2].PadRight($buffer + 31) + "Catalog : `e[38;2;255;255;0m$($mn.Catalog)`e[0m"
-            $lines[3] = $lines[3].PadRight($buffer + 10) + "Note    : $($mn.Note)"
+            $lines[3] = $lines[3].PadRight($buffer + 10) + "Note    : $($mn.Name)"
             $lines[4] = $lines[4].PadRight($buffer + 10) + "Alias   : $($mn.Alias)"
             $lines[5] = $lines[5].PadRight($buffer + 10) + "Snippet : $($mn.Snippet.Trim().Split("`n")[0])"
 
@@ -96,7 +96,7 @@ Function Import-PSNoteCatalog {
             }
             elseif ($choice -eq '2') {
                 Write-Verbose "Overwriting existing note with alias: $($mn.Alias)"
-                $script:_noteStore.RemoveNote($dup.Note, $dup.Catalog, $true )
+                $script:_noteStore.RemoveNote($dup.Name, $dup.Catalog, $true )
             }
             elseif ($choice -eq '3') {
                 $newAlias = Read-Host "Enter new alias for the migrated note"

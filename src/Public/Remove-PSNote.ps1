@@ -105,7 +105,7 @@ Function Remove-PSNote {
     process {
         if ($PSCmdlet.ParameterSetName -eq 'ByObject') {
             if ($null -ne $InputObject -and
-                $null -ne $InputObject.PSObject.Properties['Note'] -and
+                ($null -ne $InputObject.PSObject.Properties['Name'] -or $null -ne $InputObject.PSObject.Properties['Note']) -and
                 $null -ne $InputObject.PSObject.Properties['Catalog']) {
                 $candidates.Add($InputObject) | Out-Null
             }
@@ -133,7 +133,8 @@ Function Remove-PSNote {
         $unique = @{}
         foreach ($n in $candidates) {
             if ($null -eq $n) { continue }
-            $key = "{0}::{1}" -f $n.Catalog, $n.Note
+            $noteName = if ($null -ne $n.PSObject.Properties['Name']) { $n.Name } elseif ($null -ne $n.PSObject.Properties['Note']) { $n.Note } else { $null }
+            $key = "{0}::{1}" -f $n.Catalog, $noteName
             if (-not $unique.ContainsKey($key)) { $unique[$key] = $n }
         }
 
@@ -145,9 +146,10 @@ Function Remove-PSNote {
         $removed = New-Object System.Collections.Generic.List[object]
 
         foreach ($n in $unique.Values) {
-            $desc = "Removing note '{0}' from catalog '{1}'" -f $n.Note, $n.Catalog
+            $noteName = if ($null -ne $n.PSObject.Properties['Name']) { $n.Name } elseif ($null -ne $n.PSObject.Properties['Note']) { $n.Note } else { $null }
+            $desc = "Removing note '{0}' from catalog '{1}'" -f $noteName, $n.Catalog
             if ($PSCmdlet.ShouldProcess($desc)) {
-                $script:_noteStore.RemoveNote($n.Note, $n.Catalog)
+                $script:_noteStore.RemoveNote($noteName, $n.Catalog)
                 $removed.Add($n) | Out-Null
             }
         }

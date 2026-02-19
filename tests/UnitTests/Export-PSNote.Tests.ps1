@@ -88,7 +88,7 @@ Describe "Export-PSNote" {
             $json = Get-Content $exportPath | ConvertFrom-Json
             $exportedNote = $json.Notes[0]
             $exportedNote | Get-Member -MemberType NoteProperty | Should -Not -BeNullOrEmpty
-            $exportedNote.Note | Should -Be 'az-login'
+            $exportedNote.Name | Should -Be 'az-login'
             $exportedNote.Snippet | Should -Be 'Connect-AzAccount'
         }
 
@@ -129,7 +129,7 @@ Describe "Export-PSNote" {
             $note2 | Export-PSNote -Path $exportPath -Force
             
             $json = Get-Content $exportPath | ConvertFrom-Json
-            $json.Notes[0].Note | Should -Be 'day-one'
+            $json.Notes[0].Name | Should -Be 'day-one'
         }
 
         It "creates JSON file with UTF8 encoding without BOM" {
@@ -153,7 +153,7 @@ Describe "Export-PSNote" {
             
             Test-Path $exportPath | Should -Be $true
             $json = Get-Content $exportPath | ConvertFrom-Json
-            $json.Notes[0].Note | Should -Be 'az-login'
+            $json.Notes[0].Name | Should -Be 'az-login'
         }
 
         It "handles multiple notes from pipeline" {

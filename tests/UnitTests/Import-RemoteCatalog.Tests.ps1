@@ -207,11 +207,11 @@ Describe "Import-RemoteCatalog" {
             } -ModuleName PSNotes
 
             Import-RemoteCatalog -Name 'ForceCatalog' -Url 'https://example.invalid/Force.json' -AsLocal
-            (Get-PSNote -Catalog 'ForceCatalog').Note | Should -Contain 'payload-1'
+            (Get-PSNote -Catalog 'ForceCatalog').Name | Should -Contain 'payload-1'
 
             Import-RemoteCatalog -Name 'ForceCatalog' -Url 'https://example.invalid/Force.json' -AsLocal -Force
             $notes = Get-PSNote -Catalog 'ForceCatalog'
-            @($notes.Note) | Should -Contain 'payload-2'
+            @($notes.Name) | Should -Contain 'payload-2'
 
             Assert-MockCalled Invoke-WebRequest -Times 2 -ModuleName PSNotes
         }

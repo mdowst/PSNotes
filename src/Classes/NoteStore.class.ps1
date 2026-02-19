@@ -5,7 +5,7 @@ enum PSNoteKind {
 
 # Create the PSNote class
 class PSNote {
-    [string]$Note
+    [string]$Name
     [string]$Snippet
     [string]$Details
     [string]$Alias
@@ -15,13 +15,13 @@ class PSNote {
     [PSNoteKind]$Kind = [PSNoteKind]::Snippet
 
     PSNote(
-        [string]$Note,
+        [string]$Name,
         [string]$Snippet,
         [string]$Details,
         [string]$Alias,
         [string[]]$Tags
     ) {
-        $this.Note = $Note
+        $this.Name = $Name
         $this.Snippet = $Snippet
         $this.Details = $Details
         $this.Alias = $Alias
@@ -32,7 +32,7 @@ class PSNote {
     }
 
     PSNote(
-        [string]$Note,
+        [string]$Name,
         [string]$Snippet,
         [string]$Details,
         [string]$Alias,
@@ -40,7 +40,7 @@ class PSNote {
         [string]$Catalog,
         [bool]$Run
     ) {
-        $this.Note = $Note
+        $this.Name = $Name
         $this.Snippet = $Snippet
         $this.Details = $Details
         $this.Alias = $Alias
@@ -52,7 +52,7 @@ class PSNote {
     }
 
     PSNote(
-        [string]$Note,
+        [string]$Name,
         [PSNoteKind]$Kind,
         [string]$Snippet,
         [string]$Details,
@@ -61,7 +61,7 @@ class PSNote {
         [string]$Catalog,
         [bool]$Run
     ) {
-        $this.Note = $Note
+        $this.Name = $Name
         $this.Kind = $Kind
         $this.Snippet = $Snippet
         $this.Details = $Details
@@ -73,7 +73,10 @@ class PSNote {
     }
 
     PSNote([object]$object) {
-        $this.Note = $this.GetObjectProperty($object, 'Note')
+        $this.Name = $this.GetObjectProperty($object, 'Name')
+        if ([string]::IsNullOrWhiteSpace($this.Name)) {
+            $this.Name = $this.GetObjectProperty($object, 'Note')
+        }
         $this.Details = $this.GetObjectProperty($object, 'Details')
         $this.Alias = $this.GetObjectProperty($object, 'Alias')
         $this.Tags = $this.GetObjectProperty($object, 'Tags')
@@ -294,13 +297,16 @@ class NoteCatalog {
             foreach ($note in $vnotes) {
                 $noteErrors = [System.Collections.Generic.List[string]]::new()
                 
-                # Check for Note property
+                # Check for Name property (or legacy Note)
                 $noteValue = $null
-                if ($null -ne $note.PSObject.Properties['Note']) {
+                if ($null -ne $note.PSObject.Properties['Name']) {
+                    $noteValue = [string]$note.Name
+                }
+                elseif ($null -ne $note.PSObject.Properties['Note']) {
                     $noteValue = [string]$note.Note
                 }
                 if ([string]::IsNullOrWhiteSpace($noteValue)) {
-                    $noteErrors.Add("Note[$index]: Missing or empty 'Note' property")
+                    $noteErrors.Add("Note[$index]: Missing or empty 'Name' property")
                 }
 
                 # Check for Snippet property
@@ -312,10 +318,10 @@ class NoteCatalog {
                     $noteErrors.Add("Note[$index]: Missing or empty 'Snippet' property")
                 }
 
-                # Additional validation: warn if Alias is missing (will default to Note)
+                # Additional validation: warn if Alias is missing (will default to Name)
                 if ($null -eq $note.PSObject.Properties['Alias'] -or [string]::IsNullOrWhiteSpace([string]$note.Alias)) {
                     if (-not [string]::IsNullOrWhiteSpace($noteValue)) {
-                        $result.Warnings.Add("Note[$index] '$noteValue': Missing 'Alias' property (will default to Note name)")
+                        $result.Warnings.Add("Note[$index] '$noteValue': Missing 'Alias' property (will default to Name)")
                     }
                 }
 
@@ -395,7 +401,7 @@ class NoteCatalog {
     }
 
     [void] RemoveNote([string] $note, [bool] $save = $true) {
-        $remove = $this.Notes | Where-Object { $_.Note -eq $note }
+        $remove = $this.Notes | Where-Object { $_.Name -eq $note }
         if ($remove) {
             $this.Notes.Remove($remove) | Out-Null
             if ($save) {
@@ -733,10 +739,10 @@ class NoteStore {
                 $this.Notes | Where-Object { $_.Alias -eq $newNote.Alias }
             }
             else {
-                $this.Notes | Where-Object { $_.Note -eq $newNote.Note }
+                $this.Notes | Where-Object { $_.Name -eq $newNote.Name }
             }
             if ($dup -and $dup.Catalog -ne $newNote.Catalog) {
-                Write-Warning "Duplicate Alias found: $($newNote.Alias). Skipping note: $($newNote.Note)"
+                Write-Warning "Duplicate Alias found: $($newNote.Alias). Skipping note: $($newNote.Name)"
             }
             elseif (-not $dup) {
                 $this.Notes.Add($newNote) 
@@ -751,7 +757,7 @@ class NoteStore {
         $this.Notes | ForEach-Object {
             Write-Debug "Alias : $($_.Alias)"
             if ([string]::IsNullOrWhiteSpace($_.Alias)) { 
-                Write-Verbose "Note '$( $_.Note )' has an empty Alias. Skipping alias creation." 
+                Write-Verbose "Note '$( $_.Name )' has an empty Alias. Skipping alias creation." 
             }
             else {
                 Set-Alias -Name $_.Alias -Value Get-PSNoteAlias -Scope Global -Force
@@ -802,7 +808,7 @@ class NoteStore {
             return
         }
 
-        $remove = $this.Notes | Where-Object { $_.Note -eq $note -and $_.Catalog -eq $catalog }
+        $remove = $this.Notes | Where-Object { $_.Name -eq $note -and $_.Catalog -eq $catalog }
         if ($remove) {
             $this.Notes.Remove($remove) | Out-Null
             $catalogUpdates = $this.Catalogs | Where-Object { $_.Catalog -eq $remove.Catalog } | ForEach-Object {
@@ -824,7 +830,10 @@ class NoteStore {
 
     [void] UpdateNote([PSNote] $note) {
 
-        $noteNote = if ($null -ne $note.PSObject.Properties['Note']) {
+        $noteName = if ($null -ne $note.PSObject.Properties['Name']) {
+            [string]$note.Name
+        }
+        elseif ($null -ne $note.PSObject.Properties['Note']) {
             [string]$note.Note
         }
 
@@ -833,17 +842,17 @@ class NoteStore {
             [string]$note.Catalog
         }
 
-        $update = $this.Notes | Where-Object { $_.Note -eq $noteNote } | Select-Object -First 1
+        $update = $this.Notes | Where-Object { $_.Name -eq $noteName } | Select-Object -First 1
         
         if (-not $update) {
-            Write-Warning "Note '$($noteNote)' not found in catalog '$($noteCatalog)'. No action taken."
+            Write-Warning "Note '$($noteName)' not found in catalog '$($noteCatalog)'. No action taken."
             return
         }
 
         # Block updating remote notes (based on where the existing note lives)
         $existingCatalog = $this.GetCatalogObject($update.Catalog)
         if ($existingCatalog -and $existingCatalog.IsRemote) {
-            Write-Warning "Cannot update note '$($update.Note)' because it belongs to remote catalog '$($update.Catalog)'. Remote notes are read-only."
+            Write-Warning "Cannot update note '$($update.Name)' because it belongs to remote catalog '$($update.Catalog)'. Remote notes are read-only."
             return
         }
 
@@ -855,11 +864,11 @@ class NoteStore {
         }
 
         if ($update.Catalog -eq $noteCatalog) {
-            $this.RemoveNote($noteNote, $noteCatalog, $false)
+            $this.RemoveNote($noteName, $noteCatalog, $false)
             $this.AddNote($note)
         }
         else {
-            Write-Warning "Note '$($noteNote)' exists in catalog '$($update.Catalog)'. Cannot update note in different catalog at this time '$($noteCatalog)'. No action taken."
+            Write-Warning "Note '$($noteName)' exists in catalog '$($update.Catalog)'. Cannot update note in different catalog at this time '$($noteCatalog)'. No action taken."
         }
     }
 
@@ -893,13 +902,13 @@ class NoteStore {
 
         # Minimal identity: prefer Alias, else Note
         $keyAlias = [string]$Note.Alias
-        $keyNote = [string]$Note.Note
+        $keyName = [string]$Note.Name
 
         $sourceMatch = if (-not [string]::IsNullOrWhiteSpace($keyAlias)) {
             $srcCatalog.Notes | Where-Object { $_.Alias -eq $keyAlias } | Select-Object -First 1
         }
         else {
-            $srcCatalog.Notes | Where-Object { $_.Note -eq $keyNote } | Select-Object -First 1
+            $srcCatalog.Notes | Where-Object { $_.Name -eq $keyName } | Select-Object -First 1
         }
 
         if (-not $sourceMatch) {
@@ -911,8 +920,8 @@ class NoteStore {
         if (-not [string]::IsNullOrWhiteSpace($keyAlias)) {
             $destConflict = $dstCatalog.Notes | Where-Object { $_.Alias -eq $keyAlias } | Select-Object -First 1
         }
-        if (-not $destConflict -and -not [string]::IsNullOrWhiteSpace($keyNote)) {
-            $destConflict = $dstCatalog.Notes | Where-Object { $_.Note -eq $keyNote } | Select-Object -First 1
+        if (-not $destConflict -and -not [string]::IsNullOrWhiteSpace($keyName)) {
+            $destConflict = $dstCatalog.Notes | Where-Object { $_.Name -eq $keyName } | Select-Object -First 1
         }
 
         if ($destConflict -and -not $Force) {
@@ -1192,7 +1201,7 @@ class NoteStore {
     }
 
     [string] GetNoteKey([PSNote] $note) {
-        return "$($note.Catalog)::$($note.Note)::$($note.Alias)"
+        return "$($note.Catalog)::$($note.Name)::$($note.Alias)"
     }
 
     [bool] IsFavorite([PSNote] $note) {

@@ -41,7 +41,7 @@ Describe 'Update-PSNoteStore duplicate handling' {
             Catalog      = 'ExistingDup'
             Notes        = @(
                 [pscustomobject]@{
-                    Note    = 'MigrateDup01'
+                    Name    = 'MigrateDup01'
                     Snippet = 'blah'
                     Details = ''
                     Alias   = 'dup1'
@@ -50,7 +50,7 @@ Describe 'Update-PSNoteStore duplicate handling' {
                     Kind    = 0
                 },
                 [pscustomobject]@{
-                    Note    = 'Unique01'
+                    Name    = 'Unique01'
                     Snippet = 'blah'
                     Details = ''
                     Alias   = 'notadupadup'

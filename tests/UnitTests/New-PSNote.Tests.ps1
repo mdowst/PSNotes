@@ -42,7 +42,7 @@ Describe "New-PSNote" {
             New-PSNote -Note 'TestSnippet' -Snippet 'Get-Process' -Details 'Test snippet' -Tags 'Test'
             
             $result = Get-PSNote -Note 'TestSnippet'
-            $result.Note | Should -Be 'TestSnippet'
+            $result.Name | Should -Be 'TestSnippet'
             $result.Snippet | Should -Be 'Get-Process'
             $result.Details | Should -Be 'Test snippet'
             $result.Tags | Should -Contain 'Test'
@@ -53,7 +53,7 @@ Describe "New-PSNote" {
             New-PSNote -Note 'TestScriptBlock' -ScriptBlock $scriptBlock -Details 'Test scriptblock'
             
             $result = Get-PSNote -Note 'TestScriptBlock'
-            $result.Note | Should -Be 'TestScriptBlock'
+            $result.Name | Should -Be 'TestScriptBlock'
             $result.Snippet | Should -Be $scriptBlock.ToString()
             $result.Details | Should -Be 'Test scriptblock'
         }
@@ -65,7 +65,7 @@ Describe "New-PSNote" {
             New-PSNote -Note 'TestScriptPath' -ScriptPath $scriptFile -Details 'Test script path'
             
             $result = Get-PSNote -Note 'TestScriptPath'
-            $result.Note | Should -Be 'TestScriptPath'
+            $result.Name | Should -Be 'TestScriptPath'
             $result.Snippet | Should -Be $scriptFile
             $result.Kind | Should -Be 'Script'
             $result.Details | Should -Be 'Test script path'

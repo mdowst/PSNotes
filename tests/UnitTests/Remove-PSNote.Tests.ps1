@@ -78,7 +78,7 @@ Describe "Remove-PSNote" {
         
         It "calls Get-PSNote with Note/Tag/Catalog when using Note parameter set" {
             $r = Remove-PSNote -Note 'cred*' -Tag 'AD' -Catalog 'Work' -Confirm:$false
-            Write-Host $r.Note
+
             @($r).Count | Should -Be 1
             Get-PSnote -Note 'creds' -Catalog 'Work' | Should -Be $null
         }

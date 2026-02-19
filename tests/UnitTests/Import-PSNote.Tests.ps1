@@ -84,7 +84,7 @@ Describe "Import-PSNote" {
             Import-PSNote -Path $importPath -DefaultBehavior SkipMigratedNotes
             
             $imported = Get-PSNote -Note 'test-import'
-            $imported.Note | Should -Be 'test-import'
+            $imported.Name | Should -Be 'test-import'
             $imported.Snippet | Should -Be 'Get-Date'
             $imported.Details | Should -Be 'Test import note'
             $imported.Alias | Should -Be 'testimport'
@@ -121,7 +121,7 @@ Describe "Import-PSNote" {
             
             $imported = Get-PSNote -Note 'legacy-note'
             $imported | Should -Not -BeNullOrEmpty
-            $imported.Note | Should -Be 'legacy-note'
+            $imported.Name | Should -Be 'legacy-note'
         }
     }
 
@@ -148,7 +148,7 @@ Describe "Import-PSNote" {
             
             # Verify original note still exists
             $note = Get-PSNote -SearchString 'duptest'
-            $note.Note | Should -Be 'duplicate-test'
+            $note.Name | Should -Be 'duplicate-test'
             $note.Details | Should -Be 'Original note'
         }
 
@@ -173,7 +173,7 @@ Describe "Import-PSNote" {
             
             # Verify new note exists
             $note = Get-PSNote -SearchString 'overtest'
-            $note.Note | Should -Be 'overwrite-test-new'
+            $note.Name | Should -Be 'overwrite-test-new'
             $note.Details | Should -Be 'New note'
         }
     }

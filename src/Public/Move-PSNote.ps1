@@ -72,7 +72,7 @@ function Move-PSNote {
     )
 
     process {
-        $label = if ($InputObject.Alias) { $InputObject.Alias } else { $InputObject.Note }
+        $label = if ($InputObject.Alias) { $InputObject.Alias } else { $InputObject.Name }
 
         if ($PSCmdlet.ShouldProcess("[$($InputObject.Catalog)] $label", "Move to '$DestinationCatalog'")) {
             $moved = $script:_noteStore.MoveNote($InputObject, $DestinationCatalog, [bool]$Force)

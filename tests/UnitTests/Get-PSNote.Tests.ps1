@@ -48,20 +48,20 @@ Describe "Get-PSNote" {
         It "filters notes by -Note wildcard" {
             $r = Get-PSNote -Note 'cred*'
             @($r).Count | Should -Be 2
-            $r.Note | Should -Contain 'creds'
-            $r.Note | Should -Contain 'creds2'
+            $r.Name | Should -Contain 'creds'
+            $r.Name | Should -Contain 'creds2'
         }
 
         It "filters notes by -Tag (exact match)" {
             $r = Get-PSNote -Tag 'Azure'
             @($r).Count | Should -Be 1
-            $r[0].Note | Should -Be 'az-login'
+            $r[0].Name | Should -Be 'az-login'
         }
 
         It "filters notes by -Note and -Tag together" {
             $r = Get-PSNote -Note '*cred*' -Tag 'AD'
             @($r).Count | Should -Be 1
-            $r[0].Note | Should -Be 'creds'
+            $r[0].Name | Should -Be 'creds'
         }
 
         It "copies the first returned snippet to clipboard when -Copy is used" {
@@ -83,7 +83,7 @@ Describe "Get-PSNote" {
             Get-PSNote -Note 'cred*' -Run | Out-Null
 
             Assert-MockCalled -CommandName Invoke-PSNote -Times 1 -Exactly -ModuleName PSNotes -ParameterFilter {
-                $Note.Note -eq 'creds'
+                $Note.Name -eq 'creds'
             }
         }
     }
@@ -93,13 +93,13 @@ Describe "Get-PSNote" {
         It "returns notes where SearchString matches Note/Alias/Details/Snippet" {
             $r = Get-PSNote -SearchString 'Azure'
             @($r).Count | Should -BeGreaterThan 0
-            $r.Note | Should -Contain 'az-login'
+            $r.Name | Should -Contain 'az-login'
         }
 
         It "returns notes where SearchString matches Tags (even if other fields don't match)" {
             $r = Get-PSNote -SearchString 'Journal'
             @($r).Count | Should -Be 1
-            $r[0].Note | Should -Be 'day-one'
+            $r[0].Name | Should -Be 'day-one'
         }
     }
 

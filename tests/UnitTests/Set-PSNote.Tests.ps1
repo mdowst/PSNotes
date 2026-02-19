@@ -111,7 +111,7 @@ Describe "Set-PSNote" {
             Set-PSNote -Note 'NonExistentNote' -Snippet 'Get-Date' -Details 'New note' -Catalog 'Personal' -WarningVariable warn -WarningAction SilentlyContinue
             
             $result = Get-PSNote -Note 'NonExistentNote'
-            $result.Note | Should -Be 'NonExistentNote'
+            $result.Name | Should -Be 'NonExistentNote'
             $result.Snippet | Should -Be 'Get-Date'
             $warn.Count | Should -BeGreaterThan 0
         }

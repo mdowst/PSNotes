@@ -102,7 +102,12 @@ function Get-PSNoteMenu {
 
             $label = if ($n.PSObject.Properties.Match('Alias').Count -gt 0) { $n.Alias } else { $null }
             if ([string]::IsNullOrWhiteSpace($label)) {
-                $label = if ($n.PSObject.Properties.Match('Note').Count -gt 0) { $n.Note } else { $null }
+                if ($n.PSObject.Properties.Match('Name').Count -gt 0) {
+                    $label = $n.Name
+                }
+                elseif ($n.PSObject.Properties.Match('Note').Count -gt 0) {
+                    $label = $n.Note
+                }
             }
             if ([string]::IsNullOrWhiteSpace($label)) { $label = '<unnamed>' }
 
@@ -196,7 +201,15 @@ function Get-PSNoteMenu {
 
             $selLabel = if ($selected.PSObject.Properties.Match('Alias').Count -gt 0) { $selected.Alias } else { $null }
             if ([string]::IsNullOrWhiteSpace($selLabel)) {
-                $selLabel = if ($selected.PSObject.Properties.Match('Note').Count -gt 0) { $selected.Note } else { '<unnamed>' }
+                if ($selected.PSObject.Properties.Match('Name').Count -gt 0) {
+                    $selLabel = $selected.Name
+                }
+                elseif ($selected.PSObject.Properties.Match('Note').Count -gt 0) {
+                    $selLabel = $selected.Note
+                }
+                else {
+                    $selLabel = '<unnamed>'
+                }
             }
 
             Write-Host "$(($selected | Out-String).TrimEnd())"
@@ -213,7 +226,10 @@ function Get-PSNoteMenu {
                     # Prefer Snippet, else fall back to Note (or empty)
                     $text = $null
                     if ($selected.PSObject.Properties.Match('Snippet').Count -gt 0) { $text = $selected.Snippet }
-                    if ([string]::IsNullOrWhiteSpace($text) -and $selected.PSObject.Properties.Match('Note').Count -gt 0) {
+                    if ([string]::IsNullOrWhiteSpace($text) -and $selected.PSObject.Properties.Match('Name').Count -gt 0) {
+                        $text = $selected.Name
+                    }
+                    elseif ([string]::IsNullOrWhiteSpace($text) -and $selected.PSObject.Properties.Match('Note').Count -gt 0) {
                         $text = $selected.Note
                     }
                     if ($null -eq $text) { $text = '' }
