@@ -1084,15 +1084,24 @@ class NoteStore {
             # Open cached remote catalog
             $remoteCatalog = [NoteCatalog]::Open($cachePath)
 
+            # Prefer the registered friendly remote name when creating the local catalog.
+            # This keeps local file naming consistent with how remotes are presented/loaded.
+            $localCatalogName = if (-not [string]::IsNullOrWhiteSpace($match.Name)) {
+                $match.Name
+            }
+            else {
+                $remoteCatalog.Catalog
+            }
+
             # Determine local destination path using your static resolver
-            $localPath = [NoteCatalog]::ResolvePath($remoteCatalog.Catalog)
+            $localPath = [NoteCatalog]::ResolvePath($localCatalogName)
 
             if ((Test-Path $localPath) -and -not $Force) {
                 throw "Local catalog already exists: '$($remoteCatalog.Catalog)'. Use -Force to overwrite."
             }
 
             # Create a new local catalog object
-            $localCatalog = [NoteCatalog]::new($remoteCatalog.Catalog)
+            $localCatalog = [NoteCatalog]::new($localCatalogName)
             $localCatalog.IsRemote = $false
             $localCatalog.Notes = [System.Collections.Generic.List[PSNote]]::new()
 

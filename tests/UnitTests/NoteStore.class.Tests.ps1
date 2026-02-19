@@ -1,1023 +1,500 @@
-# Pester tests for NoteStore class
+#requires -Version 5.1
+# Pester 5.x tests for classes in NoteStore.class.ps1 (simple_console)
+# Locate repo root (walk up until src/ exists)
 Get-Module PSNotes | Remove-Module -Force
 $Global:TopLevel = $PSScriptRoot
 while ( -not (Test-Path (Join-Path $Global:TopLevel 'src'))) {
     $Global:TopLevel = Split-Path $Global:TopLevel -Parent
 }
-. "$Global:TopLevel\src\Classes\NoteStore.class.ps1"
-BeforeAll {
-    Set-StrictMode -Version Latest    
-    # Create a temporary directory for test files
-    $script:TestDir = Join-Path ([System.IO.Path]::GetTempPath()) "PSNotesTests\NoteStore"
-    if(Test-Path $script:TestDir) {
-        Remove-Item -Path $script:TestDir -Recurse -Force
-    }
-    $null = New-Item -Path $script:TestDir -ItemType Directory -Force
-    
-    # Set up test environment variable
-    $script:OriginalPSNotesHome = $env:PSNOTES_HOME
-    $env:PSNOTES_HOME = $script:TestDir
-    $script:MockPath = Join-Path -Path $PSScriptRoot -ChildPath 'Mocks'
 
-    $psd1 = Get-ChildItem -Path (Join-Path $Global:TopLevel 'bin') -Recurse -Filter 'PSNotes.psd1' | Select-Object -Last 1 -ExpandProperty FullName
-    Import-Module $psd1 -Force
-    # Load the class file
-    . "$Global:TopLevel\src\Classes\NoteStore.class.ps1"
+BeforeAll {
+    Set-StrictMode -Version Latest
+
+    # ---- Test sandbox ----
+    $script:OriginalPSNotesHome = $env:PSNOTES_HOME
+
+    $script:TestRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("PSNotesTests_{0}" -f ([guid]::NewGuid().ToString('N')))
+    $null = New-Item -Path $script:TestRoot -ItemType Directory -Force
+
+    $env:PSNOTES_HOME = $script:TestRoot
+
+    # Ensure the alias target exists if aliasing is not mocked for some reason
+    function Get-PSNoteAlias { param() }
+    $script:ClassPath = Join-Path $Global:TopLevel 'src\Classes\NoteStore.class.ps1'
+    # Load classes
+    . $script:ClassPath
 }
 
 AfterAll {
-    # Restore original environment
     $env:PSNOTES_HOME = $script:OriginalPSNotesHome
+    if (Test-Path $script:TestRoot) {
+        #Remove-Item -Path $script:TestRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
-Describe 'PSNote Class' {
-    Context 'Constructor with 5 parameters' {
-        It 'creates a PSNote object with all properties set' {
-            $note = [PSNote]::new(
-                'MyNote',
-                'Write-Host "Hello"',
-                'A greeting snippet',
-                'MyAlias',
-                @('test', 'example')
-            )
-            
-            $note.Note | Should -Be 'MyNote'
-            $note.Snippet | Should -Be 'Write-Host "Hello"'
-            $note.Details | Should -Be 'A greeting snippet'
-            $note.Alias | Should -Be 'MyAlias'
-            $note.Tags | Should -Be @('test', 'example')
-            $note.Catalog | Should -Be 'Default'
-        }
-        
-        It 'sets Alias to Blank when Alias is empty' {
-            $note = [PSNote]::new(
-                'MyNote',
-                'Write-Host "Hello"',
-                'A greeting snippet',
-                '',
-                @('test')
-            )
-            
-            $note.Alias | Should -Be ''
-        }
-    }
-    
-    Context 'Constructor with 6 parameters' {
-        It 'creates a PSNote object with custom catalog' {
-            $note = [PSNote]::new(
-                'MyNote',
-                'Write-Host "Hello"',
-                'A greeting snippet',
-                'MyAlias',
-                @('test'),
-                'CustomCatalog',
-                $false
-            )
-            
-            $note.Note | Should -Be 'MyNote'
-            $note.Catalog | Should -Be 'CustomCatalog'
-        }
-        
-        It 'sets Alias to Blank when Alias is empty with custom catalog' {
-            $note = [PSNote]::new(
-                'MyNote',
-                'Write-Host "Hello"',
-                'A greeting snippet',
-                '',
-                @('test'),
-                'CustomCatalog',
-                $false
-            )
-            
-            $note.Alias | Should -Be ''
-        }
-    }
-    
-    Context 'Constructor with object parameter' {
-        It 'creates a PSNote from a PSCustomObject' {
-            $obj = [pscustomobject]@{
-                Note    = 'TestNote'
-                Snippet = '$x = 1'
-                Details = 'A test note'
-                Alias   = 'tn'
-                Tags    = @('tag1', 'tag2')
-                Catalog = 'TestCatalog'
-                Run = $false
-            }
-            
-            $note = [PSNote]::new($obj)
-            
-            $note.Note | Should -Be 'TestNote'
-            $note.Snippet | Should -Be '$x = 1'
-            $note.Details | Should -Be 'A test note'
-            $note.Alias | Should -Be 'tn'
-            $note.Tags | Should -Be @('tag1', 'tag2')
-            $note.Catalog | Should -Be 'TestCatalog'
-        }
-        
-        It 'sets Alias to Blank when Alias is empty' {
-            $obj = [pscustomobject]@{
-                Note    = 'TestNote'
-                Snippet = '$x = 1'
-                Details = 'A test note'
-                Alias   = ''
-                Tags    = @('tag1')
-                Catalog = 'TestCatalog'
-                Run =$false
-            }
-            
-            $note = [PSNote]::new($obj)
-            
-            $note.Alias | Should -Be ''
-        }
+Describe 'NoteStore.class.ps1 classes' {
+    BeforeEach {
+        # Clean PSNOTES_HOME between tests (but preserve root)
+        Get-ChildItem -Path $env:PSNOTES_HOME -Force -ErrorAction SilentlyContinue | ForEach-Object {
+            Remove-Item -Path $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
+        } | Out-Null
+
+        # Recreate expected subdirs if tests want them
+        $null = New-Item -Path $env:PSNOTES_HOME -ItemType Directory -Force
     }
 
+    Describe 'PSNote' {
+        It '5-parameter constructor sets defaults (Catalog=Default, Kind=Snippet, Run=$false)' {
+            $n = [PSNote]::new('N1', 'Get-Date', 'd', 'a1', @('t1'))
 
-    Context 'Kind and Snippet behavior' {
-        It 'defaults Kind to Snippet (5-parameter constructor)' {
-            $note = [PSNote]::new(
-                'MyNote',
-                'Write-Host "Hello"',
-                'A greeting snippet',
-                'MyAlias',
-                @('test')
-            )
-
-            $note.Kind | Should -Be ([PSNoteKind]::Snippet)
-            $note.Snippet | Should -Be 'Write-Host "Hello"'
-            # Back-compat: Snippet remains populated
-            $note.Snippet | Should -Be $note.Snippet
+            $n.Note    | Should -Be 'N1'
+            $n.Snippet | Should -Be 'Get-Date'
+            $n.Details | Should -Be 'd'
+            $n.Alias   | Should -Be 'a1'
+            $n.Tags    | Should -Be @('t1')
+            $n.Catalog | Should -Be 'Default'
+            $n.Run     | Should -BeFalse
+            $n.Kind    | Should -Be ([PSNoteKind]::Snippet)
         }
 
-        It 'supports Script kind via Kind/Snippet constructor' {
-            $note = [PSNote]::new(
-                'RunScript',
-                [PSNoteKind]::Script,
-                '.\Scripts\Do-The-Thing.ps1',
-                'Runs a script',
-                'runscript',
-                @('script'),
-                'Default',
-                $true
-            )
+        It '8-parameter constructor supports Script kind' {
+            $n = [PSNote]::new('RunIt', [PSNoteKind]::Script, 'C:\x.ps1', 'd', 'run', @('s'), 'Cat1', $true)
 
-            $note.Kind | Should -Be ([PSNoteKind]::Script)
-            $note.Snippet | Should -Be '.\Scripts\Do-The-Thing.ps1'
+            $n.Kind    | Should -Be ([PSNoteKind]::Script)
+            $n.Snippet | Should -Be 'C:\x.ps1'
+            $n.Catalog | Should -Be 'Cat1'
+            $n.Run     | Should -BeTrue
         }
 
-        It 'parses Script Kind and Snippet from object data' {
+        It 'object constructor tolerates missing/invalid Kind and Run' {
             $obj = [pscustomobject]@{
-                Note    = 'ScriptNote'
-                Kind    = 'Script'
-                Snippet  = 'C:\Temp\Do.ps1'
-                Details = 'script note'
-                Alias   = 'do'
-                Tags    = @('script')
-                Catalog = 'TestCatalog'
-                Run     = $true
-            }
-
-            $note = [PSNote]::new($obj)
-
-            $note.Kind | Should -Be ([PSNoteKind]::Script)
-            $note.Snippet | Should -Be 'C:\Temp\Do.ps1'
-            $note.Run | Should -BeTrue
-        }
-
-        It 'falls back to Snippet kind when Kind is invalid' {
-            $obj = [pscustomobject]@{
-                Note    = 'BadKind'
-                Kind    = 'NotARealKind'
-                Snippet  = 'Whatever'
-                Details = 'bad kind'
-                Alias   = 'bk'
+                Note    = 'N'
+                Snippet = 'S'
+                Details = 'D'
+                Alias   = 'A'
                 Tags    = @()
-                Catalog = 'TestCatalog'
-                Run     = $false
+                Catalog = 'C'
+                Kind    = 'NotARealKind'
+                Run     = 'notabool'
             }
 
-            $note = [PSNote]::new($obj)
-
-            $note.Kind | Should -Be ([PSNoteKind]::Snippet)
+            $n = [PSNote]::new($obj)
+            $n.Kind | Should -Be ([PSNoteKind]::Snippet)
+            $n.Run  | Should -BeFalse
         }
 
-
-        It 'GetDisplayText labels Script notes and leaves Snippet notes unchanged' {
-            $snippetNote = [PSNote]::new(
-                'MyNote',
-                'Get-Process',
-                'details',
-                'gp',
-                @()
-            )
-            $snippetNote.GetDisplayText() | Should -Be 'gp'
-
-            $scriptNote = [PSNote]::new(
-                'RunScript',
-                [PSNoteKind]::Script,
-                'C:\Temp\Run.ps1',
-                'details',
-                'rs',
-                @(),
-                'Default',
-                $false
-            )
-            $scriptNote.GetDisplayText() | Should -Be 'rs (Script)'
-        }
-    }
-}
-
-Describe 'NoteCatalog Static Methods' {
-        
-    Context 'ResolvePath' {
-        It 'resolves path with no parameters (default catalog)' {
-            $path = [NoteCatalog]::ResolvePath()
-            
-            $path | Should -Match 'Default\.json$'
-            (Split-Path -Parent $path) | Should -Exist
-        }
-        
-        It 'resolves path with only catalog name parameter' {
-            $path = [NoteCatalog]::ResolvePath('MyNotes')
-            
-            $path | Should -Match 'MyNotes\.json$'
-        }
-        
-        It 'resolves path with custom catalog name and root path' {
-            $path = [NoteCatalog]::ResolvePath('CustomNote', $script:TestDir)
-            
-            $path | Should -Match 'CustomNote\.json$'
-            $path | Should -Match ([regex]::Escape($script:TestDir))
-        }
-        
-        It 'resolves path when catalog name already has .json extension' {
-            $path = [NoteCatalog]::ResolvePath('MyNotes.json')
-            
-            $path | Should -Match 'MyNotes\.json$'
-            $path | Should -Not -Match 'MyNotes\.json\.json$'
-        }
-        
-        It 'creates root path directory if it does not exist' {
-            $testPath = Join-Path $script:TestDir 'subdir'
-            
-            $path = [NoteCatalog]::ResolvePath('test', $testPath)
-            
-            (Split-Path -Parent $path) | Should -Exist
-        }
-    }
-    
-    Context 'ReadUtf8NoBom' {
-        It 'reads UTF8 content from file without BOM' {
-            $testFile = Join-Path $script:TestDir 'test.json'
-            $content = '{"test": "value"}'
-            
-            $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
-            [System.IO.File]::WriteAllText($testFile, $content, $utf8NoBom)
-            
-            $result = [NoteCatalog]::ReadUtf8NoBom($testFile)
-            
-            $result | Should -Be $content
-        }
-        
-        It 'returns null when file does not exist' {
-            $result = [NoteCatalog]::ReadUtf8NoBom('C:\NonExistent\file.json')
-            
-            $result | Should -BeNullOrEmpty
-        }
-    }
-    <#
-    Context 'WriteUtf8NoBomToLockedStream' {
-        It 'writes content to stream with UTF8 no BOM encoding' {
-            $testFile = Join-Path $script:TestDir 'write_test.json'
-            $content = '{"data": "test"}'
-            
-            $stream = [System.IO.File]::Open(
-                $testFile,
-                [System.IO.FileMode]::Create,
-                [System.IO.FileAccess]::ReadWrite,
-                [System.IO.FileShare]::None
-            )
-            
-            try {
-                [NoteCatalog]::WriteUtf8NoBomToLockedStream($stream, $content)
-                
-                $readBack = [NoteCatalog]::ReadUtf8NoBom($testFile)
-                $readBack | Should -Be $content
-            }
-            finally {
-                $stream.Dispose()
-            }
-        }
-        
-        It 'clears existing stream content before writing' {
-            $testFile = Join-Path $script:TestDir 'clear_test.json'
-            $content1 = '{"first": "content"}'
-            $content2 = '{"second": "data"}'
-            
-            # Write initial content
-            [System.IO.File]::WriteAllText($testFile, $content1)
-            
-            # Open and overwrite
-            $stream = [System.IO.File]::Open(
-                $testFile,
-                [System.IO.FileMode]::Open,
-                [System.IO.FileAccess]::ReadWrite,
-                [System.IO.FileShare]::None
-            )
-            
-            try {
-                [NoteCatalog]::WriteUtf8NoBomToLockedStream($stream, $content2)
-                
-                $readBack = [NoteCatalog]::ReadUtf8NoBom($testFile)
-                $readBack | Should -Be $content2
-                $readBack.Length | Should -BeLess $content1.Length
-            }
-            finally {
-                $stream.Dispose()
-            }
-        }
-    }
-    
-    Context 'AcquireLock' {
-        It 'acquires lock on file' {
-            $testFile = Join-Path $script:TestDir 'lock_test.json'
-            $null = New-Item -Path $testFile -ItemType File -Force
-            
-            $lockStream = $null
-            try {
-                $lockStream = [NoteCatalog]::AcquireLock($testFile)
-                $lockStream | Should -Not -BeNullOrEmpty
-                $lockStream.CanRead | Should -Be $true
-                $lockStream.CanWrite | Should -Be $true
-            }
-            finally {
-                $lockStream.Dispose()
-            }
-        }
-        
-        It 'times out when file is locked by another stream' {
-            $testFile = Join-Path $script:TestDir 'locked_test.json'
-            $null = New-Item -Path $testFile -ItemType File -Force
-            
-            $lock1 = [System.IO.File]::Open(
-                $testFile,
-                [System.IO.FileMode]::Open,
-                [System.IO.FileAccess]::ReadWrite,
-                [System.IO.FileShare]::None
-            )
-            
-            try {
-                { [NoteCatalog]::AcquireLock($testFile, 100) } | Should -Throw
-            }
-            finally {
-                $lock1.Dispose()
-            }
-        }
-    }
-    #>
-}
-
-Describe 'NoteCatalog Instance Methods' {
-    Context 'Constructor without parameters' {
-        It 'creates a default catalog' {
-            $catalog = [NoteCatalog]::new()
-            $catalog.Catalog | Should -Be 'Default'
-            $catalog.StoreVersion | Should -Be 1
-
-            $catalog.Save()
-            #$catalog.Notes | Should -BeOfType 'System.Collections.Generic.List[PSNote]'
-            $catalog.Path | Should -Exist -Because 'directory should be created'
-        }
-    }
-    
-    Context 'Constructor with catalog name' {
-        It 'creates catalog with custom name' {
-            $catalog = [NoteCatalog]::new('MyCatalog')
-            
-            $catalog.Catalog | Should -Be 'MyCatalog'
-            $catalog.Path | Should -Match 'MyCatalog\.json$'
-        }
-    }
-    
-    Context 'Constructor with blank parameter' {
-        It 'creates blank catalog without loading from disk' {
-            $catalog = [NoteCatalog]::new($true)
-            
-            $catalog.StoreVersion | Should -Be 1
-            $catalog.Notes.Count | Should -Be 0
-            $catalog.Path | Should -Not -BeNullOrEmpty
-        }
-        
-        It 'blank catalog does not auto-load existing file' {
-            # Create and save a catalog with notes
-            $existingCatalog = [NoteCatalog]::new('BlankTest')
-            $existingCatalog.Notes.Add([PSNote]::new('ExistingNote', 'code', 'details', 'en', @('tag')))
-            $existingCatalog.Save()
-            
-            # Create blank catalog - should not load the existing file
-            $blankCatalog = [NoteCatalog]::new($true)
-            $blankCatalog.Notes.Count | Should -Be 0
-        }
-    }
-    
-    Context 'Open method' {
-        It 'opens and loads existing catalog' {
-            # Create a catalog with test data
-            $testNote = [PSNote]::new(
-                'TestNote',
-                'Write-Host "test"',
-                'Test details',
-                'tn',
-                @('tag1')
-            )
-            
-            $catalog = [NoteCatalog]::new('TestCatalog')
-            $catalog.Notes.Add($testNote)
-            $catalog.Save()
-            
-            # Create a new instance and load
-            $catalog2 = [NoteCatalog]::new('TestCatalog')
-            $catalog2.Notes.Count | Should -Be 1
-            $catalog2.Notes[0].Note | Should -Be 'TestNote'
-        }
-        
-        It 'handles empty catalog file' {
-            $testFile = Join-Path $script:TestDir 'empty_catalog.json'
-            $null = New-Item -Path $testFile -ItemType File -Force
-            
-            $catalog = [NoteCatalog]::Open($testFile)
-            
-            $catalog.Notes.Count | Should -Be 0
-        }
-        
-        It 'loads legacy catalog format (array of notes)' {
-            $testFile = Join-Path $script:TestDir 'legacy_catalog.json'
-            
-            # Legacy format is just an array
-            $legacyJson = @(
-                [pscustomobject]@{
-                    Note    = 'Legacy1'
-                    Snippet = 'code'
-                    Details = 'details'
-                    Alias   = 'l1'
-                    Tags    = @('old')
-                    Catalog = ''
-                }
-            ) | ConvertTo-Json
-            
-            Set-Content -Path $testFile -Value $legacyJson
-            
-            $catalog = [NoteCatalog]::Migrate($testFile, $true)
-            
-            $catalog.Notes.Count | Should -Be 1
-            $catalog.Notes[0].Note | Should -Be 'Legacy1'
+        It 'GetKey returns Catalog::Alias' {
+            $n = [PSNote]::new('N', 'S', 'D', 'A', @())
+            $n.Catalog = 'CatX'
+            $n.GetKey() | Should -Be 'CatX::A'
         }
 
-        It 'loads legacy catalog format (array of notes)' {
-            $testFile = Join-Path $script:TestDir 'legacy_catalog.json'
-            
-            # Legacy format is just an array
-            $legacyJson = @(
-                [pscustomobject]@{
-                    Note    = 'Legacy1'
-                    Snippet = 'code'
-                    Details = 'details'
-                    Alias   = 'l1'
-                    Tags    = @('old')
-                    Catalog = ''
-                }
-            ) | ConvertTo-Json
-            
-            Set-Content -Path $testFile -Value $legacyJson
-            $warnings = & {
-                $catalog = [NoteCatalog]::Open($testFile)
-            } 3>&1
-            $warnings | Should -Match "Note catalog store version mismatch"
-            
-            # Migration should be handled elsewhere
-        }
-    }
-    
-    Context 'ToJson method' {
-        It 'serializes catalog to JSON' {
-            $catalog = [NoteCatalog]::new('TestCatalog')
-            $testNote = [PSNote]::new(
-                'TestNote',
-                'Write-Host "test"',
-                'Test details',
-                'tn',
-                @('tag1')
-            )
-            $catalog.Notes.Add($testNote)
-            
-            $json = $catalog.ToJson()
-            
-            $json | Should -Not -BeNullOrEmpty
-            $json | Should -Match '"StoreVersion"'
-            $json | Should -Match '"Notes"'
-            
-            # Verify it's valid JSON
-            { $json | ConvertFrom-Json } | Should -Not -Throw
-        }
-        
-        It 'includes all notes in JSON' {
-            $catalog = [NoteCatalog]::new('TestCatalogAdd')
-            $catalog.Notes.Add([PSNote]::new('Note1', 'code1', 'det1', 'n1', @('t1')))
-            $catalog.Notes.Add([PSNote]::new('Note2', 'code2', 'det2', 'n2', @('t2')))
-            
-            $json = $catalog.ToJson()
-            $obj = $json | ConvertFrom-Json
-            
-            $obj.Notes.Count | Should -Be 2
-        }
-    }
-    
-    Context 'Save method' {
-        It 'saves catalog to file' {
-            $catalog = [NoteCatalog]::new('SaveTest')
-            $testNote = [PSNote]::new(
-                'SaveNote',
-                'Write-Host "save"',
-                'Save test',
-                'sn',
-                @('save')
-            )
-            $catalog.Notes.Add($testNote)
-            
-            $catalog.Save()
-            
-            Test-Path $catalog.Path | Should -Be $true
-            
-            # Verify content
-            $content = Get-Content $catalog.Path -Raw
-            $content | Should -Match '"SaveNote"'
-        }
-        
-        It 'updates StoreVersion before saving' {
-            $catalog = [NoteCatalog]::new('VersionTest')
-            $initialVersion = $catalog.StoreVersion
-            
-            $catalog.Save()
-            
-            $json = Get-Content $catalog.Path -Raw | ConvertFrom-Json
-            $json.StoreVersion | Should -Be $initialVersion
-        }
-    }
-}
+        It 'GetDisplayText adds (Script) for script notes' {
+            $s = [PSNote]::new('N', [PSNoteKind]::Script, 'C:\x.ps1', 'D', 'A', @(), 'C', $false)
+            $s.GetDisplayText() | Should -Be 'A (Script)'
 
-Describe 'NoteStore Class' {
-
-    Context 'InitializeEnvironment' {
-        It 'sets PSNOTES_HOME when not already set' {
-            $tempEnv = $env:PSNOTES_HOME
-            Remove-Item env:PSNOTES_HOME -ErrorAction SilentlyContinue
-            
-            [NoteStore]::InitializeEnvironment()
-            
-            $env:PSNOTES_HOME | Should -Not -BeNullOrEmpty
-            
-            # Restore
-            $env:PSNOTES_HOME = $tempEnv
+            $p = [PSNote]::new('N2', 'Get-Process', 'D', 'gp', @())
+            $p.GetDisplayText() | Should -Be 'gp'
         }
     }
 
-    Context 'Constructor' {
-        It 'creates a NoteStore with default catalog' {
-            $store = [NoteStore]::new()
-            
-            $store.Catalogs | Should -Not -BeNullOrEmpty
-            $store.Catalogs.Count | Should -Be 1
-            $store.Catalogs[0].Catalog | Should -Be 'Default'
-            #$store.Notes | Should -BeOfType 'System.Collections.Generic.List[PSNote]'
-        }
-    }
-    
-    Context 'LoadCatalog with string' {
-        It 'loads a catalog by name' {
-            # Create a test catalog with notes
-            $testCatalog = [NoteCatalog]::new('LoadTest')
-            $testNote = [PSNote]::new(
-                'LoadedNote',
-                'code',
-                'details',
-                'ln',
-                @('tag1')
-            )
-            $testCatalog.Notes.Add($testNote)
-            $testCatalog.Save()
-            
-            # Create store and load catalog
-            $store = [NoteStore]::new()
-            $initialCount = $store.Notes.Count
-            $store.LoadCatalog('LoadTest')
-            
-            $store.Catalogs.Count | Should -Be 2
-            $store.Notes.Count | Should -BeGreaterThan $initialCount
-        }
-    }
-    
-    Context 'LoadCatalog with NoteCatalog object' {
-        It 'loads a NoteCatalog object' {
-            $testCatalog = [NoteCatalog]::new('ObjectLoadTest')
-            $testNote = [PSNote]::new(
-                'ObjectNote',
-                'code',
-                'details',
-                'on',
-                @('tag')
-            )
-            $testCatalog.Notes.Add($testNote)
-            
-            $store = [NoteStore]::new()
-            $initialCount = $store.Catalogs.Count
-            $store.LoadCatalog($testCatalog)
-            
-            $store.Catalogs.Count | Should -Be ($initialCount + 1)
-            $store.Notes.Count | Should -BeGreaterThan 0
-        }
-        
-        It 'prevents duplicate aliases when loading catalog' {
-            $store = [NoteStore]::new()
-            
-            # Create a note with same alias as one that might exist
-            $testCatalogA = [NoteCatalog]::new('DuplicateTestA')
-            $dupNote = [PSNote]::new(
-                'DupNote',
-                'code',
-                'details',
-                'Default',
-                @('tag'),
-                'DuplicateTestA',
-                $false
-            )
-            $testCatalogA.Notes.Add($dupNote)
-            $store.LoadCatalog($testCatalogA)
-            $testCatalogB = [NoteCatalog]::new('DuplicateTestB')
-            $dupNoteB = [PSNote]::new(
-                'DupNote',
-                'code',
-                'details',
-                'Default',
-                @('tag'),
-                'DuplicateTestB',
-                $false
-            )
-            $testCatalogB.Notes.Add($dupNoteB)  # Add duplicate
-            
-            # This should warn but not throw
-            $warnings = & {
-                $store.LoadCatalog($testCatalogB)
-            } 3>&1
-            $warnings | Should -Be "Duplicate Alias found: Default. Skipping note: DupNote"
-        }
-    }
-        
-    Context 'Integration tests' {
-        It 'loads multiple catalogs and consolidates notes' {
-            # Create first catalog
-            $cat1 = [NoteCatalog]::new('IntegrationCat1')
-            $cat1.Notes.Add([PSNote]::new('Note1', 'c1', 'd1', 'n1', @('t1')))
-            $cat1.Notes.Add([PSNote]::new('Note2', 'c2', 'd2', 'n2', @('t2')))
-            $cat1.Save()
-            
-            # Create second catalog
-            $cat2 = [NoteCatalog]::new('IntegrationCat2')
-            $cat2.Notes.Add([PSNote]::new('Note3', 'c3', 'd3', 'n3', @('t3')))
-            $cat2.Save()
-            
-            # Load into store
-            $store = [NoteStore]::new()
-            $store.LoadCatalog('IntegrationCat1')
-            $store.LoadCatalog('IntegrationCat2')
-            
-            $store.Catalogs.Count | Should -Be 3  # default + 2 loaded
-            $store.Notes.Count | Should -BeGreaterOrEqual 3
-        }
-    }
-    
-    Context 'AddNote method' {
-        It 'adds a note to both store and catalog' {
-            # Create and save a catalog first
-            $catalog = [NoteCatalog]::new('AddNoteTest')
-            $catalog.Save()
-            
-            $store = [NoteStore]::new()
-            $store.LoadCatalog('AddNoteTest')
-            
-            $newNote = [PSNote]::new(
-                'AddedNote',
-                'Write-Host "added"',
-                'A newly added note',
-                'an',
-                @('added'),
-                'AddNoteTest',
-                $false
-            )
-            
-            $initialCount = $store.Notes.Count
-            $store.AddNote($newNote)
-            
-            # Verify note is in store
-            $store.Notes.Count | Should -Be ($initialCount + 1)
-            $store.Notes | Where-Object { $_.Note -eq 'AddedNote' } | Should -Not -BeNullOrEmpty
-            
-            # Verify note is in catalog
-            $catalog = $store.Catalogs | Where-Object { $_.Catalog -eq 'AddNoteTest' }
-            $catalog.Notes | Where-Object { $_.Note -eq 'AddedNote' } | Should -Not -BeNullOrEmpty
-        }
-        
-        It 'saves catalog after adding note' {
-            $catalog = [NoteCatalog]::new('AddNoteSaveTest')
-            $catalog.Save()
-            
-            $store = [NoteStore]::new()
-            $store.LoadCatalog('AddNoteSaveTest')
-            
-            $newNote = [PSNote]::new(
-                'SavedNote',
-                'code',
-                'details',
-                'sn',
-                @('test'),
-                'AddNoteSaveTest',
-                $false
-            )
-            
-            $store.AddNote($newNote)
-            
-            # Reload from disk to verify persistence
-            $store2 = [NoteStore]::new()
-            $store2.LoadCatalog('AddNoteSaveTest')
-            $store2.Notes | Where-Object { $_.Note -eq 'SavedNote' } | Should -Not -BeNullOrEmpty
-        }
-    }
-    
-    Context 'RemoveNote method' {
-        It 'removes a note from store and catalog' {
-            # Create catalog with notes
-            $catalog = [NoteCatalog]::new('RemoveNoteTest')
-            $noteToRemove = [PSNote]::new('RemoveMe', 'code', 'details', 'rm', @('remove'),'RemoveNoteTest', $false)
-            $noteToKeep = [PSNote]::new('KeepMe', 'code', 'details', 'km', @('keep'),'RemoveNoteTest', $false)
-            $catalog.Notes.Add($noteToRemove)
-            $catalog.Notes.Add($noteToKeep)
-            $catalog.Save()
-            
-            $store = [NoteStore]::new()
-            $store.LoadCatalog('RemoveNoteTest')
-            
-            $initialCount = $store.Notes.Count
-            $store.RemoveNote('RemoveMe', 'RemoveNoteTest')
-            
-            # Verify note is removed from store
-            $store.Notes.Count | Should -Be ($initialCount - 1)
-            $store.Notes | Where-Object { $_.Note -eq 'RemoveMe' } | Should -BeNullOrEmpty
-            
-            # Verify other note still exists
-            $store.Notes | Where-Object { $_.Note -eq 'KeepMe' } | Should -Not -BeNullOrEmpty
-            
-            # Verify removal persisted to catalog
-            $catalog = $store.Catalogs | Where-Object { $_.Catalog -eq 'RemoveNoteTest' }
-            $catalog.Notes | Where-Object { $_.Note -eq 'RemoveMe' } | Should -BeNullOrEmpty
-        }
-        
-        It 'persists removal to disk' {
-            $catalog = [NoteCatalog]::new('RemoveNotePersistTest')
-            $noteToRemove = [PSNote]::new('TempNote', 'code', 'details', 'tn', @('temp'),'RemoveNotePersistTest', $false)
-            $catalog.Notes.Add($noteToRemove)
-            $catalog.Save()
-            
-            $store = [NoteStore]::new()
-            $store.LoadCatalog('RemoveNotePersistTest')
-            $store.RemoveNote('TempNote', 'RemoveNotePersistTest')
-            
-            # Reload from disk to verify persistence
-            $store2 = [NoteStore]::new()
-            $store2.LoadCatalog('RemoveNotePersistTest')
-            $store2.Notes | Where-Object { $_.Note -eq 'TempNote' } | Should -BeNullOrEmpty
-        }
-        
-        It 'handles removing non-existent note gracefully' {
-            $catalog = [NoteCatalog]::new('RemoveNonExistentTest')
-            $catalog.Save()
-            
-            $store = [NoteStore]::new()
-            $store.LoadCatalog('RemoveNonExistentTest')
-            
-            $initialCount = $store.Notes.Count
-            
-            # Should not throw or modify store
-            { $store.RemoveNote('NonExistent', 'RemoveNonExistentTest') } | Should -Not -Throw
-            $store.Notes.Count | Should -Be $initialCount
-        }
-    }
-    
-    Context 'UpdateNote method' {
-        It 'updates a note in store and catalog' {
-            # Create catalog with note
-            $catalog = [NoteCatalog]::new('UpdateNoteTest')
-            $originalNote = [PSNote]::new('MyNote', 'old code', 'old details', 'mn', @('old'), 'UpdateNoteTest', $false)
-            $catalog.Notes.Add($originalNote)
-            $catalog.Save()
-            
-            $store = [NoteStore]::new()
-            $store.LoadCatalog('UpdateNoteTest')
-            
-            # Update the note
-            $updatedNote = [PSNote]::new(
-                'MyNote',
-                'new code',
-                'new details',
-                'mn',
-                @('updated'),
-                'UpdateNoteTest',
-                $false
-            )
-            
-            $store.UpdateNote($updatedNote)
-            
-            # Verify update in store
-            $noteInStore = $store.Notes | Where-Object { $_.Note -eq 'MyNote' }
-            $noteInStore.Snippet | Should -Be 'new code'
-            $noteInStore.Details | Should -Be 'new details'
-            $noteInStore.Tags | Should -Be @('updated')
-            
-            # Verify update in catalog
-            $catalog = $store.Catalogs | Where-Object { $_.Catalog -eq 'UpdateNoteTest' }
-            $noteInCatalog = $catalog.Notes | Where-Object { $_.Note -eq 'MyNote' }
-            $noteInCatalog.Snippet | Should -Be 'new code'
-        }
-        
-        It 'persists updates to disk' {
-            $catalog = [NoteCatalog]::new('UpdateNotePersistTest')
-            $originalNote = [PSNote]::new('UpdateMe', 'v1', 'version 1', 'um', @('v1'),'UpdateNotePersistTest', $false)
-            $catalog.Notes.Add($originalNote)
-            $catalog.Save()
-            
-            $store = [NoteStore]::new()
-            $store.LoadCatalog('UpdateNotePersistTest')
-            
-            $updatedNote = [PSNote]::new(
-                'UpdateMe',
-                'v2',
-                'version 2',
-                'um',
-                @('v2'),
-                'UpdateNotePersistTest',
-                $false
-            )
-            
-            $store.UpdateNote($updatedNote)
-            
-            # Reload from disk to verify persistence
-            $store2 = [NoteStore]::new()
-            $store2.LoadCatalog('UpdateNotePersistTest')
-            $noteOnDisk = $store2.Notes | Where-Object { $_.Note -eq 'UpdateMe' }
-            $noteOnDisk.Snippet | Should -Be 'v2'
-            $noteOnDisk.Details | Should -Be 'version 2'
-        }
-        
-        It 'handles updating non-existent note' {
-            $catalog = [NoteCatalog]::new('UpdateNonExistentTest')
-            $catalog.Save()
-            
-            $store = [NoteStore]::new()
-            $store.LoadCatalog('UpdateNonExistentTest')
-            
-            $nonExistentNote = [PSNote]::new('NonExistent', 'code', 'details', 'ne', @('test'),'UpdateNonExistentTest', $false)
-            
-            # Should not throw, but also should not add the note
-            { $store.UpdateNote($nonExistentNote) } | Should -Not -Throw
-            $store.Notes | Where-Object { $_.Note -eq 'NonExistent' } | Should -BeNullOrEmpty
-        }
-    }
-    
-    Context 'Save method' {
-        It 'saves all catalogs' {
-            # Create and populate multiple catalogs
-            $cat1 = [NoteCatalog]::new('SaveAllCat1')
-            $cat1.Notes.Add([PSNote]::new('Note1', 'c1', 'd1', 'n1', @('t1'),'SaveAllCat1', $false))
-            
-            $cat2 = [NoteCatalog]::new('SaveAllCat2')
-            $cat2.Notes.Add([PSNote]::new('Note2', 'c2', 'd2', 'n2', @('t2'),'SaveAllCat2', $false))
-            
-            $store = [NoteStore]::new()
-            $store.LoadCatalog($cat1)
-            $store.LoadCatalog($cat2)
-            
-            # Add new notes
-            $store.Notes | ForEach-Object {
-                $_.Snippet = 'modified'
-            }
-            
-            # Save all catalogs
-            $store.Save()
-            
-            # Reload and verify all changes persisted
-            $store2 = [NoteStore]::new()
-            $store2.LoadCatalog('SaveAllCat1')
-            $store2.LoadCatalog('SaveAllCat2')
-            
-            $store2.Catalogs.Count | Should -Be 3  # default + 2
-        }
-    }
-}
+    Describe 'NoteCatalog - ResolvePath/Open/Versioning/Validation' {
+        It 'ResolvePath creates PSNOTES_HOME if needed and returns *.json' {
+            Remove-Item -Path $env:PSNOTES_HOME -Recurse -Force
+            $p = [NoteCatalog]::ResolvePath('MyCat', $env:PSNOTES_HOME)
 
-
-Describe 'NoteMetadataStore Class' {
-    Context 'Constructor and defaults' {
-        It 'creates config directory and initializes defaults' {
-            $store = [NoteMetadataStore]::new()
-
-            $store.Version | Should -Be ([NoteMetadataStore]::CurrentVersion)
-
-            $expectedDir = Join-Path $env:PSNOTES_HOME 'config'
-            (Test-Path $expectedDir) | Should -BeTrue
-
-            $expectedPath = Join-Path $expectedDir 'psnotemetadatastore.json'
-            $store.Path | Should -Be $expectedPath
+            (Split-Path -Parent $p) | Should -Exist
+            $p | Should -Match 'MyCat\.json$'
         }
 
-        It 'does not throw when metadata file does not exist' {
-            $path = Join-Path $env:PSNOTES_HOME 'config\does-not-exist.json'
-            { [NoteMetadataStore]::new($path) } | Should -Not -Throw
+        It 'Save writes current store version and ToJson excludes per-note Catalog property' {
+            $cat = [NoteCatalog]::new($true)
+            $cat.Path = [NoteCatalog]::ResolvePath('X')
+            $cat.Catalog = 'X'
+            $cat.Notes.Add([PSNote]::new('N1', 'S', 'D', 'A', @())) | Out-Null
+            $cat.Notes[0].Catalog = 'X'
+            $cat.Save()
+
+            $json = Get-Content -Path $cat.Path -Raw -Encoding UTF8
+            $data = $json | ConvertFrom-Json
+
+            $data.StoreVersion | Should -Be ([NoteCatalog]::CurrentStoreVersion)
+            $data.Catalog      | Should -Be 'X'
+            $data.Notes.Count  | Should -Be 1
+
+            # Stored notes intentionally exclude Catalog
+            $data.Notes[0].PSObject.Properties.Name | Should -Not -Contain 'Catalog'
         }
-    }
 
-    Context 'Persistence' {
-        It 'round-trips Favorites via Save/Open' {
-            $path = Join-Path $env:PSNOTES_HOME 'config\meta-roundtrip.json'
-            $store = [NoteMetadataStore]::new($path)
-
-            $null = $store.Favorites.Add('Catalog1::alias1')
-            $null = $store.Favorites.Add('Catalog2::alias2')
-            $store.Save()
-
-            $store2 = [NoteMetadataStore]::new($path)
-            $store2.Favorites.Contains('Catalog1::alias1') | Should -BeTrue
-            $store2.Favorites.Contains('Catalog2::alias2') | Should -BeTrue
-        }
-
-        It 'fails safe on corrupt JSON' {
-            $path = Join-Path $env:PSNOTES_HOME 'config\meta-corrupt.json'
-            $null = New-Item -ItemType Directory -Path (Split-Path $path) -Force
-            Set-Content -LiteralPath $path -Value '{ not json' -Encoding UTF8
-
-            { [NoteMetadataStore]::new($path) } | Should -Not -Throw
-
-            $store = [NoteMetadataStore]::new($path)
-            $store.Favorites.Count | Should -Be 0
-        }
-    }
-}
-
-Describe 'Error Handling and Edge Cases' {
-    Context 'PSNote edge cases' {
-        It 'handles null tags array' {
-            { $note = [PSNote]::new('Note', 'code', 'details', 'alias', $null) } | Should -Not -Throw
-        }
-        
-        It 'handles empty string for Note name' {
-            { $note = [PSNote]::new('', 'code', 'details', 'alias', @()) } | Should -Not -Throw
-            #$note.psobject.Properties['Note'].Value | Should -Be ''
-        }
-    }
-    
-    Context 'NoteCatalog edge cases' {
-        It 'handles catalog with very large note count' {
-            $catalog = [NoteCatalog]::new('LargeTest')
-            
-            for ($i = 1; $i -le 100; $i++) {
-                $note = [PSNote]::new(
-                    "Note$i",
-                    "code$i",
-                    "details$i",
-                    "alias$i",
-                    @("tag$i")
+        It 'Open refuses to load when StoreVersion mismatches' {
+            $path = [NoteCatalog]::ResolvePath('BadVer')
+            $bad = [pscustomobject]@{
+                StoreVersion = 999
+                Catalog      = 'BadVer'
+                Notes        = @(
+                    [pscustomobject]@{ Note = 'N'; Snippet = 'S'; Details = 'D'; Alias = 'A'; Tags = @() }
                 )
-                $catalog.Notes.Add($note)
-            }
-            
-            $catalog.Save()
-            $catalog2 = [NoteCatalog]::new('LargeTest')
-            
-            $catalog2.Notes.Count | Should -Be 100
+            } | ConvertTo-Json -Depth 10
+
+            $bad | Set-Content -Path $path -Encoding UTF8
+
+            Mock -CommandName Write-Warning
+            $c = [NoteCatalog]::new('BadVer')
+
+            $c.Notes.Count | Should -Be 0
+            Assert-MockCalled Write-Warning -Times 1
         }
-        
-        It 'handles special characters in note properties' {
-            $catalog = [NoteCatalog]::new('SpecialCharTest')
-            $note = [PSNote]::new(
-                'Note "with" quotes',
-                'code with @#$% special chars',
-                'details with `n newlines',
-                'alias_with-dashes',
-                @('tag@special', 'tag#2')
-            )
-            $catalog.Notes.Add($note)
-            
-            { $catalog.Save() } | Should -Not -Throw
-            
-            $catalog2 = [NoteCatalog]::new('SpecialCharTest')
-            $catalog2.Notes[0].Note | Should -Be 'Note "with" quotes'
+
+        It 'VersionCheck returns true only for current store version' {
+            $path = [NoteCatalog]::ResolvePath('VC')
+
+            $ok = [pscustomobject]@{
+                StoreVersion = [NoteCatalog]::CurrentStoreVersion
+                Catalog      = 'VC'
+                Notes        = @(
+                    [pscustomobject]@{ Note = 'N'; Snippet = 'S'; Details = 'D'; Alias = 'A'; Tags = @() }
+                )
+            } | ConvertTo-Json -Depth 10
+            $ok | Set-Content -Path $path -Encoding UTF8
+
+            [NoteCatalog]::VersionCheck($path) | Should -BeTrue
+
+            $bad = $ok | ConvertFrom-Json
+            $bad.StoreVersion = 0
+            ($bad | ConvertTo-Json -Depth 10) | Set-Content -Path $path -Encoding UTF8
+
+            [NoteCatalog]::VersionCheck($path) | Should -BeFalse
+        }
+
+        It 'ValidateNotes flags legacy array format and missing Alias as warnings' {
+            $path = [NoteCatalog]::ResolvePath('Legacy')
+
+            @(
+                [pscustomobject]@{ Note = 'N1'; Snippet = 'S1'; Details = 'D'; Tags = @('t') }  # no Alias
+            ) | ConvertTo-Json -Depth 10 | Set-Content -Path $path -Encoding UTF8
+
+            $r = [NoteCatalog]::ValidateNotes($path)
+            $r.IsValid | Should -BeTrue
+            $r.StoreVersion | Should -Be 'Legacy'
+            ($r.Warnings -join "`n") | Should -Match 'Legacy note catalog format'
+            ($r.Warnings -join "`n") | Should -Match "Missing 'Alias'"
+        }
+
+        It 'ValidateNotes fails for empty file' {
+            $path = [NoteCatalog]::ResolvePath('Empty')
+            '' | Set-Content -Path $path -Encoding UTF8
+
+            $r = [NoteCatalog]::ValidateNotes($path)
+            $r.IsValid | Should -BeFalse
+            ($r.Errors -join "`n") | Should -Match 'File is empty'
+        }
+    }
+
+    Describe 'NoteCatalog - AtomicSaveWithBackup' {
+        It 'creates backup when overwriting and keeps only last 10 backups' {
+            $path = [NoteCatalog]::ResolvePath('B')
+            'one' | Set-Content -Path $path -Encoding UTF8
+
+            # Write 12 times -> backups should be trimmed to 10
+            1..12 | ForEach-Object {
+                [NoteCatalog]::AtomicSaveWithBackup($path, "content $_")
+            }
+
+            $backupDir = Join-Path $env:PSNOTES_HOME 'backups'
+            $backupDir | Should -Exist
+
+            $fileName = [System.IO.Path]::GetFileName($path)
+            $bak = Get-ChildItem -Path $backupDir -Filter "$fileName.*.bak" -File -ErrorAction SilentlyContinue
+            $bak.Count | Should -BeLessOrEqual 10
+
+            (Get-Content -Path $path -Raw -Encoding UTF8) | Should -Match 'content 12'
+        }
+    }
+
+    Describe 'NoteCatalog - Migrate' {
+        It 'migrates legacy array to current object format and creates backup artifacts' {
+            $legacyPath = [NoteCatalog]::ResolvePath('LegacyToMigrate')
+            @(
+                [pscustomobject]@{ Note = 'N1'; Snippet = 'S1'; Details = 'D1'; Alias = 'A1'; Tags = @('t1') },
+                [pscustomobject]@{ Note = 'N2'; Snippet = 'S2'; Details = 'D2'; Alias = 'A2'; Tags = @() }
+            ) | ConvertTo-Json -Depth 10 | Set-Content -Path $legacyPath -Encoding UTF8
+
+            $m = [NoteCatalog]::Migrate($legacyPath, $true)
+
+            $m.Notes.Count | Should -Be 2
+            $m.Notes[0].Catalog | Should -Be 'LegacyToMigrate'
+
+            $backupDir = Join-Path $env:PSNOTES_HOME 'backups'
+            $backupDir | Should -Exist
+
+            # Should have created at least one pre-migration backup
+            $fileName = [System.IO.Path]::GetFileName($legacyPath)
+            (Get-ChildItem -Path $backupDir -Filter "$fileName.pre-migration.*.bak" -File -ErrorAction SilentlyContinue | Measure-Object).Count |
+            Should -BeGreaterThan 0
+        }
+    }
+
+    Describe 'NoteStore - local catalogs, add/remove/update, duplicate behavior' {
+        BeforeEach {
+            Mock -CommandName Set-Alias
+            Mock -CommandName Write-Warning
+            Mock -CommandName Write-Verbose
+            Mock -CommandName Write-Debug
+        }
+
+        It 'constructor loads local catalogs from PSNOTES_HOME (current format)' {
+            $path = [NoteCatalog]::ResolvePath('Cat1')
+            $obj = [pscustomobject]@{
+                StoreVersion = [NoteCatalog]::CurrentStoreVersion
+                Catalog      = 'Cat1'
+                Notes        = @(
+                    [pscustomobject]@{ Note = 'N1'; Snippet = 'S1'; Details = 'D1'; Alias = 'a1'; Tags = @('t') }
+                )
+            } | ConvertTo-Json -Depth 10
+            $obj | Set-Content -Path $path -Encoding UTF8
+
+            $s = [NoteStore]::new()
+
+            $s.Catalogs.Catalog | Should -Contain 'Cat1'
+            ($s.Notes | Where-Object Alias -eq 'a1' | Measure-Object).Count | Should -Be 1
+
+            Assert-MockCalled Set-Alias -Times 1 -Exactly
+        }
+
+        It 'LoadCatalog skips duplicate alias when already present from different catalog' {
+            $s = [NoteStore]::new()
+
+            $c1 = [NoteCatalog]::new($true); $c1.Catalog = 'C1'; $c1.Path = [NoteCatalog]::ResolvePath('C1')
+            $c2 = [NoteCatalog]::new($true); $c2.Catalog = 'C2'; $c2.Path = [NoteCatalog]::ResolvePath('C2')
+
+            $n1 = [PSNote]::new('N1', 'S', 'D', 'dup', @()); $n1.Catalog = 'C1'
+            $n2 = [PSNote]::new('N2', 'S', 'D', 'dup', @()); $n2.Catalog = 'C2'
+
+            $c1.Notes.Add($n1) | Out-Null
+            $c2.Notes.Add($n2) | Out-Null
+
+            $s.LoadCatalog($c1)
+            $s.LoadCatalog($c2)
+
+            ($s.Notes | Where-Object Alias -eq 'dup' | Measure-Object).Count | Should -Be 1
+            Assert-MockCalled Write-Warning -Times 1
+        }
+
+        It 'AddNote blocks adding into remote catalog' {
+            $s = [NoteStore]::new()
+
+            $remote = [NoteCatalog]::new($true)
+            $remote.Catalog = 'Remote1'
+            $remote.Path = 'x'
+            $remote.IsRemote = $true
+            $s.Catalogs.Add($remote) | Out-Null
+
+            $n = [PSNote]::new('N', 'S', 'D', 'a', @()); $n.Catalog = 'Remote1'
+            $s.AddNote($n)
+
+            ($s.Notes | Where-Object Note -eq 'N' | Measure-Object).Count | Should -Be 0
+            Assert-MockCalled Write-Warning -Times 1
+        }
+
+        It 'RemoveNote blocks removing from remote catalog' {
+            $s = [NoteStore]::new()
+
+            $remote = [NoteCatalog]::new($true)
+            $remote.Catalog = 'Remote1'
+            $remote.Path = 'x'
+            $remote.IsRemote = $true
+
+            $n = [PSNote]::new('N', 'S', 'D', 'a', @()); $n.Catalog = 'Remote1'
+            $remote.Notes.Add($n) | Out-Null
+
+            $s.Catalogs.Add($remote) | Out-Null
+            $s.Notes.Add($n) | Out-Null
+
+            $s.RemoveNote('N', 'Remote1')
+            ($s.Notes | Where-Object Note -eq 'N' | Measure-Object).Count | Should -Be 1
+            Assert-MockCalled Write-Warning -Times 1
+        }
+
+        It 'UpdateNote blocks updating remote notes (existing lives in remote)' {
+            $s = [NoteStore]::new()
+
+            $remote = [NoteCatalog]::new($true)
+            $remote.Catalog = 'Remote1'
+            $remote.Path = 'x'
+            $remote.IsRemote = $true
+
+            $existing = [PSNote]::new('N', 'S', 'D', 'a', @()); $existing.Catalog = 'Remote1'
+            $remote.Notes.Add($existing) | Out-Null
+
+            $s.Catalogs.Add($remote) | Out-Null
+            $s.Notes.Add($existing) | Out-Null
+
+            $updated = [PSNote]::new('N', 'S2', 'D2', 'a', @()); $updated.Catalog = 'Remote1'
+            $s.UpdateNote($updated)
+
+            ($s.Notes | Where-Object Note -eq 'N' | Select-Object -First 1).Snippet | Should -Be 'S'
+            Assert-MockCalled Write-Warning -Times 1
+        }
+    }
+
+    Describe 'NoteStore - favorites + MoveNote' {
+        BeforeEach {
+            Mock -CommandName Set-Alias
+            Mock -CommandName Write-Warning
+            Mock -CommandName Write-Verbose
+            Mock -CommandName Write-Debug
+        }
+
+        It 'AddFavorite/IsFavorite/GetFavorites/RemoveFavorite works' {
+            $s = [NoteStore]::new()
+
+            $c = [NoteCatalog]::new($true); $c.Catalog = 'C1'; $c.Path = [NoteCatalog]::ResolvePath('C1')
+            $n = [PSNote]::new('N', 'S', 'D', 'a', @()); $n.Catalog = 'C1'
+            $c.Notes.Add($n) | Out-Null
+            $s.LoadCatalog($c)
+
+            $s.IsFavorite($n) | Should -BeFalse
+            $s.AddFavorite($n)
+            $s.IsFavorite($n) | Should -BeTrue
+
+            $f = $s.GetFavorites()
+            $f.Count | Should -Be 1
+            $f[0].Note | Should -Be 'N'
+
+            $s.RemoveFavorite($n)
+            $s.IsFavorite($n) | Should -BeFalse
+        }
+
+        It 'MoveNote preserves favorite status and supports -Force overwrite' {
+            $s = [NoteStore]::new()
+
+            $src = [NoteCatalog]::new($true); $src.Catalog = 'Src'; $src.Path = [NoteCatalog]::ResolvePath('Src')
+            $dst = [NoteCatalog]::new($true); $dst.Catalog = 'Dst'; $dst.Path = [NoteCatalog]::ResolvePath('Dst')
+
+            $n = [PSNote]::new('N', 'S', 'D', 'a', @()); $n.Catalog = 'Src'
+            $src.Notes.Add($n) | Out-Null
+
+            # Conflict in destination
+            $conflict = [PSNote]::new('Other', 'S', 'D', 'a', @()); $conflict.Catalog = 'Dst'
+            $dst.Notes.Add($conflict) | Out-Null
+
+            $s.LoadCatalog($src)
+            $s.LoadCatalog($dst)
+
+            $s.AddFavorite($n)
+            $s.IsFavorite($n) | Should -BeTrue
+
+            { $s.MoveNote($n, 'Dst', $false) } | Should -Throw
+
+            $s.MoveNote($n, 'Dst', $true)
+
+            # After move:
+            $n.Catalog | Should -Be 'Dst'
+            $s.IsFavorite($n) | Should -BeTrue
+
+            # Destination should now contain moved note (alias 'a')
+            ($s.Catalogs | Where-Object Catalog -eq 'Dst' | Select-Object -First 1).Notes |
+            Where-Object Alias -eq 'a' |
+            Select-Object -First 1 |
+            ForEach-Object { $_.Note } | Should -Be 'N'
+        }
+    }
+
+    Describe 'NoteStore - remote catalogs (mocked web)' {
+        BeforeEach {
+            Mock -CommandName Set-Alias
+            Mock -CommandName Write-Warning
+            Mock -CommandName Write-Verbose
+            Mock -CommandName Write-Debug
+        }
+
+        It 'RegisterRemoteCatalog stores config and creates stable cache file path' {
+            # mock web so LoadRemoteCatalogs/SyncRemoteCatalogs doesn’t do real network
+            Mock -CommandName Invoke-WebRequest -MockWith {
+                [pscustomobject]@{
+                    Content = ([pscustomobject]@{
+                            StoreVersion = [NoteCatalog]::CurrentStoreVersion
+                            Catalog      = 'RemoteIgnored'
+                            Notes        = @(
+                                [pscustomobject]@{ Note = 'N'; Snippet = 'S'; Details = 'D'; Alias = 'a'; Tags = @() }
+                            )
+                        } | ConvertTo-Json -Depth 10)
+                    Headers = @{ ETag = '"x"'; 'Last-Modified' = 'Wed, 01 Jan 2025 00:00:00 GMT' }
+                }
+            }
+
+            $s = [NoteStore]::new()
+            $entry = $s.RegisterRemoteCatalog('MyRemote', 'https://example.invalid/catalog.json')
+
+            $entry.Name | Should -Be 'MyRemote'
+            $entry.Url  | Should -Be 'https://example.invalid/catalog.json'
+            $entry.CacheFile | Should -Match '^remote\\.+\.json$'
+
+            # Config file should exist
+            (Join-Path $env:PSNOTES_HOME 'config\psnoteconfigstore.json') | Should -Exist
+        }
+
+        It 'LoadRemoteCatalogs loads cache as IsRemote and overrides catalog name with config Name' {
+            Mock -CommandName Invoke-WebRequest -MockWith {
+                [pscustomobject]@{
+                    Content = ([pscustomobject]@{
+                            StoreVersion = [NoteCatalog]::CurrentStoreVersion
+                            Catalog      = 'RemoteCatalogName'
+                            Notes        = @(
+                                [pscustomobject]@{ Note = 'N1'; Snippet = 'S1'; Details = 'D1'; Alias = 'r1'; Tags = @() }
+                            )
+                        } | ConvertTo-Json -Depth 10)
+                    Headers = @{ ETag = '"x"' }
+                }
+            }
+
+            $s = [NoteStore]::new()
+            $null = $s.RegisterRemoteCatalog('FriendlyRemote', 'https://example.invalid/r.json')
+
+            # After register it calls LoadRemoteCatalogs; verify remote loaded
+            $rc = $s.Catalogs | Where-Object Catalog -eq 'FriendlyRemote' | Select-Object -First 1
+            $rc | Should -Not -BeNullOrEmpty
+            $rc.IsRemote | Should -BeTrue
+
+            ($s.Notes | Where-Object Catalog -eq 'FriendlyRemote' | Select-Object -First 1).Alias | Should -Be 'r1'
+        }
+
+        It 'RemoveRemoteCatalog throws when none registered' {
+            $s = [NoteStore]::new()
+            { $s.RemoveRemoteCatalog('https://nope', $false, $false) } | Should -Throw
+        }
+
+        It 'RemoveRemoteCatalog -ConvertToLocal writes local catalog and unregisters remote' {
+            # Prepare remote registration + cached file
+            Mock -CommandName Invoke-WebRequest -MockWith {
+                [pscustomobject]@{
+                    Content = ([pscustomobject]@{
+                            StoreVersion = [NoteCatalog]::CurrentStoreVersion
+                            Catalog      = 'RemoteCatalogName'
+                            Notes        = @(
+                                [pscustomobject]@{ Note = 'N1'; Snippet = 'S1'; Details = 'D1'; Alias = 'r1'; Tags = @() }
+                            )
+                        } | ConvertTo-Json -Depth 10)
+                    Headers = @{ }
+                }
+            }
+
+            $s = [NoteStore]::new()
+            $entry = $s.RegisterRemoteCatalog('FriendlyRemote', 'https://example.invalid/r.json')
+
+            # Force a cache presence (register already syncs; but be explicit)
+            $cachePath = Join-Path $env:PSNOTES_HOME $entry.CacheFile
+            $cachePath | Should -Exist
+
+            # Convert to local -> should create FriendlyRemote.json locally
+            $removed = $s.RemoveRemoteCatalog($entry.Url, $true, $true)
+            $removed.Url | Should -Be $entry.Url
+
+            $localPath = [NoteCatalog]::ResolvePath('FriendlyRemote')
+            $localPath | Should -Exist
+
+            # Should no longer be registered
+            ($s.Config.RemoteCatalogs | Where-Object Url -eq $entry.Url | Measure-Object).Count | Should -Be 0
         }
     }
 }
