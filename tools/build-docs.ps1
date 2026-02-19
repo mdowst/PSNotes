@@ -93,7 +93,7 @@ if (-not (Test-Path .\bin\PSNotes\)) {
 $psd1 = Get-ChildItem .\bin -Filter 'PSNotes.psd1' -Recurse | Select-Object -Last 1 
 Import-Module $psd1.FullName -Force
 
-Get-ChildItem .\Documentation\PSNotes -Filter '*.md' | Remove-Item -Force
+Get-ChildItem .\Documentation -Filter '*.md' -Recurse | Remove-Item -Force
 
 $newMarkdownCommandHelpSplat = @{
     ModuleInfo     = Get-Module PSNotes
@@ -107,35 +107,10 @@ Get-ChildItem .\Documentation\PSNotes -Filter '*.md' | ForEach-Object {
     Add-ExamplePowerShellFence -Path $_.FullName
 }
 
+Get-ChildItem .\Documentation\PSNotes -Filter 'PSNotes.md' | Move-Item -Destination '.\Documentation\Commands.md' -Force
 
-$readme = Get-Content .\README.md
-$docs = Get-ChildItem .\Documentation -Filter '*.md' | ForEach-Object {
-    $content = Get-Content -LiteralPath $_.FullName
-    "| [$($_.BaseName)](Documentation/$($_.Name)) | $($content[$content.IndexOf('## SYNOPSIS')+2]) |"
-}
-
-$commands = $false
-$readmeupdate = foreach ($line in $readme) {
-    if ($line -eq '# Commands') {
-        $commands = $true
-        $line
-        ''
-        '| Cmdlet | Synopsis |'
-        '| ------ | -------- |'
-        $docs
-        ''
-        '[top](#psnotes)'
-    }
-    elseif ($commands -and $line -match '^#') {
-        $commands = $false
-    }
-
-    if (-not $commands) {
-        $line
-    }
-}
-
-#$readmeupdate | Out-File .\README.md
+Get-ChildItem .\Documentation\PSNotes -Filter '*.md' | Move-Item -Destination .\Documentation -Force
+Remove-Item -Path .\Documentation\PSNotes -Force
 
 Set-Location -LiteralPath $currentPath
 #>
