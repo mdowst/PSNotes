@@ -58,7 +58,7 @@ Imports notes from azure-notes.json and places them into the Azure catalog (if s
 ### EXAMPLE 3
 
 ```powershell
-Import-PSNote -Path .\backup.json -Force -PassThru
+Import-PSNote -Path .\backup.json -DefaultBehavior OverwriteExistingNotes
 ```
 
 Imports notes, overwriting conflicts, and returns the imported note objects.
@@ -88,6 +88,11 @@ HelpMessage: ''
 
 ### -DefaultBehavior
 
+Determines how to handle existing notes when conflicts are detected during import.
+Valid values:
+- Prompt: prompts when conflicts occur
+- SkipMigratedNotes: keeps existing notes and skips conflicting imported notes
+- OverwriteExistingNotes: overwrites existing notes with imported versions
 
 ```yaml
 Type: System.String

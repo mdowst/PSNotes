@@ -20,7 +20,7 @@ Removes one or more PSNotes from the note store.
 ### Note (Default)
 
 ```
-Remove-PSNote [-Note <string>] [-Tag <string>] [-Catalog <string[]>] [-Force] [-WhatIf] [-Confirm]
+Remove-PSNote [-Name <string>] [-Tag <string>] [-Catalog <string[]>] [-Force] [-WhatIf] [-Confirm]
  [<CommonParameters>]
 ```
 
@@ -73,14 +73,6 @@ Remove-PSNote -Alias 'azvm' -WhatIf
 ```
 
 Shows what would happen if the note with alias 'azvm' were removed.
-
-### EXAMPLE 4
-
-```powershell
-Get-PSNote -Tag 'Legacy' | Remove-PSNote -Force -PassThru
-```
-
-Removes all notes tagged 'Legacy' without prompting and returns the removed note objects.
 
 ## PARAMETERS
 
@@ -176,9 +168,10 @@ AcceptedValues: []
 HelpMessage: ''
 ```
 
-### -Note
+### -Name
 
-Discovery params (match Get-PSNote)
+The name of the note to remove.
+Wildcards may be supported depending on implementation.
 
 ```yaml
 Type: System.String
@@ -199,6 +192,7 @@ HelpMessage: ''
 
 ### -SearchString
 
+Performs a broader search across note properties such as name, alias, and tags to identify notes for removal.
 
 ```yaml
 Type: System.String

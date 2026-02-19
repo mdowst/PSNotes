@@ -20,7 +20,7 @@ Updates an existing PSNote or creates it if it does not already exist.
 ### __AllParameterSets
 
 ```
-Set-PSNote [-Note] <string> [[-Catalog] <string>] [[-Snippet] <string>]
+Set-PSNote [-Name] <string> [[-Catalog] <string>] [[-Snippet] <string>]
  [[-ScriptBlock] <scriptblock>] [[-ScriptPath] <string>] [[-Details] <string>] [[-Alias] <string>]
  [[-Tags] <string[]>] [[-Run] <bool>] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
@@ -48,7 +48,7 @@ from Get-PSNote output or structured data sources such as CSV.
 ### EXAMPLE 1
 
 ```powershell
-Set-PSNote -Note 'ADUser' -Tags 'AD','Users','Updated'
+Set-PSNote -Name 'ADUser' -Tags 'AD','Users','Updated'
 ```
 
 Updates the Tags for the note 'ADUser' in the Default catalog, replacing any existing tags.
@@ -57,7 +57,7 @@ Updates the Tags for the note 'ADUser' in the Default catalog, replacing any exi
 
 ```powershell
 $NewSnippet = '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__))'
-PS> Set-PSNote -Note 'DayOfWeek' -Snippet $NewSnippet
+Set-PSNote -Name 'DayOfWeek' -Snippet $NewSnippet
 ```
 
 Updates only the snippet content for the note 'DayOfWeek' while leaving other properties unchanged.
@@ -65,7 +65,7 @@ Updates only the snippet content for the note 'DayOfWeek' while leaving other pr
 ### EXAMPLE 3
 
 ```powershell
-Set-PSNote -Note 'CpuUsage' -ScriptBlock {
+Set-PSNote -Name 'CpuUsage' -ScriptBlock {
     Get-CimInstance Win32_Processor |
         Measure-Object -Property LoadPercentage -Average |
         Select-Object -ExpandProperty Average
@@ -77,7 +77,7 @@ Updates the note 'CpuUsage' with a new multi-line script block.
 ### EXAMPLE 4
 
 ```powershell
-Set-PSNote -Note 'CpuUsage' -Details "Returns average CPU usage percentage" -Alias 'cpu'
+Set-PSNote -Name 'CpuUsage' -Details "Returns average CPU usage percentage" -Alias 'cpu'
 ```
 
 Updates only the Details and Alias properties for the note 'CpuUsage'.
@@ -85,7 +85,7 @@ Updates only the Details and Alias properties for the note 'CpuUsage'.
 ### EXAMPLE 5
 
 ```powershell
-Set-PSNote -Note 'BackupScript' -ScriptPath 'D:\Scripts\Backup-Database.ps1' -Details "Updated backup script location"
+Set-PSNote -Name 'BackupScript' -ScriptPath 'D:\Scripts\Backup-Database.ps1' -Details "Updated backup script location"
 ```
 
 Updates an existing note to reference a different script file, changing Kind to 'Script'.
@@ -102,7 +102,7 @@ Bulk-updates notes by piping objects from Get-PSNote and replacing their Tags.
 
 ```powershell
 [PSCustomObject]@{
-    Note    = 'MyNote'
+    Name    = 'MyNote'
     Snippet = 'Get-Process | Select-Object -First 10'
     Details = 'Top 10 processes'
     Tags    = @('process','monitoring')
@@ -211,7 +211,7 @@ AcceptedValues: []
 HelpMessage: ''
 ```
 
-### -Note
+### -Name
 
 The name of the note to update or create.
 

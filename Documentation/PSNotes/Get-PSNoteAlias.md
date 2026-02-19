@@ -39,38 +39,6 @@ easy-to-remember aliases.
 
 ## EXAMPLES
 
-### EXAMPLE 1
-
-```powershell
-Get-PSNoteAlias -Alias azvm
-```
-
-Outputs the snippet associated with the alias 'azvm'.
-
-### EXAMPLE 2
-
-```powershell
-Get-PSNoteAlias -Alias azvm -Copy
-```
-
-Copies the snippet associated with 'azvm' to the clipboard.
-
-### EXAMPLE 3
-
-```powershell
-Get-PSNoteAlias -Alias azvm -Run
-```
-
-Executes the snippet associated with 'azvm'.
-
-### EXAMPLE 4
-
-```powershell
-Get-PSNoteAlias -Alias buildscript -Run
-```
-
-Executes the script referenced by the 'buildscript' note if it is a script-path note.
-
 ## PARAMETERS
 
 ### -Copy

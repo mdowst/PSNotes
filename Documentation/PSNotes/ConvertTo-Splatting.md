@@ -54,9 +54,8 @@ Set-AzVMExtension -ExtensionName "MicrosoftMonitoringAgent" -ResourceGroupName "
     -TypeHandlerVersion "1.0" -Settings @{"workspaceId" = "xxxx"} `
     -ProtectedSettings @{"workspaceKey" = "xxxx"} -Location "uksouth"
 '@
-```
-
 ConvertTo-Splatting $splatme
+```
 
 Creates a parameter hashtable and a splatted Set-AzVMExtension call.
 

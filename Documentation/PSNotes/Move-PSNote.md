@@ -41,31 +41,15 @@ Supports ShouldProcess, enabling the use of -WhatIf and -Confirm.
 ### EXAMPLE 1
 
 ```powershell
-Move-PSNote -Name 'Get-VMInfo' -Catalog 'Azure'
-```
-
-Moves the note named 'Get-VMInfo' to the Azure catalog.
-
-### EXAMPLE 2
-
-```powershell
-Get-PSNote -Catalog 'General' | Move-PSNote -Catalog 'Archive'
+Get-PSNote -Catalog 'General' | Move-PSNote -DestinationCatalog 'Archive'
 ```
 
 Moves all notes from the General catalog to the Archive catalog.
 
-### EXAMPLE 3
+### EXAMPLE 2
 
 ```powershell
-Move-PSNote -Alias 'azvm' -Catalog 'Azure' -WhatIf
-```
-
-Shows what would happen if the note were moved, without performing the action.
-
-### EXAMPLE 4
-
-```powershell
-Get-PSNote -Tag 'Legacy' | Move-PSNote -Catalog 'Archive' -Force -PassThru
+Get-PSNote -Tag 'Legacy' | Move-PSNote -DestinationCatalog 'Archive' -Force -PassThru
 ```
 
 Moves all notes tagged 'Legacy' into the Archive catalog without prompting and returns the updated notes.
@@ -96,6 +80,7 @@ HelpMessage: ''
 
 ### -DestinationCatalog
 
+The destination catalog to move the note(s) into.
 
 ```yaml
 Type: System.String

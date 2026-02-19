@@ -20,14 +20,14 @@ Creates a new PSNote for storing reusable snippets or script references.
 ### Note (Default)
 
 ```
-New-PSNote -Note <string> [-Details <string>] [-Alias <string>] [-Tags <string[]>]
+New-PSNote -Name <string> [-Details <string>] [-Alias <string>] [-Tags <string[]>]
  [-Catalog <string>] [-Run <bool>] [-Force] [-WhatIf] [-Confirm] [<CommonParameters>]
 ```
 
 ### Snippet
 
 ```
-New-PSNote -Note <string> [-Snippet <string>] [-Details <string>] [-Alias <string>]
+New-PSNote -Name <string> [-Snippet <string>] [-Details <string>] [-Alias <string>]
  [-Tags <string[]>] [-Catalog <string>] [-Run <bool>] [-Force] [-WhatIf] [-Confirm]
  [<CommonParameters>]
 ```
@@ -35,7 +35,7 @@ New-PSNote -Note <string> [-Snippet <string>] [-Details <string>] [-Alias <strin
 ### ScriptBlock
 
 ```
-New-PSNote -Note <string> [-ScriptBlock <scriptblock>] [-Details <string>] [-Alias <string>]
+New-PSNote -Name <string> [-ScriptBlock <scriptblock>] [-Details <string>] [-Alias <string>]
  [-Tags <string[]>] [-Catalog <string>] [-Run <bool>] [-Force] [-WhatIf] [-Confirm]
  [<CommonParameters>]
 ```
@@ -43,7 +43,7 @@ New-PSNote -Note <string> [-ScriptBlock <scriptblock>] [-Details <string>] [-Ali
 ### ScriptPath
 
 ```
-New-PSNote -Note <string> [-ScriptPath <string>] [-Details <string>] [-Alias <string>]
+New-PSNote -Name <string> [-ScriptPath <string>] [-Details <string>] [-Alias <string>]
  [-Tags <string[]>] [-Catalog <string>] [-Run <bool>] [-Force] [-WhatIf] [-Confirm]
  [<CommonParameters>]
 ```
@@ -164,6 +164,7 @@ HelpMessage: ''
 
 ### -Details
 
+Additional details or description about the note.
 
 ```yaml
 Type: System.String
@@ -203,8 +204,9 @@ AcceptedValues: []
 HelpMessage: ''
 ```
 
-### -Note
+### -Name
 
+The name of the note.
 
 ```yaml
 Type: System.String
@@ -225,6 +227,7 @@ HelpMessage: ''
 
 ### -Run
 
+When specified, executes the snippet content of the note immediately after creation.
 
 ```yaml
 Type: System.Boolean
@@ -245,6 +248,7 @@ HelpMessage: ''
 
 ### -ScriptBlock
 
+A PowerShell script block containing the code to store in the note.
 
 ```yaml
 Type: System.Management.Automation.ScriptBlock
@@ -307,6 +311,7 @@ HelpMessage: ''
 
 ### -Tags
 
+One or more tags to associate with the note.
 
 ```yaml
 Type: System.String[]

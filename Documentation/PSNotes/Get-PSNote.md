@@ -20,7 +20,7 @@ Retrieves PSNotes from the note store by listing or searching.
 ### Note (Default)
 
 ```
-Get-PSNote [-Note <string>] [-Tag <string>] [-Copy] [-Run] [-Catalog <string[]>]
+Get-PSNote [-Name <string>] [-Tag <string>] [-Copy] [-Run] [-Catalog <string[]>]
  [<CommonParameters>]
 ```
 
@@ -123,6 +123,8 @@ HelpMessage: ''
 
 ### -Copy
 
+When specified, copies the snippet content of the first matching note to the clipboard.
+If multiple notes match, you will be prompted to select one.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter
@@ -141,8 +143,10 @@ AcceptedValues: []
 HelpMessage: ''
 ```
 
-### -Note
+### -Name
 
+Returns notes that match the specified name.
+Wildcards are supported.
 
 ```yaml
 Type: System.String
@@ -163,6 +167,8 @@ HelpMessage: ''
 
 ### -Run
 
+When specified, executes the snippet content of the first matching note.
+If multiple notes match, you will be prompted to select one.
 
 ```yaml
 Type: System.Management.Automation.SwitchParameter

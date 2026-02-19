@@ -40,11 +40,6 @@ PS> Get-PSNote -Catalog 'General' | Move-PSNote -DestinationCatalog 'Archive'
 Moves all notes from the General catalog to the Archive catalog.
 
 .EXAMPLE
-PS> Move-PSNote -Alias 'azvm' -DestinationCatalog 'Azure' -WhatIf
-
-Shows what would happen if the note were moved, without performing the action.
-
-.EXAMPLE
 PS> Get-PSNote -Tag 'Legacy' | Move-PSNote -DestinationCatalog 'Archive' -Force -PassThru
 
 Moves all notes tagged 'Legacy' into the Archive catalog without prompting and returns the updated notes.

@@ -84,7 +84,7 @@ Updates the Tags for the note 'ADUser' in the Default catalog, replacing any exi
 
 .EXAMPLE
 PS> $NewSnippet = '(Get-Culture).DateTimeFormat.GetAbbreviatedDayName((Get-Date).DayOfWeek.value__))'
-PS> Set-PSNote -Name 'DayOfWeek' -Snippet $NewSnippet
+Set-PSNote -Name 'DayOfWeek' -Snippet $NewSnippet
 
 Updates only the snippet content for the note 'DayOfWeek' while leaving other properties unchanged.
 
@@ -114,7 +114,7 @@ Bulk-updates notes by piping objects from Get-PSNote and replacing their Tags.
 
 .EXAMPLE
 PS> [PSCustomObject]@{
-    Note    = 'MyNote'
+    Name    = 'MyNote'
     Snippet = 'Get-Process | Select-Object -First 10'
     Details = 'Top 10 processes'
     Tags    = @('process','monitoring')

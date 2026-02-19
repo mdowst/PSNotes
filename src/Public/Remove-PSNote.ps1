@@ -53,11 +53,6 @@ PS> Remove-PSNote -Alias 'azvm' -WhatIf
 
 Shows what would happen if the note with alias 'azvm' were removed.
 
-.EXAMPLE
-PS> Get-PSNote -Tag 'Legacy' | Remove-PSNote -Force -PassThru
-
-Removes all notes tagged 'Legacy' without prompting and returns the removed note objects.
-
 .OUTPUTS
 PSNote
 

@@ -2,7 +2,7 @@ param(
     [switch]$Refresh
 )
 $Path = Join-Path (Split-Path $PSScriptRoot) 'src'
-
+Get-Module PSNotes | Remove-Module -Force
 $psd1 = Join-Path -Path $Path -ChildPath 'PSNotes.psd1'
 $psm1 = Join-Path -Path $Path -ChildPath 'PSNotes.psm1'
 
