@@ -1,0 +1,30 @@
+{
+  "StoreVersion": 1,
+  "Notes": [
+    {
+      "Note": "creds",
+      "Snippet": "Get-Credential",
+      "Details": "Credential helpers",
+      "Alias": "creds",
+      "Tags": [
+        "AD",
+        "Auth"
+      ],
+      "Catalog": "Work",
+      "Run": false,
+      "Kind": 0
+    },
+    {
+      "Note": "creds2",
+      "Snippet": "Write-Output creds2",
+      "Details": "More creds",
+      "Alias": "c2",
+      "Tags": [
+        "Auth"
+      ],
+      "Catalog": "Work",
+      "Run": false,
+      "Kind": 0
+    }
+  ]
+}
