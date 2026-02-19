@@ -23,7 +23,7 @@ Public
 .COMPONENT
 Notes
 
-.PARAMETER Name
+.PARAMETER Note
 The name of the note.
 
 .PARAMETER Catalog
@@ -41,11 +41,17 @@ The PowerShell snippet content to store in the note.
 .PARAMETER ScriptPath
 A script path to store in the note for later execution.
 
+.PARAMETER ScriptBlock
+A PowerShell script block containing the code to store in the note.
+
+.PARAMETER Details
+Additional details or description about the note.
+
 .PARAMETER Force
 Overwrites an existing note with the same name (or alias conflict) where supported.
 
-.PARAMETER PassThru
-Returns the created PSNote object.
+.PARAMETER Run
+When specified, executes the snippet content of the note immediately after creation.
 
 .EXAMPLE
 PS> New-PSNote -Name 'List-AzVMs' -Catalog 'Azure' -Alias 'azvms' -Tag 'VM','Azure' -Snippet 'Get-AzVM'

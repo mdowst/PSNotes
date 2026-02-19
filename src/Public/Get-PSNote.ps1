@@ -21,7 +21,7 @@ Public
 .COMPONENT
 Notes
 
-.PARAMETER Name
+.PARAMETER Note
 Returns notes that match the specified name. Wildcards are supported.
 
 .PARAMETER Tag

@@ -19,17 +19,6 @@ Maintenance
 .COMPONENT
 Store
 
-.PARAMETER Path
-Specifies the root path where the PSNotes store should be created or validated.
-
-If not specified, the default PSNotes store path is used.
-
-.PARAMETER Force
-Recreates missing files and folders and can overwrite base configuration artifacts where supported.
-
-.PARAMETER PassThru
-Returns the initialized store configuration object.
-
 .EXAMPLE
 PS> Initialize-PSNoteStore
 

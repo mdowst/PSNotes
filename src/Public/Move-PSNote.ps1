@@ -21,16 +21,10 @@ Public
 .COMPONENT
 Notes
 
-.PARAMETER Name
-The name of the note to move. Wildcards may be supported depending on the implementation.
-
-.PARAMETER Alias
-The alias of the note to move.
-
 .PARAMETER InputObject
 One or more PSNote objects to move. Accepts pipeline input from Get-PSNote.
 
-.PARAMETER Catalog
+.PARAMETER DestinationCatalog
 The destination catalog to move the note(s) into.
 
 .PARAMETER Force
@@ -39,23 +33,19 @@ Suppresses confirmation prompts when moving notes.
 .PARAMETER PassThru
 Returns the moved PSNote objects.
 
-.EXAMPLE
-PS> Move-PSNote -Name 'Get-VMInfo' -Catalog 'Azure'
-
-Moves the note named 'Get-VMInfo' to the Azure catalog.
 
 .EXAMPLE
-PS> Get-PSNote -Catalog 'General' | Move-PSNote -Catalog 'Archive'
+PS> Get-PSNote -Catalog 'General' | Move-PSNote -DestinationCatalog 'Archive'
 
 Moves all notes from the General catalog to the Archive catalog.
 
 .EXAMPLE
-PS> Move-PSNote -Alias 'azvm' -Catalog 'Azure' -WhatIf
+PS> Move-PSNote -Alias 'azvm' -DestinationCatalog 'Azure' -WhatIf
 
 Shows what would happen if the note were moved, without performing the action.
 
 .EXAMPLE
-PS> Get-PSNote -Tag 'Legacy' | Move-PSNote -Catalog 'Archive' -Force -PassThru
+PS> Get-PSNote -Tag 'Legacy' | Move-PSNote -DestinationCatalog 'Archive' -Force -PassThru
 
 Moves all notes tagged 'Legacy' into the Archive catalog without prompting and returns the updated notes.
 

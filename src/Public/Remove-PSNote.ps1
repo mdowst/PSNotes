@@ -20,11 +20,8 @@ Public
 .COMPONENT
 Notes
 
-.PARAMETER Name
+.PARAMETER Note
 The name of the note to remove. Wildcards may be supported depending on implementation.
-
-.PARAMETER Alias
-The alias of the note to remove.
 
 .PARAMETER Catalog
 Removes notes from the specified catalog.
@@ -32,17 +29,17 @@ Removes notes from the specified catalog.
 .PARAMETER Tag
 Removes notes that contain one or more specified tags.
 
+.PARAMETER SearchString
+Performs a broader search across note properties such as name, alias, and tags to identify notes for removal.
+
 .PARAMETER InputObject
 One or more PSNote objects to remove. Accepts pipeline input from Get-PSNote.
 
 .PARAMETER Force
 Suppresses confirmation prompts.
 
-.PARAMETER PassThru
-Returns the removed PSNote objects.
-
 .EXAMPLE
-PS> Remove-PSNote -Name 'OldNote'
+PS> Remove-PSNote -Note 'OldNote'
 
 Removes the note named 'OldNote'.
 
