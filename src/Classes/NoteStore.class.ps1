@@ -89,16 +89,25 @@ class PSNote {
         if ([bool]::TryParse($objRun, [ref]$tryRun)) { $this.Run = $tryRun } else { $this.Run = $false }
 
         # --- Kind (new, but tolerate missing/invalid) ---
-        $kindText = $null
+        $kindValue = $null
         if ($null -ne $object.PSObject.Properties['Kind']) {
-            $kindText = [string]$object.Kind
+            $kindValue = $object.Kind
         }
 
-        if ([string]::IsNullOrWhiteSpace($kindText)) {
+        if ($null -eq $kindValue) {
             $this.Kind = [PSNoteKind]::Snippet
         }
         else {
-            try { $this.Kind = [PSNoteKind]::$kindText }
+            try {
+                # Handle both string names and int values (0, 1)
+                $intValue = 0
+                if ([int]::TryParse([string]$kindValue, [ref]$intValue)) {
+                    $this.Kind = [PSNoteKind]$intValue
+                }
+                else {
+                    $this.Kind = [PSNoteKind]::$kindValue
+                }
+            }
             catch { $this.Kind = [PSNoteKind]::Snippet }
         }
     }

@@ -88,6 +88,17 @@ Describe "Get-PSNoteAlias" {
             TestScriptPath | Should -Be 'Hello Pester'
         }
 
+        It "executes a script note when the script path contains spaces" {
+            $scriptDirWithSpaces = Join-Path $script:TestDir 'Folder With Spaces'
+            $null = New-Item -Path $scriptDirWithSpaces -ItemType Directory -Force
+            $scriptFile = Join-Path $scriptDirWithSpaces 'Test Script Path.ps1'
+            Set-Content -Path $scriptFile -Value '"Hello Space Path"' -Force
+
+            New-PSNote -Name 'TestScriptPathWithSpaces' -ScriptPath $scriptFile -Details 'Test script path with spaces' -Catalog 'TestScriptStore' -Alias 'TestScriptPathWithSpaces'
+
+            TestScriptPathWithSpaces | Should -Be 'Hello Space Path'
+        }
+
         It "copies to clipboard without executing when -Copy is used" {
             $scriptFile = Join-Path $script:TestDir 'TestScriptPath.ps1'
             Set-Content -Path $scriptFile -Value '"Hello Pester"' -Force
