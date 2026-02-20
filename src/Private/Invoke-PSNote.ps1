@@ -24,7 +24,6 @@ Executes the provided note.
     Returns any output from the executed script or snippet.
 #>
 Function Invoke-PSNote {
-
     [cmdletbinding(DefaultParameterSetName = "Note")]
     param(      
         [parameter(Mandatory = $true, ParameterSetName = "Note", Position = 0)]
@@ -34,13 +33,21 @@ Function Invoke-PSNote {
     
     switch ($Note.Kind) {
         Script {
-            if ([string]::IsNullOrWhiteSpace($Note.Snippet)) {
+            $scriptPath = $Note.Snippet
+            if (-not [string]::IsNullOrWhiteSpace($scriptPath)) {
+                $scriptPath = $scriptPath.Trim()
+            }
+
+            if ([string]::IsNullOrWhiteSpace($scriptPath)) {
                 throw "Cannot invoke Script note '$($Note.Name)': Path is empty."
             }
-            if (-not (Test-Path -LiteralPath $Note.Snippet)) {
-                throw "Cannot invoke Script note '$($Note.Name)': Script file not found at path: $($Note.Snippet)"
+
+            if (-not (Test-Path -LiteralPath $scriptPath -PathType Leaf)) {
+                throw "Cannot invoke Script note '$($Note.Name)': Script file not found at path: $scriptPath"
             }
-            & $Note.Snippet
+
+            $resolvedScriptPath = (Get-Item -LiteralPath $scriptPath -ErrorAction Stop).FullName
+            & $resolvedScriptPath
         }
         Snippet {
             if ([string]::IsNullOrWhiteSpace($Note.Snippet)) {
